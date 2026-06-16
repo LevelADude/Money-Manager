@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../features/auth/login_screen.dart';
+import '../features/categories/categories_screen.dart';
 import '../features/ledgers/ledger_detail_screen.dart';
 import '../features/ledgers/ledgers_screen.dart';
+import '../features/profile/profile_screen.dart';
 import '../features/transactions/transaction_form_screen.dart';
 
 /// go_router mit Auth-abhängiger Umleitung.
@@ -41,6 +43,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LedgersScreen(),
       ),
       GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
         path: '/ledger/:id',
         builder: (context, state) =>
             LedgerDetailScreen(ledgerId: state.pathParameters['id']!),
@@ -49,6 +55,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'new',
             builder: (context, state) =>
                 TransactionFormScreen(ledgerId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'edit/:txId',
+            builder: (context, state) => TransactionFormScreen(
+              ledgerId: state.pathParameters['id']!,
+              transactionId: state.pathParameters['txId'],
+            ),
+          ),
+          GoRoute(
+            path: 'categories',
+            builder: (context, state) =>
+                CategoriesScreen(ledgerId: state.pathParameters['id']!),
           ),
         ],
       ),

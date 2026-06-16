@@ -38,6 +38,24 @@ class TransactionRepository {
     });
   }
 
+  Future<void> updateTransaction({
+    required String id,
+    required TransactionDirection direction,
+    required double amount,
+    required DateTime occurredOn,
+    String note = '',
+    String? categoryId,
+  }) {
+    return _client.from('transactions').update({
+      'direction':
+          direction == TransactionDirection.income ? 'income' : 'expense',
+      'amount': amount,
+      'occurred_on': occurredOn.toIso8601String().substring(0, 10),
+      'note': note,
+      'category_id': categoryId,
+    }).eq('id', id);
+  }
+
   Future<void> deleteTransaction(String id) {
     return _client.from('transactions').delete().eq('id', id);
   }

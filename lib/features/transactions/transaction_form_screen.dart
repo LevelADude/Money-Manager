@@ -4,13 +4,24 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/app_transaction.dart';
+import '../../data/models/category.dart';
+import '../categories/category_providers.dart';
 import 'transaction_providers.dart';
 
-/// Formular zum Erfassen einer neuen Buchung.
+/// Formular zum Erfassen ODER Bearbeiten einer Buchung.
 class TransactionFormScreen extends ConsumerStatefulWidget {
-  const TransactionFormScreen({super.key, required this.ledgerId});
+  const TransactionFormScreen({
+    super.key,
+    required this.ledgerId,
+    this.transactionId,
+  });
 
   final String ledgerId;
+
+  /// Wenn gesetzt: Bearbeitungsmodus für diese Buchung.
+  final String? transactionId;
+
+  bool get isEditing => transactionId != null;
 
   @override
   ConsumerState<TransactionFormScreen> createState() =>
@@ -23,13 +34,32 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _note = TextEditingController();
   TransactionDirection _direction = TransactionDirection.expense;
   DateTime _date = DateTime.now();
+  String? _categoryId;
   bool _saving = false;
+  bool _prefilled = false;
 
   @override
   void dispose() {
     _amount.dispose();
     _note.dispose();
     super.dispose();
+  }
+
+  void _prefillFromExisting() {
+    if (_prefilled || !widget.isEditing) return;
+    final list = ref.read(transactionsProvider(widget.ledgerId)).asData?.value;
+    if (list == null) return;
+    for (final t in list) {
+      if (t.id == widget.transactionId) {
+        _amount.text = t.amount.toStringAsFixed(2).replaceAll('.', ',');
+        _note.text = t.note;
+        _direction = t.direction;
+        _date = t.occurredOn;
+        _categoryId = t.categoryId;
+        _prefilled = true;
+        break;
+      }
+    }
   }
 
   Future<void> _pickDate() async {
@@ -47,14 +77,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final amount = double.tryParse(_amount.text.replaceAll(',', '.'));
     if (amount == null) return;
     setState(() => _saving = true);
+    final repo = ref.read(transactionRepositoryProvider);
     try {
-      await ref.read(transactionRepositoryProvider).addTransaction(
-            ledgerId: widget.ledgerId,
-            direction: _direction,
-            amount: amount,
-            occurredOn: _date,
-            note: _note.text.trim(),
-          );
+      if (widget.isEditing) {
+        await repo.updateTransaction(
+          id: widget.transactionId!,
+          direction: _direction,
+          amount: amount,
+          occurredOn: _date,
+          note: _note.text.trim(),
+          categoryId: _categoryId,
+        );
+      } else {
+        await repo.addTransaction(
+          ledgerId: widget.ledgerId,
+          direction: _direction,
+          amount: amount,
+          occurredOn: _date,
+          note: _note.text.trim(),
+          categoryId: _categoryId,
+        );
+      }
       if (mounted) context.go('/ledger/${widget.ledgerId}');
     } catch (e) {
       if (mounted) {
@@ -65,11 +108,55 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
+  Future<void> _delete() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Buchung löschen?'),
+        content: const Text('Das kann nicht rückgängig gemacht werden.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await ref
+        .read(transactionRepositoryProvider)
+        .deleteTransaction(widget.transactionId!);
+    if (mounted) context.go('/ledger/${widget.ledgerId}');
+  }
+
   @override
   Widget build(BuildContext context) {
+    _prefillFromExisting();
     final df = DateFormat('dd.MM.yyyy');
+    final all = ref.watch(categoriesProvider(widget.ledgerId)).asData?.value ??
+        const <Category>[];
+    final categories = all.where((c) => c.matches(_direction)).toList();
+    // Gewählte Kategorie passt nicht (mehr) zur Richtung -> zurücksetzen.
+    if (_categoryId != null && !categories.any((c) => c.id == _categoryId)) {
+      _categoryId = null;
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Neue Buchung')),
+      appBar: AppBar(
+        title: Text(widget.isEditing ? 'Buchung bearbeiten' : 'Neue Buchung'),
+        actions: [
+          if (widget.isEditing)
+            IconButton(
+              tooltip: 'Löschen',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _delete,
+            ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -96,7 +183,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _amount,
-                autofocus: true,
+                autofocus: !widget.isEditing,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
@@ -111,6 +198,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String?>(
+                initialValue: _categoryId,
+                decoration: const InputDecoration(
+                  labelText: 'Kategorie',
+                  prefixIcon: Icon(Icons.label_outline),
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Keine Kategorie'),
+                  ),
+                  for (final c in categories)
+                    DropdownMenuItem<String?>(value: c.id, child: Text(c.name)),
+                ],
+                onChanged: (v) => setState(() => _categoryId = v),
               ),
               const SizedBox(height: 16),
               TextFormField(

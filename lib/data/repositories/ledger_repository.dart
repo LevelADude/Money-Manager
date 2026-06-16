@@ -28,6 +28,10 @@ class LedgerRepository {
     return _client.from('ledgers').update({'name': name}).eq('id', id);
   }
 
+  Future<void> setArchived({required String id, required bool archived}) {
+    return _client.from('ledgers').update({'archived': archived}).eq('id', id);
+  }
+
   Future<void> deleteLedger(String id) {
     return _client.from('ledgers').delete().eq('id', id);
   }

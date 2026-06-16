@@ -113,12 +113,13 @@ Trennung der Buchhaltungen ist organisatorisch (eigene Bücher je Person, sichtb
 über `owner_id` / `created_by`) – keine Zugriffssperre. Strenger machen =
 nur die RLS-Policies in `0001_init.sql` anpassen, die App bleibt gleich.
 
-## Nächste Schritte
+## Status & Roadmap
 
-- [ ] Kategorien je Buch in der UI nutzen (Schema ist bereits da)
-- [ ] Buchungen bearbeiten (Update-Screen; Repository-Methode ergänzen)
-- [ ] Profile/Namen anzeigen („erfasst von …")
-- [ ] Filter & Zeitraum-Auswertung, Monatssummen
-- [ ] Bücher umbenennen/archivieren in der UI (Repo-Methoden existieren)
-- [ ] E-Mail-Bestätigung & Passwort-Reset-Flow
-- [ ] App-Icon & Branding, Release-Builds (msix für Windows, apk/aab für Android)
+Der vollständige Plan bis zum Release steht in [ROADMAP.md](ROADMAP.md).
+
+- **Phase 1 – Grundgerüst:** ✅ Auth, Bücher, Buchungen, Supabase + RLS + Realtime
+- **Phase 2 – Kernfunktionen:** ✅ Kategorien (verwalten + im Formular), Buchungen bearbeiten/löschen, Attribution („erfasst von …" / Besitzer), Profil (Anzeigename), Bücher verwalten (umbenennen/archivieren/löschen)
+- **Phase 3 – Auswertungen & UX:** ⬜ Zeitraum-Filter, Summen + Kategorien-Aufschlüsselung, Diagramme, Suche, Lokalisierung
+- **Phase 4 – Auth & Sicherheit:** ⬜ E-Mail-Bestätigung, Passwort-Reset, Session-Handling
+- **Phase 5 – Qualität & Release:** ⬜ Tests, CI, App-Icon, Release-Builds (Windows MSIX, Android APK/AAB)
+- **Phase 6 – Optional:** ⬜ wiederkehrende Buchungen, Belege, Budgets, Export, Mehrwährung
