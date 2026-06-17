@@ -59,7 +59,10 @@ Kategorien, Buchung bearbeiten/löschen, Attribution, Profil.
 - ✅ **Wiederkehrende Buchungen** (Daueraufträge): Regeln je Konto, Intervall
   Tag/Woche/Monat/Jahr, Start-/Enddatum; **race-sichere Auto-Generierung** beim
   App-Start (atomares Beanspruchen der Periode → keine Doppelbuchungen); Migration 0005.
-- ⬜ Tags, Split-Buchungen, Belege (Supabase Storage, komprimiert), Export (CSV/PDF).
+- ✅ **CSV-Export** + **Belege/Fotos** je Buchung (Supabase Storage, komprimiert).
+- ✅ **Admin-Bereich + E-Mail-Whitelist**: Registrierung nur für freigeschaltete
+  E-Mails, Nutzerübersicht/-verwaltung, Admin-Rechte, Nutzer löschen (Edge Function).
+- ⬜ Tags, Split-Buchungen, PDF-Export.
 
 ## 🔄 Phase G — Qualität & Release
 - ✅ **App-Icon** (grünes €, Android/Windows/Web) + App-Name „Money Manager".
@@ -67,8 +70,9 @@ Kategorien, Buchung bearbeiten/löschen, Attribution, Profil.
   + Android (`app-release.apk`, ~54 MB). Build-Fixes: `kotlin.incremental=false`
   (Projekt F: ↔ Pub-Cache C:), Gradle-Heap 4G/Metaspace 1G (OOM), `compileSdk 36`
   global für alle Plugin-Subprojekte. Anleitung in der README.
-- ⬜ Tests (Modelle/Repos), CI (GitHub Actions), Windows-MSIX-Installer,
-  Screenshots.
+- ✅ **Windows-MSIX-Installer** (signiert; `tool/build-msix.ps1`).
+- ✅ **Taschenrechner-Tastenfeld** + **Menüleiste** (Tabs) + Konten nach Kategorie.
+- ⬜ Tests (Modelle/Repos), CI (GitHub Actions), Screenshots.
 
 ---
 
