@@ -52,6 +52,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  msix: ^3.17.0
 
 flutter_launcher_icons:
   image_path: "assets/icon/app_icon.png"
@@ -68,6 +69,15 @@ flutter_launcher_icons:
     image_path: "assets/icon/app_icon.png"
     background_color: "#2E7D32"
     theme_color: "#2E7D32"
+
+msix_config:
+  display_name: Money Manager
+  publisher_display_name: LevelADude
+  identity_name: com.leveladude.moneymanager
+  publisher: CN=Money Manager
+  msix_version: 1.0.0.0
+  logo_path: assets/icon/app_icon.png
+  capabilities: internetClient
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

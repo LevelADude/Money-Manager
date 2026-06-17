@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
+import '../../shared/calculator_sheet.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
@@ -277,9 +278,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
                       onChanged: (_) => setState(() {}),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Betrag (auch Rechnung, z. B. 12,50+3)',
-                        prefixIcon: Icon(Icons.euro),
+                        prefixIcon: const Icon(Icons.euro),
+                        suffixIcon: IconButton(
+                          tooltip: 'Taschenrechner',
+                          icon: const Icon(Icons.calculate_outlined),
+                          onPressed: () async {
+                            final r = await showCalculatorSheet(context,
+                                initial: _amount.text);
+                            if (r != null) setState(() => _amount.text = r);
+                          },
+                        ),
                       ),
                       validator: (v) {
                         final c = parseToCents(v ?? '');

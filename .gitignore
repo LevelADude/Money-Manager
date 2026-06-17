@@ -49,3 +49,6 @@ app.*.map.json
 env.json
 *.env
 .env
+
+# Code-Signing-Zertifikate (privat, NICHT committen)
+windows/certs/
