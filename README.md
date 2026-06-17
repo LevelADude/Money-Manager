@@ -140,8 +140,19 @@ Entwicklermodus.
 flutter build windows --release --dart-define-from-file=env.json
 ```
 Ergebnis: `build\windows\x64\runner\Release\` — den ganzen Ordner weitergeben;
-`money_manager.exe` startet die App. (Optional später: MSIX-Installer via
-`msix`-Paket.)
+`money_manager.exe` startet die App.
+
+### Windows-MSIX-Installer (zusätzlich zur .exe)
+Richtiger Installer mit Startmenü-Eintrag und sauberem De-/Installieren.
+1. Einmalig ein selbst-signiertes Zertifikat anlegen — Anleitung im Kopf von
+   [`tool/build-msix.ps1`](tool/build-msix.ps1) (erzeugt `windows/certs/mm.pfx` + `mm.cer`).
+2. Installer bauen: `.\tool\build-msix.ps1` → `build\windows\msix\MoneyManager.msix`.
+3. Beim Empfänger **einmalig `mm.cer` vertrauen**: Rechtsklick auf `mm.cer` →
+   *Zertifikat installieren* → *Lokaler Computer* → *Alle Zertifikate in folgendem
+   Speicher* → *Vertrauenswürdige Personen*. Danach **`MoneyManager.msix`
+   doppelklicken → Installieren**.
+
+> `windows/certs/` (privater Schlüssel) steht in `.gitignore` und wird nicht eingecheckt.
 
 ## Status & Roadmap
 
