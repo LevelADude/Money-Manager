@@ -1,12 +1,12 @@
 {
-    "name": "money_manager",
-    "short_name": "money_manager",
+    "name": "Money Manager",
+    "short_name": "Money",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#2E7D32",
     "theme_color": "#2E7D32",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "description": "Persönliche Finanzverwaltung – Konten, Buchungen, Budgets und Statistiken, geräteübergreifend synchronisiert.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

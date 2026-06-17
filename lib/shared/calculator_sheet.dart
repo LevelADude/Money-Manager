@@ -9,6 +9,8 @@ Future<String?> showCalculatorSheet(BuildContext context, {String initial = ''})
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
+    // Auf breiten Screens zentriert + begrenzt statt über die ganze Breite.
+    constraints: const BoxConstraints(maxWidth: 480),
     builder: (_) => _CalculatorSheet(initial: initial),
   );
 }

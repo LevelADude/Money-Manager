@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../shared/responsive.dart';
+
 /// Persistente Menüleiste: untere NavigationBar (schmal/Handy) bzw. seitliche
-/// NavigationRail (breit/Desktop). Hält die vier Hauptbereiche.
+/// NavigationRail (breit/Desktop). Hält die vier Hauptbereiche. Der Inhalt wird
+/// auf breiten Bildschirmen zentriert und in der Breite begrenzt (responsive).
 class MainScaffold extends StatelessWidget {
   const MainScaffold({super.key, required this.shell});
 
@@ -29,16 +32,21 @@ class MainScaffold extends StatelessWidget {
       (icon: Icons.menu, active: Icons.menu, label: 'Mehr'),
     ];
 
-    final wide = MediaQuery.sizeOf(context).width >= 640;
+    // Auf breiten Screens den Inhalt zentriert + begrenzt darstellen.
+    final content = MaxWidthBox(child: shell);
 
-    if (wide) {
+    if (context.isWide) {
+      final extended = context.isExtraWide;
       return Scaffold(
         body: Row(
           children: [
             NavigationRail(
               selectedIndex: shell.currentIndex,
               onDestinationSelected: _goBranch,
-              labelType: NavigationRailLabelType.all,
+              extended: extended,
+              labelType: extended
+                  ? NavigationRailLabelType.none
+                  : NavigationRailLabelType.all,
               destinations: [
                 for (final d in items)
                   NavigationRailDestination(
@@ -49,14 +57,14 @@ class MainScaffold extends StatelessWidget {
               ],
             ),
             const VerticalDivider(width: 1),
-            Expanded(child: shell),
+            Expanded(child: content),
           ],
         ),
       );
     }
 
     return Scaffold(
-      body: shell,
+      body: content,
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
         onDestinationSelected: _goBranch,
