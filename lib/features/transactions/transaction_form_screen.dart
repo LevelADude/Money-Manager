@@ -32,8 +32,9 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
 class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amount = TextEditingController();
-  final _title = TextEditingController();
   final _note = TextEditingController();
+  String _titleInitial = '';
+  TextEditingController? _titleCtrl;
   late String _sourceAccountId = widget.accountId;
   TransactionType _type = TransactionType.expense;
   DateTime _date = DateTime.now();
@@ -45,9 +46,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   @override
   void dispose() {
     _amount.dispose();
-    _title.dispose();
     _note.dispose();
     super.dispose();
+  }
+
+  String get _titleText => (_titleCtrl?.text ?? _titleInitial).trim();
+
+  /// Bei Auswahl eines bekannten Titels die zuletzt genutzte Kategorie
+  /// vorschlagen (nur wenn noch keine gewählt wurde).
+  void _onTitleSelected(String selected) {
+    if (_type == TransactionType.transfer || _categoryId != null) return;
+    final suggestion =
+        ref.read(titleCategoryProvider)[selected.trim().toLowerCase()];
+    if (suggestion != null) setState(() => _categoryId = suggestion);
   }
 
   void _prefill() {
@@ -56,7 +67,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     for (final t in txs) {
       if (t.id == widget.transactionId) {
         _amount.text = centsToInput(t.amountCents);
-        _title.text = t.title;
+        _titleInitial = t.title;
         _note.text = t.note;
         _type = t.type;
         _date = t.occurredOn;
@@ -99,7 +110,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           type: _type,
           amountCents: cents,
           occurredOn: _date,
-          title: _title.text.trim(),
+          title: _titleText,
           note: _note.text.trim(),
           categoryId: _categoryId,
           transferAccountId: _transferTargetId,
@@ -110,7 +121,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           type: _type,
           amountCents: cents,
           occurredOn: _date,
-          title: _title.text.trim(),
+          title: _titleText,
           note: _note.text.trim(),
           categoryId: _categoryId,
           transferAccountId: _transferTargetId,
@@ -220,8 +231,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 autofocus: !widget.isEditing,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
-                  labelText: 'Betrag',
+                  labelText: 'Betrag (auch Rechnung, z. B. 12,50+3+7,99)',
                   prefixIcon: Icon(Icons.euro),
                 ),
                 validator: (v) {
@@ -230,6 +242,28 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   return null;
                 },
               ),
+              Builder(builder: (context) {
+                final t = _amount.text;
+                final hasOp = t.contains('+') ||
+                    t.contains('*') ||
+                    t.contains('/') ||
+                    t.lastIndexOf('-') > 0;
+                final cents = hasOp ? parseToCents(t) : null;
+                if (cents == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6, left: 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '= ${formatCents(cents)}',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                );
+              }),
               const SizedBox(height: 16),
               if (isTransfer)
                 DropdownButtonFormField<String?>(
@@ -268,13 +302,29 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   onChanged: (v) => setState(() => _categoryId = v),
                 ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _title,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Titel (z. B. Aldi, Rewe, Aral)',
-                  prefixIcon: Icon(Icons.storefront_outlined),
-                ),
+              Autocomplete<String>(
+                initialValue: TextEditingValue(text: _titleInitial),
+                optionsBuilder: (value) {
+                  final q = value.text.trim().toLowerCase();
+                  if (q.isEmpty) return const Iterable<String>.empty();
+                  return ref
+                      .read(titleSuggestionsProvider)
+                      .where((s) => s.toLowerCase().contains(q))
+                      .take(8);
+                },
+                onSelected: _onTitleSelected,
+                fieldViewBuilder: (context, controller, focusNode, onSubmit) {
+                  _titleCtrl = controller;
+                  return TextFormField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      labelText: 'Titel (z. B. Aldi, Rewe, Aral)',
+                      prefixIcon: Icon(Icons.storefront_outlined),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(

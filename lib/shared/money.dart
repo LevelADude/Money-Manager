@@ -1,25 +1,127 @@
 import 'package:intl/intl.dart';
 
 /// Geldbeträge werden intern als **Ganzzahl in Cent** gespeichert
-/// (exakt + speichersparend). Hier die Konvertierung/Formatierung.
+/// (exakt + speichersparend). Hier Konvertierung/Formatierung + ein kleiner
+/// sicherer Rechner fürs Betragsfeld.
 final NumberFormat _eur = NumberFormat.currency(locale: 'de_DE', symbol: '€');
 
 String formatCents(int cents) => _eur.format(cents / 100);
 
-/// Parst eine Nutzereingabe ("12,50", "12.50", "1.234,56 €") nach Cent.
-/// Gibt null zurück, wenn nichts Sinnvolles erkannt wird.
+/// Cent -> bearbeitbarer Eingabe-String ("12,50").
+String centsToInput(int cents) =>
+    (cents / 100).toStringAsFixed(2).replaceAll('.', ',');
+
+/// Parst eine Nutzereingabe ODER einen Rechenausdruck ("12,50 + 3 + 7,99")
+/// nach Cent. Gibt null zurück, wenn nichts Sinnvolles erkannt wird.
 int? parseToCents(String input) {
-  var s = input.trim();
-  if (s.isEmpty) return null;
-  // Tausenderpunkte entfernen, Komma -> Punkt, dann alles außer Ziffern/Punkt/Minus weg.
-  s = s.replaceAll('.', '').replaceAll(',', '.');
-  s = s.replaceAll(RegExp(r'[^0-9.\-]'), '');
-  if (s.isEmpty) return null;
-  final value = double.tryParse(s);
+  final value = evalExpression(input);
   if (value == null) return null;
   return (value * 100).round();
 }
 
-/// Cent -> bearbeitbarer Eingabe-String ("12,50").
-String centsToInput(int cents) =>
-    (cents / 100).toStringAsFixed(2).replaceAll('.', ',');
+/// Wertet einen einfachen Rechenausdruck aus: + - * / und Klammern.
+/// Komma gilt als Dezimaltrenner. Gibt null bei Fehler zurück.
+double? evalExpression(String input) {
+  var s = input.trim().replaceAll('€', '').replaceAll(' ', '').replaceAll(',', '.');
+  if (s.isEmpty) return null;
+
+  // --- Tokenisierung (mit unärem Minus/Plus) ---
+  final tokens = <String>[];
+  final num = StringBuffer();
+  var expectOperand = true;
+  void flush() {
+    if (num.isNotEmpty) {
+      tokens.add(num.toString());
+      num.clear();
+    }
+  }
+
+  for (var i = 0; i < s.length; i++) {
+    final ch = s[i];
+    if ((ch.codeUnitAt(0) >= 48 && ch.codeUnitAt(0) <= 57) || ch == '.') {
+      num.write(ch);
+      expectOperand = false;
+    } else if (ch == '(') {
+      flush();
+      tokens.add('(');
+      expectOperand = true;
+    } else if (ch == ')') {
+      flush();
+      tokens.add(')');
+      expectOperand = false;
+    } else if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
+      if (expectOperand) {
+        if (ch == '-') {
+          num.write('-'); // unäres Minus in die Zahl
+        } else if (ch != '+') {
+          return null; // * oder / können nicht unär sein
+        }
+        // unäres + wird ignoriert; weiterhin Operand erwartet
+      } else {
+        flush();
+        tokens.add(ch);
+        expectOperand = true;
+      }
+    } else {
+      return null; // unerlaubtes Zeichen
+    }
+  }
+  flush();
+  if (tokens.isEmpty) return null;
+
+  // --- Shunting-Yard -> RPN ---
+  const prec = {'+': 1, '-': 1, '*': 2, '/': 2};
+  final output = <String>[];
+  final ops = <String>[];
+  for (final t in tokens) {
+    if (double.tryParse(t) != null) {
+      output.add(t);
+    } else if (prec.containsKey(t)) {
+      while (ops.isNotEmpty &&
+          prec.containsKey(ops.last) &&
+          prec[ops.last]! >= prec[t]!) {
+        output.add(ops.removeLast());
+      }
+      ops.add(t);
+    } else if (t == '(') {
+      ops.add(t);
+    } else if (t == ')') {
+      while (ops.isNotEmpty && ops.last != '(') {
+        output.add(ops.removeLast());
+      }
+      if (ops.isEmpty) return null; // unbalancierte Klammern
+      ops.removeLast();
+    }
+  }
+  while (ops.isNotEmpty) {
+    final op = ops.removeLast();
+    if (op == '(') return null;
+    output.add(op);
+  }
+
+  // --- RPN auswerten ---
+  final stack = <double>[];
+  for (final t in output) {
+    final n = double.tryParse(t);
+    if (n != null) {
+      stack.add(n);
+    } else {
+      if (stack.length < 2) return null;
+      final b = stack.removeLast();
+      final a = stack.removeLast();
+      switch (t) {
+        case '+':
+          stack.add(a + b);
+        case '-':
+          stack.add(a - b);
+        case '*':
+          stack.add(a * b);
+        case '/':
+          if (b == 0) return null;
+          stack.add(a / b);
+      }
+    }
+  }
+  if (stack.length != 1) return null;
+  return stack.first;
+}
