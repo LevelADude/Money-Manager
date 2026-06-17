@@ -1,23 +1,39 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../local/app_cache.dart';
 import '../models/app_transaction.dart';
 
-/// Zugriff auf die Tabelle `transactions` inkl. Realtime-Stream.
+/// Zugriff auf die Tabelle `transactions` inkl. Realtime-Stream + Offline-Cache.
 class TransactionRepository {
-  TransactionRepository(this._client);
+  TransactionRepository(this._client, this._cache);
 
   final SupabaseClient _client;
+  final AppCache _cache;
 
-  /// Live-Stream aller (nicht gelöschten) Buchungen.
-  Stream<List<AppTransaction>> watchAll() {
-    return _client
-        .from('transactions')
-        .stream(primaryKey: ['id'])
-        .order('occurred_on')
-        .map((rows) => rows
+  /// Erst der gecachte Stand (sofort/offline), dann der Live-Stream.
+  Stream<List<AppTransaction>> watchAll() async* {
+    final cached = _cache.readRows('transactions');
+    if (cached.isNotEmpty) {
+      yield cached
+          .where((r) => r['deleted_at'] == null)
+          .map(AppTransaction.fromJson)
+          .toList();
+    }
+    try {
+      yield* _client
+          .from('transactions')
+          .stream(primaryKey: ['id'])
+          .order('occurred_on')
+          .map((rows) {
+        _cache.writeRows('transactions', rows);
+        return rows
             .where((r) => r['deleted_at'] == null)
             .map(AppTransaction.fromJson)
-            .toList());
+            .toList();
+      });
+    } catch (_) {
+      // Offline: beim Cache bleiben.
+    }
   }
 
   Map<String, dynamic> _payload({

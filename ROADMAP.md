@@ -27,10 +27,13 @@ Kategorien, Buchung bearbeiten/löschen, Attribution, Profil.
   Konto-Detail mit Saldo, Buchungsformular mit Typen/Übertrag/Titel/Notiz,
   gruppenweite Kategorienverwaltung.
 
-## 🔄 Phase B — Local-First-Datenschicht
-- `drift` (SQLite) als lokale Quelle; `SyncService`: Delta-Pull
-  (`updated_at > last_sync`) + Tombstones + Push; Wasserzeichen in
-  `shared_preferences`. Statistiken rechnen lokal → minimale Bandbreite, offline.
+## ✅ Phase B — Local-First (Offline-Cache)
+- Persistenter Offline-Cache (`shared_preferences`, plattformübergreifend) über
+  dem Supabase-Realtime-Stream: **sofortiger und offline-fähiger Start** mit den
+  letzten bekannten Daten, automatische Persistenz bei jedem Update.
+- Korrektheit bleibt beim erprobten Stream (wichtig für Finanzdaten). Eine reine
+  Delta-Synchronisation zur weiteren Bandbreiten-Reduktion ist optional/später —
+  für eine kleine Gruppe nicht nötig (Bandbreite ist nicht der Engpass).
 
 ## ⬜ Phase C — Konten-Feinschliff
 - Icon/Farb-Auswahl je Konto, Reihenfolge, Personen-Filter in der Übersicht,

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/local/app_cache.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/repositories/account_repository.dart';
@@ -7,7 +8,10 @@ import '../auth/auth_providers.dart';
 import '../transactions/transaction_providers.dart';
 
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
-  return AccountRepository(ref.watch(supabaseClientProvider));
+  return AccountRepository(
+    ref.watch(supabaseClientProvider),
+    ref.watch(appCacheProvider),
+  );
 });
 
 /// Live-Liste aller Konten.

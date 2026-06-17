@@ -1,22 +1,40 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../local/app_cache.dart';
 import '../models/account.dart';
 
-/// Zugriff auf die Tabelle `accounts` inkl. Realtime-Stream.
+/// Zugriff auf die Tabelle `accounts` inkl. Realtime-Stream + Offline-Cache.
 class AccountRepository {
-  AccountRepository(this._client);
+  AccountRepository(this._client, this._cache);
 
   final SupabaseClient _client;
+  final AppCache _cache;
 
-  Stream<List<Account>> watchAccounts() {
-    return _client
-        .from('accounts')
-        .stream(primaryKey: ['id'])
-        .order('created_at')
-        .map((rows) => rows
+  /// Erst der gecachte Stand (sofort/offline), dann der Live-Stream
+  /// (aktualisiert + persistiert den Cache).
+  Stream<List<Account>> watchAccounts() async* {
+    final cached = _cache.readRows('accounts');
+    if (cached.isNotEmpty) {
+      yield cached
+          .where((r) => r['deleted_at'] == null)
+          .map(Account.fromJson)
+          .toList();
+    }
+    try {
+      yield* _client
+          .from('accounts')
+          .stream(primaryKey: ['id'])
+          .order('created_at')
+          .map((rows) {
+        _cache.writeRows('accounts', rows);
+        return rows
             .where((r) => r['deleted_at'] == null)
             .map(Account.fromJson)
-            .toList());
+            .toList();
+      });
+    } catch (_) {
+      // Offline: beim Cache bleiben.
+    }
   }
 
   Future<void> createAccount({

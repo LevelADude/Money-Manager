@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/local/app_cache.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../auth/auth_providers.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
-  return TransactionRepository(ref.watch(supabaseClientProvider));
+  return TransactionRepository(
+    ref.watch(supabaseClientProvider),
+    ref.watch(appCacheProvider),
+  );
 });
 
 /// Live-Liste ALLER Buchungen (Basis für Salden/Vermögen/Statistik).

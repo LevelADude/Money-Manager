@@ -1,22 +1,38 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../local/app_cache.dart';
 import '../models/category.dart';
 
-/// Zugriff auf die Tabelle `categories` (gruppenweit) inkl. Realtime-Stream.
+/// Zugriff auf die Tabelle `categories` (gruppenweit) inkl. Stream + Cache.
 class CategoryRepository {
-  CategoryRepository(this._client);
+  CategoryRepository(this._client, this._cache);
 
   final SupabaseClient _client;
+  final AppCache _cache;
 
-  Stream<List<Category>> watchCategories() {
-    return _client
-        .from('categories')
-        .stream(primaryKey: ['id'])
-        .order('name')
-        .map((rows) => rows
+  Stream<List<Category>> watchCategories() async* {
+    final cached = _cache.readRows('categories');
+    if (cached.isNotEmpty) {
+      yield cached
+          .where((r) => r['deleted_at'] == null)
+          .map(Category.fromJson)
+          .toList();
+    }
+    try {
+      yield* _client
+          .from('categories')
+          .stream(primaryKey: ['id'])
+          .order('name')
+          .map((rows) {
+        _cache.writeRows('categories', rows);
+        return rows
             .where((r) => r['deleted_at'] == null)
             .map(Category.fromJson)
-            .toList());
+            .toList();
+      });
+    } catch (_) {
+      // Offline: beim Cache bleiben.
+    }
   }
 
   Future<void> addCategory({
