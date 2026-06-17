@@ -114,6 +114,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.go('/categories'),
             ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.download_outlined),
+              title: const Text('Export (CSV)'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/export'),
+            ),
             const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: () => ref.read(authRepositoryProvider).signOut(),

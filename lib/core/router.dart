@@ -9,6 +9,7 @@ import '../features/accounts/accounts_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
+import '../features/export/export_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/recurring/recurring_form_screen.dart';
 import '../features/recurring/recurring_screen.dart';
@@ -44,6 +45,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/statistics', builder: (c, s) => const StatisticsScreen()),
       GoRoute(path: '/search', builder: (c, s) => const SearchScreen()),
       GoRoute(path: '/budgets', builder: (c, s) => const BudgetsScreen()),
+      GoRoute(path: '/export', builder: (c, s) => const ExportScreen()),
       GoRoute(path: '/recurring', builder: (c, s) => const RecurringScreen()),
       GoRoute(
           path: '/recurring/new',
