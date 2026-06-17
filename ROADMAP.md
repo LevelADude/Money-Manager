@@ -44,10 +44,14 @@ Kategorien, Buchung bearbeiten/löschen, Attribution, Profil.
   (+ Kategorie-Vorschlag bei bekanntem Titel), Korrektur-/Saldoabgleich-Buchung,
   Icon/Farbe je Kategorie + Unterkategorien.
 
-## ⬜ Phase E — Suche & Statistik
-- Volltextsuche + Filter (Konto/Kategorie/Typ/Zeitraum/Betrag); **Statistik-
-  Fenster** (Kategorie-Aufteilung, Verlauf, Einnahmen/Ausgaben, Vermögen über
-  Zeit); Auswertung pro Woche/Monat/Jahr; Sparquote.
+## ✅ Phase E — Suche & Statistik
+- **Suche** über alle Buchungen (Titel/Notiz/Kategorie) + Typ-Filter
+  (Ausgabe/Einnahme/Übertrag) → Treffer öffnen direkt die Buchung.
+- **Statistik-Fenster**: Zeitraum (Monat/Jahr/Gesamt), Summen
+  Einnahmen/Ausgaben/Saldo, **Kategorie-Aufschlüsselung als Balken**,
+  Gesamtvermögen + Schulden. Alles lokal gerechnet.
+- Offen/später: Wochenansicht + benutzerdefinierter Zeitraum, Verlaufskurve,
+  Sparquote.
 
 ## ⬜ Phase F — Mehr Finanzfunktionen
 - Budgets je Kategorie + Warnungen, wiederkehrende Buchungen, Tags, Split-

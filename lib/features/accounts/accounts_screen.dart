@@ -35,6 +35,16 @@ class AccountsScreen extends ConsumerWidget {
         title: const Text('Konten'),
         actions: [
           IconButton(
+            tooltip: 'Statistik',
+            icon: const Icon(Icons.bar_chart_outlined),
+            onPressed: () => context.go('/statistics'),
+          ),
+          IconButton(
+            tooltip: 'Suche',
+            icon: const Icon(Icons.search),
+            onPressed: () => context.go('/search'),
+          ),
+          IconButton(
             tooltip: 'Kategorien',
             icon: const Icon(Icons.label_outline),
             onPressed: () => context.go('/categories'),
