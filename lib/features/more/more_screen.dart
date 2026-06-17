@@ -1,0 +1,45 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../auth/auth_providers.dart';
+
+/// "Mehr"-Tab: Sammelmenü für Funktionen außerhalb der Haupt-Tabs.
+class MoreScreen extends ConsumerWidget {
+  const MoreScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final email =
+        ref.watch(supabaseClientProvider).auth.currentUser?.email ?? '';
+
+    Widget tile(IconData icon, String title, String route) => ListTile(
+          leading: Icon(icon),
+          title: Text(title),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.go(route),
+        );
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Mehr')),
+      body: ListView(
+        children: [
+          tile(Icons.savings_outlined, 'Budgets', '/more/budgets'),
+          tile(Icons.repeat, 'Daueraufträge', '/more/recurring'),
+          tile(Icons.label_outline, 'Kategorien', '/more/categories'),
+          tile(Icons.download_outlined, 'Export (CSV)', '/more/export'),
+          const Divider(),
+          tile(Icons.account_circle_outlined, 'Profil', '/more/profile'),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              email.isEmpty ? '' : 'Angemeldet als $email',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

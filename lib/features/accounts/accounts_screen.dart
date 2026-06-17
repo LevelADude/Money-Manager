@@ -11,17 +11,31 @@ import '../recurring/recurring_providers.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
 
-/// Startseite: Gesamtvermögen + Konten, nach Person gruppiert.
+/// "Konten"-Tab: Gesamtvermögen + Konten, nach Kontokategorie gruppiert
+/// (mit Summe je Kategorie).
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
+
+  // Anzeige-Reihenfolge der Kontotypen (Vermögenswerte zuerst, Schulden zuletzt).
+  static const List<AccountType> _order = [
+    AccountType.bank,
+    AccountType.cash,
+    AccountType.savings,
+    AccountType.wallet,
+    AccountType.investment,
+    AccountType.other,
+    AccountType.creditCard,
+    AccountType.loan,
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Fällige Daueraufträge beim App-Start einmalig erzeugen.
     ref.watch(recurringGenerationProvider);
+
     final accountsAsync = ref.watch(accountsProvider);
-    final txs =
-        ref.watch(allTransactionsProvider).asData?.value ?? const <AppTransaction>[];
+    final txs = ref.watch(allTransactionsProvider).asData?.value ??
+        const <AppTransaction>[];
     final memberNames =
         ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
 
@@ -34,31 +48,7 @@ class AccountsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Konten'),
-        actions: [
-          IconButton(
-            tooltip: 'Statistik',
-            icon: const Icon(Icons.bar_chart_outlined),
-            onPressed: () => context.go('/statistics'),
-          ),
-          IconButton(
-            tooltip: 'Suche',
-            icon: const Icon(Icons.search),
-            onPressed: () => context.go('/search'),
-          ),
-          IconButton(
-            tooltip: 'Kategorien',
-            icon: const Icon(Icons.label_outline),
-            onPressed: () => context.go('/categories'),
-          ),
-          IconButton(
-            tooltip: 'Profil',
-            icon: const Icon(Icons.account_circle_outlined),
-            onPressed: () => context.go('/profile'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Konten')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/account/new'),
         icon: const Icon(Icons.add),
@@ -73,38 +63,38 @@ class AccountsScreen extends ConsumerWidget {
               child: Text('Noch keine Konten. Lege unten eines an.'),
             );
           }
-          // Nach Besitzer gruppieren (Reihenfolge stabil).
-          final groups = <String?, List<Account>>{};
+          final byType = <AccountType, List<Account>>{};
           for (final a in accounts) {
-            groups.putIfAbsent(a.ownerId, () => []).add(a);
+            byType.putIfAbsent(a.type, () => []).add(a);
           }
 
-          final total = ref.watch(netWorthProvider(null));
-
           final children = <Widget>[
-            _NetWorthCard(totalCents: total),
+            _NetWorthCard(totalCents: ref.watch(netWorthProvider(null))),
           ];
-          groups.forEach((ownerId, accs) {
-            final ownerName = memberNames[ownerId] ?? 'Unbekannt';
-            final subtotal = accs
-                .where((a) => a.includeInNetWorth && !a.archived)
-                .fold<int>(0, (s, a) => s + balanceOf(a));
-            children.add(_GroupHeader(name: ownerName, subtotalCents: subtotal));
-            for (final a in accs) {
+          for (final type in _order) {
+            final group = byType[type];
+            if (group == null || group.isEmpty) continue;
+            final subtotal =
+                group.fold<int>(0, (s, a) => s + balanceOf(a));
+            children.add(_CategoryHeader(
+              label: type.label,
+              cents: subtotal,
+              isLiability: type.isLiability,
+            ));
+            for (final a in group) {
               children.add(_AccountTile(
                 account: a,
                 balanceCents: balanceOf(a),
+                ownerName: memberNames[a.ownerId] ?? '',
                 onTap: () => context.go('/account/${a.id}'),
                 onEdit: () => context.go('/account/${a.id}/edit'),
-                onArchive: () => ref.read(accountRepositoryProvider).setArchived(
-                      id: a.id,
-                      archived: !a.archived,
-                    ),
+                onArchive: () => ref
+                    .read(accountRepositoryProvider)
+                    .setArchived(id: a.id, archived: !a.archived),
                 onDelete: () => _confirmDelete(context, ref, a),
               ));
             }
-          });
-
+          }
           return ListView(children: children);
         },
       ),
@@ -171,26 +161,37 @@ class _NetWorthCard extends StatelessWidget {
   }
 }
 
-class _GroupHeader extends StatelessWidget {
-  const _GroupHeader({required this.name, required this.subtotalCents});
+class _CategoryHeader extends StatelessWidget {
+  const _CategoryHeader({
+    required this.label,
+    required this.cents,
+    required this.isLiability,
+  });
 
-  final String name;
-  final int subtotalCents;
+  final String label;
+  final int cents;
+  final bool isLiability;
 
   @override
   Widget build(BuildContext context) {
+    final negative = cents < 0;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(name,
+          Text(label,
               style: Theme.of(context)
                   .textTheme
                   .titleSmall
                   ?.copyWith(fontWeight: FontWeight.bold)),
-          Text(formatCents(subtotalCents),
-              style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            formatCents(cents),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: negative ? Colors.red.shade700 : null,
+                ),
+          ),
         ],
       ),
     );
@@ -201,6 +202,7 @@ class _AccountTile extends StatelessWidget {
   const _AccountTile({
     required this.account,
     required this.balanceCents,
+    required this.ownerName,
     required this.onTap,
     required this.onEdit,
     required this.onArchive,
@@ -209,6 +211,7 @@ class _AccountTile extends StatelessWidget {
 
   final Account account;
   final int balanceCents;
+  final String ownerName;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onArchive;
@@ -217,24 +220,17 @@ class _AccountTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final negative = balanceCents < 0;
+    final subtitle = [
+      if (ownerName.isNotEmpty) ownerName,
+      if (account.archived) 'archiviert',
+    ].join('  ·  ');
     return ListTile(
       onTap: onTap,
       leading: CircleAvatar(
         child: Icon(iconForAccountType(accountTypeToDb(account.type))),
       ),
-      title: Row(
-        children: [
-          Flexible(
-            child: Text(account.name, overflow: TextOverflow.ellipsis),
-          ),
-          if (account.archived) ...[
-            const SizedBox(width: 8),
-            Text('· archiviert',
-                style: Theme.of(context).textTheme.labelSmall),
-          ],
-        ],
-      ),
-      subtitle: Text(account.type.label),
+      title: Text(account.name, overflow: TextOverflow.ellipsis),
+      subtitle: subtitle.isEmpty ? null : Text(subtitle),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

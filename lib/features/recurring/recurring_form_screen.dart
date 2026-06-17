@@ -137,7 +137,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
           endDate: _endDate,
         );
       }
-      if (mounted) context.go('/recurring');
+      if (mounted) context.go('/more/recurring');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

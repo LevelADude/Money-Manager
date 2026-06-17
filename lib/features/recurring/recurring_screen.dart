@@ -27,7 +27,7 @@ class RecurringScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Daueraufträge')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/recurring/new'),
+        onPressed: () => context.go('/more/recurring/new'),
         icon: const Icon(Icons.add),
         label: const Text('Dauerauftrag'),
       ),
@@ -63,7 +63,7 @@ class RecurringScreen extends ConsumerWidget {
                   ' · nächste: ${df.format(r.nextDue)}'
                   '${r.active ? '' : ' · pausiert'}';
               return ListTile(
-                onTap: () => context.go('/recurring/${r.id}/edit'),
+                onTap: () => context.go('/more/recurring/${r.id}/edit'),
                 leading: CircleAvatar(
                   backgroundColor: transfer
                       ? null

@@ -49,12 +49,15 @@ class AppTransaction {
   final String? createdBy;
 
   /// Vorzeichenbehafteter Betrag aus Sicht eines bestimmten Kontos.
+  /// WICHTIG: zählt nur für das Konto, zu dem die Buchung gehört (bzw. das
+  /// Übertrags-Zielkonto). Sonst 0 — sonst würde jede Buchung jedes Konto
+  /// beeinflussen.
   int signedCentsFor(String accountId) {
     switch (type) {
       case TransactionType.income:
-        return amountCents;
+        return this.accountId == accountId ? amountCents : 0;
       case TransactionType.expense:
-        return -amountCents;
+        return this.accountId == accountId ? -amountCents : 0;
       case TransactionType.transfer:
         if (this.accountId == accountId) return -amountCents; // Abgang
         if (transferAccountId == accountId) return amountCents; // Zugang

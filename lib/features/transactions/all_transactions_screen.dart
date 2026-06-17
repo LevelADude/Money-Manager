@@ -8,17 +8,19 @@ import '../../data/models/app_transaction.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
-import '../transactions/transaction_providers.dart';
+import 'transaction_providers.dart';
 
-/// Volltextsuche über alle Buchungen (Titel/Notiz/Kategorie) + Typ-Filter.
-class SearchScreen extends ConsumerStatefulWidget {
-  const SearchScreen({super.key});
+/// "Buchungen"-Tab: alle Buchungen aller Konten, durchsuch- und filterbar,
+/// plus globaler "+"-Button (Konto wählt man im Formular).
+class AllTransactionsScreen extends ConsumerStatefulWidget {
+  const AllTransactionsScreen({super.key});
 
   @override
-  ConsumerState<SearchScreen> createState() => _SearchScreenState();
+  ConsumerState<AllTransactionsScreen> createState() =>
+      _AllTransactionsScreenState();
 }
 
-class _SearchScreenState extends ConsumerState<SearchScreen> {
+class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   final _query = TextEditingController();
   TransactionType? _typeFilter;
 
@@ -43,24 +45,30 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       if (_typeFilter != null && t.type != _typeFilter) return false;
       if (q.isEmpty) return true;
       final cat = t.categoryId == null ? '' : (catNames[t.categoryId] ?? '');
+      final acc = accountNames[t.accountId] ?? '';
       return t.title.toLowerCase().contains(q) ||
           t.note.toLowerCase().contains(q) ||
-          cat.toLowerCase().contains(q);
+          cat.toLowerCase().contains(q) ||
+          acc.toLowerCase().contains(q);
     }).toList()
       ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Suche')),
+      appBar: AppBar(title: const Text('Buchungen')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/transactions/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Buchung'),
+      ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
             child: TextField(
               controller: _query,
-              autofocus: true,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'Titel, Notiz oder Kategorie …',
+                hintText: 'Suchen: Titel, Notiz, Kategorie, Konto …',
                 prefixIcon: const Icon(Icons.search),
                 border: const OutlineInputBorder(),
                 suffixIcon: _query.text.isEmpty
@@ -78,46 +86,44 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
-                _typeChip(null, 'Alle'),
-                _typeChip(TransactionType.expense, 'Ausgaben'),
-                _typeChip(TransactionType.income, 'Einnahmen'),
-                _typeChip(TransactionType.transfer, 'Überträge'),
+                _chip(null, 'Alle'),
+                _chip(TransactionType.expense, 'Ausgaben'),
+                _chip(TransactionType.income, 'Einnahmen'),
+                _chip(TransactionType.transfer, 'Überträge'),
               ],
             ),
           ),
           const Divider(height: 1),
           Expanded(
             child: results.isEmpty
-                ? const Center(child: Text('Keine Treffer.'))
+                ? const Center(child: Text('Keine Buchungen.'))
                 : ListView.separated(
                     itemCount: results.length,
                     separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (_, i) {
                       final t = results[i];
-                      final cat = t.categoryId == null
-                          ? null
-                          : catNames[t.categoryId];
-                      final accountName = accountNames[t.accountId] ?? '';
+                      final cat =
+                          t.categoryId == null ? null : catNames[t.categoryId];
+                      final acc = accountNames[t.accountId] ?? '';
                       final sub = [
                         df.format(t.occurredOn),
-                        if (accountName.isNotEmpty) accountName,
+                        if (acc.isNotEmpty) acc,
                         ?cat,
                       ].join('  ·  ');
                       return ListTile(
-                        leading: _typeIcon(t.type),
-                        title: Text(t.title.isEmpty
-                            ? (cat ?? t.type.label)
-                            : t.title),
+                        leading: _icon(t.type),
+                        title: Text(
+                          t.title.isEmpty ? (cat ?? t.type.label) : t.title,
+                        ),
                         subtitle: Text(sub),
                         trailing: Text(
                           _amountText(t),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: _amountColor(t),
+                            color: _color(t),
                           ),
                         ),
-                        onTap: () =>
-                            context.go('/account/${t.accountId}/tx/${t.id}'),
+                        onTap: () => context.go('/transactions/${t.id}'),
                       );
                     },
                   ),
@@ -127,33 +133,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _typeChip(TransactionType? type, String label) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: _typeFilter == type,
-        onSelected: (_) => setState(() => _typeFilter = type),
-      ),
-    );
-  }
+  Widget _chip(TransactionType? type, String label) => Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          label: Text(label),
+          selected: _typeFilter == type,
+          onSelected: (_) => setState(() => _typeFilter = type),
+        ),
+      );
 
-  Widget _typeIcon(TransactionType type) {
-    switch (type) {
-      case TransactionType.income:
-        return CircleAvatar(
-          backgroundColor: Colors.green.shade100,
-          child: Icon(Icons.south_west, color: Colors.green.shade700),
-        );
-      case TransactionType.expense:
-        return CircleAvatar(
-          backgroundColor: Colors.red.shade100,
-          child: Icon(Icons.north_east, color: Colors.red.shade700),
-        );
-      case TransactionType.transfer:
-        return const CircleAvatar(child: Icon(Icons.swap_horiz));
-    }
-  }
+  Widget _icon(TransactionType type) => switch (type) {
+        TransactionType.income => CircleAvatar(
+            backgroundColor: Colors.green.shade100,
+            child: Icon(Icons.south_west, color: Colors.green.shade700),
+          ),
+        TransactionType.expense => CircleAvatar(
+            backgroundColor: Colors.red.shade100,
+            child: Icon(Icons.north_east, color: Colors.red.shade700),
+          ),
+        TransactionType.transfer =>
+          const CircleAvatar(child: Icon(Icons.swap_horiz)),
+      };
 
   String _amountText(AppTransaction t) => switch (t.type) {
         TransactionType.income => '+${formatCents(t.amountCents)}',
@@ -161,7 +161,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         TransactionType.transfer => formatCents(t.amountCents),
       };
 
-  Color? _amountColor(AppTransaction t) => switch (t.type) {
+  Color? _color(AppTransaction t) => switch (t.type) {
         TransactionType.income => Colors.green.shade700,
         TransactionType.expense => Colors.red.shade700,
         TransactionType.transfer => null,

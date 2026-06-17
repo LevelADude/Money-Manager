@@ -47,7 +47,7 @@ class AccountDetailScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/account/$accountId/new'),
+        onPressed: () => context.go('/account/$accountId/tx/new'),
         icon: const Icon(Icons.add),
         label: const Text('Buchung'),
       ),

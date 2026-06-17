@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../auth/auth_providers.dart';
 import 'profile_providers.dart';
@@ -90,36 +89,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     )
                   : const Icon(Icons.check),
               label: const Text('Speichern'),
-            ),
-            const SizedBox(height: 24),
-            const Divider(),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.repeat),
-              title: const Text('Daueraufträge'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/recurring'),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.savings_outlined),
-              title: const Text('Budgets'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/budgets'),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.label_outline),
-              title: const Text('Kategorien'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/categories'),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.download_outlined),
-              title: const Text('Export (CSV)'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/export'),
             ),
             const SizedBox(height: 24),
             OutlinedButton.icon(
