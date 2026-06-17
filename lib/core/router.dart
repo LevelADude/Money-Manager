@@ -7,6 +7,7 @@ import '../features/accounts/account_detail_screen.dart';
 import '../features/accounts/account_form_screen.dart';
 import '../features/accounts/accounts_screen.dart';
 import '../features/auth/login_screen.dart';
+import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/search/search_screen.dart';
@@ -40,6 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/categories', builder: (c, s) => const CategoriesScreen()),
       GoRoute(path: '/statistics', builder: (c, s) => const StatisticsScreen()),
       GoRoute(path: '/search', builder: (c, s) => const SearchScreen()),
+      GoRoute(path: '/budgets', builder: (c, s) => const BudgetsScreen()),
       // Literal '/account/new' VOR '/account/:id' deklarieren.
       GoRoute(path: '/account/new', builder: (c, s) => const AccountFormScreen()),
       GoRoute(

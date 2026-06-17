@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../shared/money.dart';
 import '../categories/category_providers.dart';
@@ -19,7 +20,16 @@ class StatisticsScreen extends ConsumerWidget {
         id == null ? 'Ohne Kategorie' : (catNames[id] ?? 'Ohne Kategorie');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistik')),
+      appBar: AppBar(
+        title: const Text('Statistik'),
+        actions: [
+          IconButton(
+            tooltip: 'Budgets',
+            icon: const Icon(Icons.savings_outlined),
+            onPressed: () => context.go('/budgets'),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [

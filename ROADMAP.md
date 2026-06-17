@@ -53,9 +53,11 @@ Kategorien, Buchung bearbeiten/löschen, Attribution, Profil.
 - Offen/später: Wochenansicht + benutzerdefinierter Zeitraum, Verlaufskurve,
   Sparquote.
 
-## ⬜ Phase F — Mehr Finanzfunktionen
-- Budgets je Kategorie + Warnungen, wiederkehrende Buchungen, Tags, Split-
-  Buchungen, Belege (Supabase Storage, komprimiert), Export (CSV/PDF).
+## 🔄 Phase F — Mehr Finanzfunktionen
+- ✅ **Budgets** je Kategorie (Monatsbudget, Fortschritt + Überschreitungs-Warnung,
+  Migration 0004).
+- ⬜ **Wiederkehrende Buchungen** (race-sichere Generierung), Tags, Split-Buchungen,
+  Belege (Supabase Storage, komprimiert), Export (CSV/PDF).
 
 ## ⬜ Phase G — Qualität & Release
 - Tests (Modelle/Repos/Sync), CI (GitHub Actions), App-Icon/Splash,
