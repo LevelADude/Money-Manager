@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "com.leveladude.money_manager"
-    compileSdk = flutter.compileSdkVersion
+    // Manche Plugins (z. B. package_info_plus) verlangen compileSdk 36.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
