@@ -45,6 +45,7 @@ class TransactionRepository {
     required String note,
     String? categoryId,
     String? transferAccountId,
+    String? receiptPath,
   }) {
     final isTransfer = type == TransactionType.transfer;
     return {
@@ -56,6 +57,7 @@ class TransactionRepository {
       'note': note,
       'category_id': isTransfer ? null : categoryId,
       'transfer_account_id': isTransfer ? transferAccountId : null,
+      'receipt_path': receiptPath,
     };
   }
 
@@ -68,6 +70,7 @@ class TransactionRepository {
     String note = '',
     String? categoryId,
     String? transferAccountId,
+    String? receiptPath,
   }) {
     return _client.from('transactions').insert(_payload(
           accountId: accountId,
@@ -78,6 +81,7 @@ class TransactionRepository {
           note: note,
           categoryId: categoryId,
           transferAccountId: transferAccountId,
+          receiptPath: receiptPath,
         ));
   }
 
@@ -91,6 +95,7 @@ class TransactionRepository {
     String note = '',
     String? categoryId,
     String? transferAccountId,
+    String? receiptPath,
   }) {
     return _client
         .from('transactions')
@@ -103,6 +108,7 @@ class TransactionRepository {
           note: note,
           categoryId: categoryId,
           transferAccountId: transferAccountId,
+          receiptPath: receiptPath,
         ))
         .eq('id', id);
   }

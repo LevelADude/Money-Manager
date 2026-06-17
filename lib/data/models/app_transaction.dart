@@ -35,6 +35,7 @@ class AppTransaction {
     required this.title,
     required this.note,
     required this.createdBy,
+    required this.receiptPath,
   });
 
   final String id;
@@ -47,6 +48,7 @@ class AppTransaction {
   final String title;
   final String note;
   final String? createdBy;
+  final String? receiptPath;
 
   /// Vorzeichenbehafteter Betrag aus Sicht eines bestimmten Kontos.
   /// WICHTIG: zählt nur für das Konto, zu dem die Buchung gehört (bzw. das
@@ -76,5 +78,6 @@ class AppTransaction {
         title: (json['title'] as String?) ?? '',
         note: (json['note'] as String?) ?? '',
         createdBy: json['created_by'] as String?,
+        receiptPath: json['receipt_path'] as String?,
       );
 }

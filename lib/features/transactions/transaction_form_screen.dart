@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/account.dart';
@@ -47,6 +50,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String? _transferTargetId;
   bool _saving = false;
   bool _prefilled = false;
+  String? _receiptPath;
+  bool _receiptBusy = false;
+  Future<String>? _receiptUrlFuture;
 
   @override
   void initState() {
@@ -77,6 +83,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _categoryId = t.categoryId;
         _transferTargetId = t.transferAccountId;
         _accountId = t.accountId;
+        _receiptPath = t.receiptPath;
+        if (_receiptPath != null) {
+          _receiptUrlFuture =
+              ref.read(receiptStorageProvider).signedUrl(_receiptPath!);
+        }
         _prefilled = true;
         break;
       }
@@ -133,6 +144,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           note: _note.text.trim(),
           categoryId: _categoryId,
           transferAccountId: _transferTargetId,
+          receiptPath: _receiptPath,
         );
       } else {
         await repo.addTransaction(
@@ -144,6 +156,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           note: _note.text.trim(),
           categoryId: _categoryId,
           transferAccountId: _transferTargetId,
+          receiptPath: _receiptPath,
         );
       }
       if (mounted) context.go(_backTarget);
@@ -179,6 +192,144 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         .read(transactionRepositoryProvider)
         .deleteTransaction(widget.transactionId!);
     if (mounted) context.go(_backTarget);
+  }
+
+  Future<ImageSource?> _chooseSource() {
+    final mobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (mobile)
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Kamera'),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galerie / Datei'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickReceipt() async {
+    final source = await _chooseSource();
+    if (source == null) return;
+    try {
+      final x = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 70,
+      );
+      if (x == null) return;
+      setState(() => _receiptBusy = true);
+      final bytes = await x.readAsBytes();
+      final ext = x.name.contains('.') ? x.name.split('.').last : 'jpg';
+      final path = await ref.read(receiptStorageProvider).upload(bytes, ext);
+      if (!mounted) return;
+      setState(() {
+        _receiptPath = path;
+        _receiptUrlFuture = ref.read(receiptStorageProvider).signedUrl(path);
+        _receiptBusy = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _receiptBusy = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Beleg-Fehler: $e')));
+      }
+    }
+  }
+
+  Future<void> _removeReceipt() async {
+    final path = _receiptPath;
+    if (path == null) return;
+    setState(() {
+      _receiptPath = null;
+      _receiptUrlFuture = null;
+    });
+    try {
+      await ref.read(receiptStorageProvider).delete(path);
+    } catch (_) {
+      // Beleg bleibt evtl. im Storage; Referenz ist entfernt.
+    }
+  }
+
+  Widget _buildReceiptSection(BuildContext context) {
+    if (_receiptBusy) {
+      return const Padding(
+        padding: EdgeInsets.all(8),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_receiptPath != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Beleg', style: Theme.of(context).textTheme.labelLarge),
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: FutureBuilder<String>(
+              future: _receiptUrlFuture,
+              builder: (ctx, snap) {
+                if (!snap.hasData) {
+                  return Container(
+                    height: 160,
+                    alignment: Alignment.center,
+                    child: const CircularProgressIndicator(),
+                  );
+                }
+                return Image.network(
+                  snap.data!,
+                  height: 160,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    height: 160,
+                    alignment: Alignment.center,
+                    child: const Text('Beleg konnte nicht geladen werden'),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: _pickReceipt,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Ersetzen'),
+              ),
+              TextButton.icon(
+                onPressed: _removeReceipt,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Entfernen'),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+    return OutlinedButton.icon(
+      onPressed: _pickReceipt,
+      icon: const Icon(Icons.attach_file),
+      label: const Text('Beleg / Foto hinzufügen'),
+    );
   }
 
   @override
@@ -396,6 +547,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         prefixIcon: Icon(Icons.notes),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    _buildReceiptSection(context),
                     const SizedBox(height: 16),
                     ListTile(
                       shape: RoundedRectangleBorder(

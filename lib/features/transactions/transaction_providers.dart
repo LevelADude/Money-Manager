@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/app_cache.dart';
 import '../../data/models/app_transaction.dart';
+import '../../data/repositories/receipt_storage.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../auth/auth_providers.dart';
 
@@ -10,6 +11,10 @@ final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
     ref.watch(supabaseClientProvider),
     ref.watch(appCacheProvider),
   );
+});
+
+final receiptStorageProvider = Provider<ReceiptStorage>((ref) {
+  return ReceiptStorage(ref.watch(supabaseClientProvider));
 });
 
 /// Live-Liste ALLER Buchungen (Basis für Salden/Vermögen/Statistik).
