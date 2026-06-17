@@ -61,9 +61,12 @@ Kategorien, Buchung bearbeiten/löschen, Attribution, Profil.
   App-Start (atomares Beanspruchen der Periode → keine Doppelbuchungen); Migration 0005.
 - ⬜ Tags, Split-Buchungen, Belege (Supabase Storage, komprimiert), Export (CSV/PDF).
 
-## ⬜ Phase G — Qualität & Release
-- Tests (Modelle/Repos/Sync), CI (GitHub Actions), App-Icon/Splash,
-  Release-Builds (Windows MSIX, Android APK/AAB), Doku/Screenshots.
+## 🔄 Phase G — Qualität & Release
+- ✅ **App-Icon** (grünes €, Android/Windows/Web) + App-Name „Money Manager"
+  (`flutter_launcher_icons`); **Release-Build-Anleitung** in der README
+  (Android-APK + Windows, jeweils mit `--dart-define-from-file`).
+- ⬜ Tests (Modelle/Repos), CI (GitHub Actions), Windows-MSIX-Installer,
+  Screenshots.
 
 ---
 

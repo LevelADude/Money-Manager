@@ -113,6 +113,36 @@ Trennung der Buchhaltungen ist organisatorisch (eigene Bücher je Person, sichtb
 über `owner_id` / `created_by`) – keine Zugriffssperre. Strenger machen =
 nur die RLS-Policies in `0001_init.sql` anpassen, die App bleibt gleich.
 
+## Release-Builds (auf Geräten installieren)
+
+> **Wichtig:** Bei *jedem* Build die Supabase-Werte mitgeben:
+> `--dart-define-from-file=env.json` — sonst startet die App nur mit dem
+> Konfig-Hinweis.
+
+App-Name „Money Manager" + grünes €-Icon sind für Android/Windows/Web gesetzt
+(Quelle `assets/icon/app_icon.png`, neu generierbar mit
+`dart run flutter_launcher_icons`).
+
+### Android (APK zum Sideloaden)
+Voraussetzung: Android Studio (Android SDK) + einmal
+`flutter doctor --android-licenses`.
+```powershell
+flutter build apk --release --dart-define-from-file=env.json
+```
+Ergebnis: `build\app\outputs\flutter-apk\app-release.apk` → aufs Handy kopieren
+und installieren (》Installation aus unbekannten Quellen《 erlauben). Für den
+Play Store später einen eigenen Keystore einrichten.
+
+### Windows (Desktop)
+Voraussetzung: Visual Studio mit „Desktopentwicklung mit C++" + Windows-
+Entwicklermodus.
+```powershell
+flutter build windows --release --dart-define-from-file=env.json
+```
+Ergebnis: `build\windows\x64\runner\Release\` — den ganzen Ordner weitergeben;
+`money_manager.exe` startet die App. (Optional später: MSIX-Installer via
+`msix`-Paket.)
+
 ## Status & Roadmap
 
 Der vollständige Plan bis zum Release steht in [ROADMAP.md](ROADMAP.md).
