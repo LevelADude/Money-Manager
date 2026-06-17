@@ -3,17 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../features/accounts/account_detail_screen.dart';
+import '../features/accounts/account_form_screen.dart';
+import '../features/accounts/accounts_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/categories/categories_screen.dart';
-import '../features/ledgers/ledger_detail_screen.dart';
-import '../features/ledgers/ledgers_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/transactions/transaction_form_screen.dart';
 
 /// go_router mit Auth-abhängiger Umleitung.
-///
-/// `refreshListenable` wird bei jeder Auth-Änderung benachrichtigt, wodurch
-/// `redirect` neu ausgewertet wird (Login/Logout leitet automatisch um).
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = ValueNotifier<AuthState?>(null);
   final sub = Supabase.instance.client.auth.onAuthStateChange
@@ -34,39 +32,32 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(path: '/login', builder: (c, s) => const LoginScreen()),
+      GoRoute(path: '/', builder: (c, s) => const AccountsScreen()),
+      GoRoute(path: '/profile', builder: (c, s) => const ProfileScreen()),
+      GoRoute(path: '/categories', builder: (c, s) => const CategoriesScreen()),
+      // Literal '/account/new' VOR '/account/:id' deklarieren.
+      GoRoute(path: '/account/new', builder: (c, s) => const AccountFormScreen()),
       GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const LedgersScreen(),
-      ),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
-      ),
-      GoRoute(
-        path: '/ledger/:id',
-        builder: (context, state) =>
-            LedgerDetailScreen(ledgerId: state.pathParameters['id']!),
+        path: '/account/:id',
+        builder: (c, s) => AccountDetailScreen(accountId: s.pathParameters['id']!),
         routes: [
           GoRoute(
+            path: 'edit',
+            builder: (c, s) =>
+                AccountFormScreen(accountId: s.pathParameters['id']),
+          ),
+          GoRoute(
             path: 'new',
-            builder: (context, state) =>
-                TransactionFormScreen(ledgerId: state.pathParameters['id']!),
+            builder: (c, s) =>
+                TransactionFormScreen(accountId: s.pathParameters['id']!),
           ),
           GoRoute(
-            path: 'edit/:txId',
-            builder: (context, state) => TransactionFormScreen(
-              ledgerId: state.pathParameters['id']!,
-              transactionId: state.pathParameters['txId'],
+            path: 'tx/:txId',
+            builder: (c, s) => TransactionFormScreen(
+              accountId: s.pathParameters['id']!,
+              transactionId: s.pathParameters['txId'],
             ),
-          ),
-          GoRoute(
-            path: 'categories',
-            builder: (context, state) =>
-                CategoriesScreen(ledgerId: state.pathParameters['id']!),
           ),
         ],
       ),

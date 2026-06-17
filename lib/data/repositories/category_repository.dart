@@ -2,34 +2,45 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/category.dart';
 
-/// Zugriff auf die Tabelle `categories` inkl. Realtime-Stream.
+/// Zugriff auf die Tabelle `categories` (gruppenweit) inkl. Realtime-Stream.
 class CategoryRepository {
   CategoryRepository(this._client);
 
   final SupabaseClient _client;
 
-  Stream<List<Category>> watchCategories(String ledgerId) {
+  Stream<List<Category>> watchCategories() {
     return _client
         .from('categories')
         .stream(primaryKey: ['id'])
-        .eq('ledger_id', ledgerId)
         .order('name')
-        .map((rows) => rows.map(Category.fromJson).toList());
+        .map((rows) => rows
+            .where((r) => r['deleted_at'] == null)
+            .map(Category.fromJson)
+            .toList());
   }
 
   Future<void> addCategory({
-    required String ledgerId,
     required String name,
     required CategoryKind kind,
+    String? icon,
   }) {
     return _client.from('categories').insert({
-      'ledger_id': ledgerId,
       'name': name,
-      'kind': kind == CategoryKind.income ? 'income' : 'expense',
+      'kind': categoryKindToDb(kind),
+      'icon': icon,
+      'is_preset': false,
     });
   }
 
+  Future<void> setActive({required String id, required bool active}) {
+    return _client.from('categories').update({'active': active}).eq('id', id);
+  }
+
+  /// Soft-Delete (Tombstone); Buchungen behalten ihre (nun verwaiste) Referenz.
   Future<void> deleteCategory(String id) {
-    return _client.from('categories').delete().eq('id', id);
+    return _client
+        .from('categories')
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', id);
   }
 }

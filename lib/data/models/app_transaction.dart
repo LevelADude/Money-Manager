@@ -1,44 +1,76 @@
-/// Richtung einer Buchung.
-enum TransactionDirection { income, expense }
+/// Art einer Buchung. `transfer` verschiebt Geld zwischen zwei eigenen Konten
+/// und zählt nicht als Einnahme/Ausgabe.
+enum TransactionType { expense, income, transfer }
 
-/// Eine Buchung, siehe Tabelle `transactions`.
-///
-/// `AppTransaction` statt `Transaction`, um Namenskollisionen mit
-/// Datenbank-/SDK-Typen zu vermeiden.
+TransactionType transactionTypeFromDb(String s) => switch (s) {
+      'income' => TransactionType.income,
+      'transfer' => TransactionType.transfer,
+      _ => TransactionType.expense,
+    };
+
+String transactionTypeToDb(TransactionType t) => switch (t) {
+      TransactionType.income => 'income',
+      TransactionType.transfer => 'transfer',
+      TransactionType.expense => 'expense',
+    };
+
+extension TransactionTypeX on TransactionType {
+  String get label => switch (this) {
+        TransactionType.income => 'Einnahme',
+        TransactionType.transfer => 'Übertrag',
+        TransactionType.expense => 'Ausgabe',
+      };
+}
+
+/// Eine Buchung, siehe Tabelle `transactions`. Beträge in Cent.
 class AppTransaction {
   const AppTransaction({
     required this.id,
-    required this.ledgerId,
-    required this.categoryId,
+    required this.accountId,
+    required this.type,
+    required this.amountCents,
     required this.occurredOn,
-    required this.direction,
-    required this.amount,
+    required this.categoryId,
+    required this.transferAccountId,
+    required this.title,
     required this.note,
     required this.createdBy,
   });
 
   final String id;
-  final String ledgerId;
-  final String? categoryId;
+  final String accountId;
+  final TransactionType type;
+  final int amountCents;
   final DateTime occurredOn;
-  final TransactionDirection direction;
-  final double amount;
+  final String? categoryId;
+  final String? transferAccountId;
+  final String title;
   final String note;
   final String? createdBy;
 
-  /// Vorzeichenbehafteter Betrag: Einnahmen positiv, Ausgaben negativ.
-  double get signedAmount =>
-      direction == TransactionDirection.income ? amount : -amount;
+  /// Vorzeichenbehafteter Betrag aus Sicht eines bestimmten Kontos.
+  int signedCentsFor(String accountId) {
+    switch (type) {
+      case TransactionType.income:
+        return amountCents;
+      case TransactionType.expense:
+        return -amountCents;
+      case TransactionType.transfer:
+        if (this.accountId == accountId) return -amountCents; // Abgang
+        if (transferAccountId == accountId) return amountCents; // Zugang
+        return 0;
+    }
+  }
 
   factory AppTransaction.fromJson(Map<String, dynamic> json) => AppTransaction(
         id: json['id'] as String,
-        ledgerId: json['ledger_id'] as String,
-        categoryId: json['category_id'] as String?,
+        accountId: json['account_id'] as String,
+        type: transactionTypeFromDb((json['type'] as String?) ?? 'expense'),
+        amountCents: (json['amount_cents'] as num?)?.toInt() ?? 0,
         occurredOn: DateTime.parse(json['occurred_on'] as String),
-        direction: (json['direction'] as String) == 'income'
-            ? TransactionDirection.income
-            : TransactionDirection.expense,
-        amount: (json['amount'] as num).toDouble(),
+        categoryId: json['category_id'] as String?,
+        transferAccountId: json['transfer_account_id'] as String?,
+        title: (json['title'] as String?) ?? '',
         note: (json['note'] as String?) ?? '',
         createdBy: json['created_by'] as String?,
       );

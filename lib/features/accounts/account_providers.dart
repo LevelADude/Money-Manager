@@ -1,0 +1,55 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../data/models/account.dart';
+import '../../data/models/app_transaction.dart';
+import '../../data/repositories/account_repository.dart';
+import '../auth/auth_providers.dart';
+import '../transactions/transaction_providers.dart';
+
+final accountRepositoryProvider = Provider<AccountRepository>((ref) {
+  return AccountRepository(ref.watch(supabaseClientProvider));
+});
+
+/// Live-Liste aller Konten.
+final accountsProvider = StreamProvider<List<Account>>((ref) {
+  return ref.watch(accountRepositoryProvider).watchAccounts();
+});
+
+/// Saldo (Cent) eines Kontos = Anfangssaldo + alle Buchungen (inkl. Überträge).
+final accountBalanceProvider = Provider.family<int, String>((ref, accountId) {
+  final accounts = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  Account? account;
+  for (final a in accounts) {
+    if (a.id == accountId) {
+      account = a;
+      break;
+    }
+  }
+  if (account == null) return 0;
+  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+      const <AppTransaction>[];
+  var sum = account.openingBalanceCents;
+  for (final t in txs) {
+    sum += t.signedCentsFor(accountId);
+  }
+  return sum;
+});
+
+/// Gesamtvermögen (Cent) über alle Konten mit `include_in_net_worth`,
+/// optional nur für eine Person (`ownerId`). Verbindlichkeiten sind negativ.
+final netWorthProvider = Provider.family<int, String?>((ref, ownerId) {
+  final accounts = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+      const <AppTransaction>[];
+  var total = 0;
+  for (final a in accounts) {
+    if (!a.includeInNetWorth || a.archived) continue;
+    if (ownerId != null && a.ownerId != ownerId) continue;
+    var sum = a.openingBalanceCents;
+    for (final t in txs) {
+      sum += t.signedCentsFor(a.id);
+    }
+    total += sum;
+  }
+  return total;
+});

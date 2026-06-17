@@ -1,103 +1,63 @@
 # Money-Manager · Roadmap
 
-Plan vom Grundgerüst bis zum fertigen, veröffentlichten Produkt. Jede Phase ist
-in sich nutzbar; abgehakt wird erst, wenn die **Definition of Done** erfüllt ist.
+Vollwertige **Personal-Finance-App** für eine kleine, vertrauenswürdige Gruppe –
+eine Flutter-Codebasis für **Windows · Android · Web**, Backend **Supabase**.
+
+**Architektur-Entscheidungen:** Local-First + Delta-Sync (bandbreitenschonend,
+offline) · Konten gehören Personen, alle dürfen alles, Ansichten **pro Person
+trennbar** · Kategorien **gruppenweit** geteilt · Beträge als **Integer Cent**.
 
 Legende: ✅ fertig · 🔄 in Arbeit · ⬜ offen
 
 ---
 
-## Phase 1 — Grundgerüst ✅
+## ✅ Phase 1 — Grundgerüst
+Auth, Supabase (Postgres/Auth/Realtime/RLS), erste Buchungen, Multi-Plattform.
 
-Fundament: Eine Codebasis (Flutter) für Windows + Android + Web, Supabase als
-Backend mit Auth, Realtime-Sync und RLS.
+## ✅ Phase 2 — Kernfunktionen (v1)
+Kategorien, Buchung bearbeiten/löschen, Attribution, Profil.
 
-- ✅ Flutter-Projekt (Windows, Android, Web)
-- ✅ Supabase-Schema: `profiles`, `ledgers`, `categories`, `transactions`, View `ledger_balances`
-- ✅ RLS (vertrauenswürdige Gruppe: alle dürfen alles) + Realtime + Security-Härtung
-- ✅ Auth (Login/Registrierung), Bücher anlegen/auflisten, Buchungen erfassen/auflisten/löschen
-- ✅ Konfiguration über `--dart-define-from-file`, CI-freie Validierung (`analyze`, `test`)
+## ✅ Phase A — Datenmodell v2 (Personal-Finance)
+- `accounts` (Kontotypen, Anfangssaldo-Cent, Icon/Farbe, Kreditlimit, „zählt zum
+  Vermögen", Archiv) ersetzt `ledgers`.
+- `transactions` mit Typ **Ausgabe/Einnahme/Übertrag**, `amount_cents`, Titel,
+  `transfer_account_id`, `deleted_at`-Tombstones.
+- `categories` **gruppenweit** + umfangreiches **Preset** (Migration 0003).
+- `account_balances`-View; UI: Kontoliste je Person + **Gesamtvermögen**,
+  Konto-Detail mit Saldo, Buchungsformular mit Typen/Übertrag/Titel/Notiz,
+  gruppenweite Kategorienverwaltung.
 
-**Definition of Done:** App startet, verbindet sich mit Supabase, Login + erste Buchung funktionieren. ✔
+## 🔄 Phase B — Local-First-Datenschicht
+- `drift` (SQLite) als lokale Quelle; `SyncService`: Delta-Pull
+  (`updated_at > last_sync`) + Tombstones + Push; Wasserzeichen in
+  `shared_preferences`. Statistiken rechnen lokal → minimale Bandbreite, offline.
 
----
+## ⬜ Phase C — Konten-Feinschliff
+- Icon/Farb-Auswahl je Konto, Reihenfolge, Personen-Filter in der Übersicht,
+  Schulden-/Kredit-Übersicht (Verbindlichkeiten getrennt), Kontowährung.
 
-## Phase 2 — Kernfunktionen vervollständigen 🔄
+## ⬜ Phase D — Buchung-Komfort
+- **Taschenrechner im Betragsfeld** (Teilsummen), **Titel-Autovervollständigung**
+  (+ Kategorie-Vorschlag bei bekanntem Titel), Korrektur-/Saldoabgleich-Buchung,
+  Icon/Farbe je Kategorie + Unterkategorien.
 
-Aus dem Grundgerüst wird eine vollwertige Buchhaltung.
+## ⬜ Phase E — Suche & Statistik
+- Volltextsuche + Filter (Konto/Kategorie/Typ/Zeitraum/Betrag); **Statistik-
+  Fenster** (Kategorie-Aufteilung, Verlauf, Einnahmen/Ausgaben, Vermögen über
+  Zeit); Auswertung pro Woche/Monat/Jahr; Sparquote.
 
-- 🔄 **Kategorien**: je Buch anlegen/löschen, Auswahl im Buchungsformular (gefiltert nach Einnahme/Ausgabe), Anzeige auf der Buchung
-- 🔄 **Buchungen bearbeiten**: bestehende Einträge ändern (nicht nur neu/löschen)
-- 🔄 **Attribution**: „erfasst von …" je Buchung, Eigentümer je Buch (Namen aus `profiles`)
-- 🔄 **Profil**: Anzeigename ändern
-- 🔄 **Ledger-Verwaltung**: umbenennen, archivieren/aktivieren, löschen (mit Bestätigung)
+## ⬜ Phase F — Mehr Finanzfunktionen
+- Budgets je Kategorie + Warnungen, wiederkehrende Buchungen, Tags, Split-
+  Buchungen, Belege (Supabase Storage, komprimiert), Export (CSV/PDF).
 
-**Definition of Done:** Eine Buchung lässt sich vollständig pflegen (Kategorie,
-Bearbeiten, Ersteller sichtbar); Bücher lassen sich verwalten.
-
----
-
-## Phase 3 — Auswertungen & UX ⬜
-
-Zahlen verständlich machen und die Bedienung verfeinern.
-
-- ⬜ Zeitraum-Filter (Monat/Jahr/benutzerdefiniert) je Buch
-- ⬜ Zusammenfassung: Summe Einnahmen/Ausgaben, Saldo, Aufschlüsselung pro Kategorie
-- ⬜ Einfaches Diagramm (Balken/Donut) pro Kategorie/Monat
-- ⬜ Suche & Sortierung der Buchungen
-- ⬜ Archiv-Filter in der Bücherliste, Pull-to-Refresh, leere Zustände/Skeletons
-- ⬜ Zentrale Texte (Lokalisierung de/en via `flutter_localizations` + `intl`)
-- ⬜ Theme-Feinschliff, Dark-Mode-Umschalter, App-weite Fehler-/Lade-Zustände
-
-**Definition of Done:** Nutzer sieht auf einen Blick Monatssalden und
-Kategorien-Aufteilung; Buchungen sind durchsuchbar.
+## ⬜ Phase G — Qualität & Release
+- Tests (Modelle/Repos/Sync), CI (GitHub Actions), App-Icon/Splash,
+  Release-Builds (Windows MSIX, Android APK/AAB), Doku/Screenshots.
 
 ---
 
-## Phase 4 — Auth & Sicherheit härten ⬜
-
-- ⬜ E-Mail-Bestätigung sauber abbilden (Hinweis-Screen, Resend)
-- ⬜ Passwort-Reset-Flow (Deep-Link/Redirect je Plattform)
-- ⬜ Session-Handling: Auto-Refresh, „abgemeldet"-Zustände, Fehlerbanner bei Offline
-- ⬜ Optionales strengeres Berechtigungsmodell (z. B. private Bücher + explizites Teilen) — nur RLS-Policies + kleine UI
-- ⬜ Rate-Limit-/Fehlermeldungen benutzerfreundlich übersetzen
-
-**Definition of Done:** Registrierung, Bestätigung und Passwort-Reset
-funktionieren auf allen Zielplattformen; Sitzungsverlust wird sauber behandelt.
-
----
-
-## Phase 5 — Qualität & Release ⬜
-
-- ⬜ Tests: Unit (Models/Repos mit Mock-Client), Widget-Tests der Screens, 1 Integrationstest gegen Test-Supabase
-- ⬜ CI: GitHub Actions (`flutter analyze` + `flutter test`) bei jedem Push/PR
-- ⬜ App-Icon, Splash-Screen, Branding (`flutter_launcher_icons`)
-- ⬜ Release-Builds: **Windows** (MSIX o. Installer), **Android** (signiertes APK/AAB)
-- ⬜ Versionierung/Changelog, Release-Workflow dokumentiert
-- ⬜ README/Doku finalisieren (Screenshots, Installationsanleitung für Endnutzer)
-
-**Definition of Done:** Installierbare Builds für Windows + Android liegen vor,
-CI ist grün, Doku ist vollständig.
-
----
-
-## Phase 6 — Optional / Zukunft ⬜
-
-Erweiterungen nach Bedarf:
-
-- ⬜ Wiederkehrende Buchungen (Daueraufträge)
-- ⬜ Belege/Anhänge (Supabase Storage)
-- ⬜ Budgets pro Kategorie + Warnungen
-- ⬜ Export (CSV/PDF), Import
-- ⬜ Mehrwährung mit Umrechnung
-- ⬜ Audit-Log / Änderungsverlauf je Buchung
-- ⬜ Mehrere Mandanten/Gruppen
-
----
-
-## Technische Schulden & Notizen
-
-- `passkeys`-Konsolenwarnung im Web ist harmlos (ungenutzte Transitiv-Abhängigkeit von `supabase_flutter`).
-- `profiles` ist bewusst **nicht** in der Realtime-Publication (selten geändert; wird per Einmal-Abfrage geladen).
-- Windows-Desktop-Build erfordert VS-Workload „Desktopentwicklung mit C++" + Entwicklermodus.
-- RLS ist aktuell offen für alle Mitglieder — gewollt; Verschärfung ist reine Policy-Änderung (siehe Phase 4).
+## Sparsam mit Supabase (Free-Plan)
+DB-Speicher ist hier praktisch nie das Limit (Buchungen = winzige Zeilen). Die
+realen Grenzen sind **Bandbreite** und die **7-Tage-Pause**. Gegenmaßnahmen:
+Local-First (nur Deltas laden, Statistik lokal), Integer-Cent + kompakte Typen,
+Nachschlagetabellen, selektives Realtime, Belege in Storage (nicht in der DB).

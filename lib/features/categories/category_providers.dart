@@ -8,8 +8,13 @@ final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   return CategoryRepository(ref.watch(supabaseClientProvider));
 });
 
-/// Live-Liste der Kategorien eines Buchs.
-final categoriesProvider =
-    StreamProvider.family<List<Category>, String>((ref, ledgerId) {
-  return ref.watch(categoryRepositoryProvider).watchCategories(ledgerId);
+/// Live-Liste aller (gruppenweiten) Kategorien.
+final categoriesProvider = StreamProvider<List<Category>>((ref) {
+  return ref.watch(categoryRepositoryProvider).watchCategories();
+});
+
+/// Map: Kategorie-ID -> Name (für Anzeige auf Buchungen).
+final categoryNamesProvider = Provider<Map<String, String>>((ref) {
+  final cats = ref.watch(categoriesProvider).asData?.value ?? const <Category>[];
+  return {for (final c in cats) c.id: c.name};
 });

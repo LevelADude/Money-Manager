@@ -1,33 +1,48 @@
-import 'app_transaction.dart' show TransactionDirection;
+import 'app_transaction.dart' show TransactionType;
 
-/// Art einer Kategorie – passt 1:1 zur Richtung einer Buchung.
+/// Art einer Kategorie – Einnahme oder Ausgabe (passend zum Buchungstyp).
 enum CategoryKind { income, expense }
 
-/// Eine Kategorie je Buch, siehe Tabelle `categories`.
+CategoryKind categoryKindFromDb(String s) =>
+    s == 'income' ? CategoryKind.income : CategoryKind.expense;
+
+String categoryKindToDb(CategoryKind k) =>
+    k == CategoryKind.income ? 'income' : 'expense';
+
+/// Eine gruppenweite Kategorie, siehe Tabelle `categories`.
 class Category {
   const Category({
     required this.id,
-    required this.ledgerId,
     required this.name,
     required this.kind,
+    required this.parentId,
+    required this.icon,
+    required this.color,
+    required this.isPreset,
+    required this.active,
   });
 
   final String id;
-  final String ledgerId;
   final String name;
   final CategoryKind kind;
+  final String? parentId;
+  final String? icon;
+  final int? color;
+  final bool isPreset;
+  final bool active;
 
   /// Passt diese Kategorie zur gegebenen Buchungsrichtung?
-  bool matches(TransactionDirection direction) =>
-      (kind == CategoryKind.income) ==
-      (direction == TransactionDirection.income);
+  bool matches(TransactionType type) =>
+      (kind == CategoryKind.income) == (type == TransactionType.income);
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
         id: json['id'] as String,
-        ledgerId: json['ledger_id'] as String,
         name: json['name'] as String,
-        kind: (json['kind'] as String) == 'income'
-            ? CategoryKind.income
-            : CategoryKind.expense,
+        kind: categoryKindFromDb((json['kind'] as String?) ?? 'expense'),
+        parentId: json['parent_id'] as String?,
+        icon: json['icon'] as String?,
+        color: (json['color'] as num?)?.toInt(),
+        isPreset: (json['is_preset'] as bool?) ?? false,
+        active: (json['active'] as bool?) ?? true,
       );
 }
