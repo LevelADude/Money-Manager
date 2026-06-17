@@ -22,6 +22,49 @@ die Bücher der anderen **sehen und bearbeiten**. Alle Geräte werden über
 
 Warum dieser Stack? → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
+## 🚀 Eigene Instanz (ohne Programmierkenntnisse)
+
+Du möchtest die App mit **deiner eigenen, kostenlosen Datenbank** nutzen – am
+Handy, Tablet, Laptop oder Monitor – ohne etwas zu programmieren oder zu bauen?
+So geht's in wenigen Minuten:
+
+1. **Repo forken.** Oben rechts auf **„Fork"** klicken → das Projekt liegt jetzt
+   in deinem GitHub-Konto.
+2. **Kostenloses Supabase-Projekt anlegen.** Auf [supabase.com](https://supabase.com)
+   registrieren → **New Project** (Region Europa empfohlen) → kurz warten, bis es
+   fertig ist.
+3. **Datenbank einrichten (1 Klick).** Im Supabase-Dashboard **„SQL Editor"**
+   öffnen, den kompletten Inhalt von [`supabase/setup.sql`](supabase/setup.sql)
+   einfügen und **„Run"** klicken. (Diesen SQL-Text bietet die App beim ersten
+   Start auch per Kopier-Knopf an.)
+   - Optional, damit die Registrierung ohne E-Mail-Bestätigung klappt:
+     **Authentication → Providers → Email → „Confirm email" ausschalten.**
+4. **Website veröffentlichen (GitHub Pages).** In deinem Fork:
+   **Settings → Pages → Source: „GitHub Actions".** Dann unter **Actions** den
+   Workflow **„Deploy Web (GitHub Pages)"** einmal starten (oder einen kleinen
+   Commit machen). Nach ~2 Minuten ist die Seite unter
+   `https://<dein-name>.github.io/<repo-name>/` erreichbar.
+5. **App öffnen & verbinden.** Beim ersten Start fragt die App nach
+   **Supabase-URL** und **anon/publishable Key** (beide findest du im
+   Supabase-Dashboard unter *Project Settings → Data API* bzw. *API Keys*).
+   Eingeben → **„Verbinden & starten"**. Fertig.
+   - **Die erste Person, die sich registriert, wird automatisch Administrator.**
+
+> **Auf dem iPhone:** Seite in **Safari** öffnen → **Teilen** → **„Zum
+> Home-Bildschirm"**. Dann startet Money Manager wie eine echte App (PWA).
+> Auf Android funktioniert das in Chrome genauso („App installieren").
+
+> **Alternative zum Hosting:** Statt GitHub Pages kannst du den Ordner
+> `build/web` (nach `flutter build web`) auch bei **Cloudflare Pages** oder
+> **Netlify** hochladen – beides kostenlos und ohne eigenes Konto bei dritten
+> nötig. GitHub Pages ist hier vorkonfiguriert und am einfachsten.
+
+Die Zugangsdaten landen **nur lokal im Gerät** (bzw. Browser) – nicht im Code
+und nicht auf GitHub. Jede Person/Instanz nutzt so ihre **eigene, getrennte
+Datenbank**.
+
+---
+
 ## Voraussetzungen (einmalig einrichten)
 
 1. **Flutter SDK** – in diesem Projekt bereits nach `F:\flutter` installiert.
@@ -79,9 +122,11 @@ flutter run -d android --dart-define-from-file=env.json
 .\tool\run-android.ps1
 ```
 
-> Wichtig: Die App liest die Supabase-Zugangsdaten ausschließlich über
-> `--dart-define-from-file`. Ohne dieses Flag (bzw. ohne `env.json`) zeigt sie
-> einen Konfigurations-Hinweis statt zu starten.
+> Hinweis: `env.json` ist für die **eigene Entwickler-Instanz** der bequemste
+> Weg (Zugangsdaten fest vorgegeben). Lässt man es weg, zeigt die App beim
+> ersten Start das **Onboarding** und fragt URL + Key dort ab (siehe
+> [Eigene Instanz](#-eigene-instanz-ohne-programmierkenntnisse)). `env.json` hat
+> immer Vorrang vor im Onboarding gespeicherten Werten.
 
 ## Projektstruktur
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../config/app_config.dart';
 import '../auth/auth_providers.dart';
 import 'profile_providers.dart';
 
@@ -96,9 +97,96 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               icon: const Icon(Icons.logout),
               label: const Text('Abmelden'),
             ),
+            const Divider(height: 48),
+            _DatabaseConnectionSection(config: ref.read(appConfigProvider)),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Zeigt die aktuelle Supabase-Verbindung und – wenn sie zur Laufzeit gesetzt
+/// wurde (Onboarding) – einen Knopf zum Zurücksetzen.
+class _DatabaseConnectionSection extends StatelessWidget {
+  const _DatabaseConnectionSection({required this.config});
+
+  final AppConfig config;
+
+  Future<void> _reset(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Verbindung zurücksetzen?'),
+        content: const Text(
+          'Die gespeicherte Supabase-Verbindung wird gelöscht. Danach musst '
+          'du die App neu starten (oder den Browser-Tab neu laden) und die '
+          'Zugangsdaten erneut eingeben. Deine Daten in Supabase bleiben '
+          'erhalten.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Zurücksetzen'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await config.clear();
+    if (!context.mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Zurückgesetzt'),
+        content: const Text(
+          'Bitte schließe die App und öffne sie neu (am Handy/Desktop) bzw. '
+          'lade den Browser-Tab neu, um die Einrichtung erneut zu starten.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Datenbank-Verbindung',
+            style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.cloud_done_outlined),
+          title: const Text('Supabase'),
+          subtitle: Text(config.url.isEmpty ? '—' : config.url),
+        ),
+        if (config.isLockedByEnv)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              'Diese Verbindung ist über env.json fest eingestellt und kann '
+              'hier nicht geändert werden.',
+              style: TextStyle(fontStyle: FontStyle.italic),
+            ),
+          )
+        else
+          OutlinedButton.icon(
+            onPressed: () => _reset(context),
+            icon: const Icon(Icons.link_off),
+            label: const Text('Verbindung zurücksetzen'),
+          ),
+      ],
     );
   }
 }
