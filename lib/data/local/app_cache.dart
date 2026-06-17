@@ -23,7 +23,7 @@ class AppCache {
 
   final SharedPreferences _prefs;
 
-  String _key(String table) => 'cache_v2_$table';
+  String _key(String table) => 'cache_v3_$table';
 
   /// Liefert die zuletzt gecachten Roh-Zeilen einer Tabelle (oder leer).
   List<Map<String, dynamic>> readRows(String table) {
@@ -40,5 +40,18 @@ class AppCache {
   /// Persistiert die Roh-Zeilen einer Tabelle (fire-and-forget).
   void writeRows(String table, List<Map<String, dynamic>> rows) {
     _prefs.setString(_key(table), jsonEncode(rows));
+  }
+
+  /// Entfernt eine Zeile sofort aus dem Cache (z. B. nach dem Löschen),
+  /// damit sie nicht bis zum nächsten Stream-Update sichtbar bleibt.
+  void removeFromCache(String table, String id) =>
+      removeWhereFromCache(table, (r) => r['id'] == id);
+
+  void removeWhereFromCache(
+      String table, bool Function(Map<String, dynamic>) test) {
+    final rows = List<Map<String, dynamic>>.from(readRows(table));
+    if (rows.isEmpty) return;
+    rows.removeWhere(test);
+    writeRows(table, rows);
   }
 }

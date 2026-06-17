@@ -79,6 +79,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           creditLimitCents: creditCents,
         );
       }
+      ref.invalidate(accountsProvider);
       if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {

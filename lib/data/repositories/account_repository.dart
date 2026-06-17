@@ -84,11 +84,21 @@ class AccountRepository {
     return _client.from('accounts').update({'archived': archived}).eq('id', id);
   }
 
-  /// Soft-Delete (Tombstone) – für Local-First-Sync.
-  Future<void> deleteAccount(String id) {
-    return _client
-        .from('accounts')
-        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
-        .eq('id', id);
+  /// Soft-Delete des Kontos INKL. seiner Buchungen (sonst bleiben verwaiste
+  /// Einträge übrig). Lokaler Cache wird direkt bereinigt.
+  Future<void> deleteAccount(String id) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    await _client
+        .from('transactions')
+        .update({'deleted_at': now}).eq('account_id', id);
+    await _client
+        .from('transactions')
+        .update({'deleted_at': now}).eq('transfer_account_id', id);
+    await _client.from('accounts').update({'deleted_at': now}).eq('id', id);
+    _cache.removeFromCache('accounts', id);
+    _cache.removeWhereFromCache(
+      'transactions',
+      (r) => r['account_id'] == id || r['transfer_account_id'] == id,
+    );
   }
 }

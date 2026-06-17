@@ -159,6 +159,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           receiptPath: _receiptPath,
         );
       }
+      ref.invalidate(allTransactionsProvider);
       if (mounted) context.go(_backTarget);
     } catch (e) {
       if (mounted) {
@@ -191,6 +192,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     await ref
         .read(transactionRepositoryProvider)
         .deleteTransaction(widget.transactionId!);
+    ref.invalidate(allTransactionsProvider);
     if (mounted) context.go(_backTarget);
   }
 

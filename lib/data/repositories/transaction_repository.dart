@@ -113,12 +113,13 @@ class TransactionRepository {
         .eq('id', id);
   }
 
-  /// Soft-Delete (Tombstone).
-  Future<void> deleteTransaction(String id) {
-    return _client
+  /// Soft-Delete (Tombstone) + sofort aus dem lokalen Cache entfernen.
+  Future<void> deleteTransaction(String id) async {
+    await _client
         .from('transactions')
         .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
+    _cache.removeFromCache('transactions', id);
   }
 
   /// Zuletzt verwendete Titel (für Autovervollständigung).

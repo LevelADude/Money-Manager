@@ -88,9 +88,12 @@ class AccountsScreen extends ConsumerWidget {
                 ownerName: memberNames[a.ownerId] ?? '',
                 onTap: () => context.go('/account/${a.id}'),
                 onEdit: () => context.go('/account/${a.id}/edit'),
-                onArchive: () => ref
-                    .read(accountRepositoryProvider)
-                    .setArchived(id: a.id, archived: !a.archived),
+                onArchive: () async {
+                  await ref
+                      .read(accountRepositoryProvider)
+                      .setArchived(id: a.id, archived: !a.archived);
+                  ref.invalidate(accountsProvider);
+                },
                 onDelete: () => _confirmDelete(context, ref, a),
               ));
             }
@@ -125,6 +128,8 @@ class AccountsScreen extends ConsumerWidget {
     );
     if (ok == true) {
       await ref.read(accountRepositoryProvider).deleteAccount(a.id);
+      ref.invalidate(accountsProvider);
+      ref.invalidate(allTransactionsProvider);
     }
   }
 }
