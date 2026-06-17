@@ -7,6 +7,7 @@ import '../../data/models/app_transaction.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/money.dart';
 import '../profile/profile_providers.dart';
+import '../recurring/recurring_providers.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
 
@@ -16,6 +17,8 @@ class AccountsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Fällige Daueraufträge beim App-Start einmalig erzeugen.
+    ref.watch(recurringGenerationProvider);
     final accountsAsync = ref.watch(accountsProvider);
     final txs =
         ref.watch(allTransactionsProvider).asData?.value ?? const <AppTransaction>[];

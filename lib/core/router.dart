@@ -10,6 +10,8 @@ import '../features/auth/login_screen.dart';
 import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/recurring/recurring_form_screen.dart';
+import '../features/recurring/recurring_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/statistics/statistics_screen.dart';
 import '../features/transactions/transaction_form_screen.dart';
@@ -42,6 +44,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/statistics', builder: (c, s) => const StatisticsScreen()),
       GoRoute(path: '/search', builder: (c, s) => const SearchScreen()),
       GoRoute(path: '/budgets', builder: (c, s) => const BudgetsScreen()),
+      GoRoute(path: '/recurring', builder: (c, s) => const RecurringScreen()),
+      GoRoute(
+          path: '/recurring/new',
+          builder: (c, s) => const RecurringFormScreen()),
+      GoRoute(
+        path: '/recurring/:id/edit',
+        builder: (c, s) => RecurringFormScreen(ruleId: s.pathParameters['id']),
+      ),
       // Literal '/account/new' VOR '/account/:id' deklarieren.
       GoRoute(path: '/account/new', builder: (c, s) => const AccountFormScreen()),
       GoRoute(

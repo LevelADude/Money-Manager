@@ -56,8 +56,10 @@ Kategorien, Buchung bearbeiten/löschen, Attribution, Profil.
 ## 🔄 Phase F — Mehr Finanzfunktionen
 - ✅ **Budgets** je Kategorie (Monatsbudget, Fortschritt + Überschreitungs-Warnung,
   Migration 0004).
-- ⬜ **Wiederkehrende Buchungen** (race-sichere Generierung), Tags, Split-Buchungen,
-  Belege (Supabase Storage, komprimiert), Export (CSV/PDF).
+- ✅ **Wiederkehrende Buchungen** (Daueraufträge): Regeln je Konto, Intervall
+  Tag/Woche/Monat/Jahr, Start-/Enddatum; **race-sichere Auto-Generierung** beim
+  App-Start (atomares Beanspruchen der Periode → keine Doppelbuchungen); Migration 0005.
+- ⬜ Tags, Split-Buchungen, Belege (Supabase Storage, komprimiert), Export (CSV/PDF).
 
 ## ⬜ Phase G — Qualität & Release
 - Tests (Modelle/Repos/Sync), CI (GitHub Actions), App-Icon/Splash,
