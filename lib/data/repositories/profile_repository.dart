@@ -18,6 +18,17 @@ class ProfileRepository {
         .toList();
   }
 
+  Future<bool> fetchIsAdmin() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return false;
+    final row = await _client
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', uid)
+        .maybeSingle();
+    return (row?['is_admin'] as bool?) ?? false;
+  }
+
   Future<String> fetchMyDisplayName() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return '';

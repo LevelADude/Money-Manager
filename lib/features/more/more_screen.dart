@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/auth_providers.dart';
+import '../profile/profile_providers.dart';
 
 /// "Mehr"-Tab: Sammelmenü für Funktionen außerhalb der Haupt-Tabs.
 class MoreScreen extends ConsumerWidget {
@@ -12,6 +13,7 @@ class MoreScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final email =
         ref.watch(supabaseClientProvider).auth.currentUser?.email ?? '';
+    final isAdmin = ref.watch(isAdminProvider).asData?.value ?? false;
 
     Widget tile(IconData icon, String title, String route) => ListTile(
           leading: Icon(icon),
@@ -30,6 +32,9 @@ class MoreScreen extends ConsumerWidget {
           tile(Icons.download_outlined, 'Export (CSV)', '/more/export'),
           const Divider(),
           tile(Icons.account_circle_outlined, 'Profil', '/more/profile'),
+          if (isAdmin)
+            tile(Icons.admin_panel_settings_outlined, 'Verwaltung (Admin)',
+                '/more/admin'),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.all(16),

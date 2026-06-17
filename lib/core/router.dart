@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../features/accounts/account_detail_screen.dart';
 import '../features/accounts/account_form_screen.dart';
 import '../features/accounts/accounts_screen.dart';
+import '../features/admin/admin_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
@@ -149,6 +150,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'profile',
                     builder: (c, s) => const ProfileScreen(),
+                  ),
+                  GoRoute(
+                    path: 'admin',
+                    builder: (c, s) => const AdminScreen(),
                   ),
                 ],
               ),

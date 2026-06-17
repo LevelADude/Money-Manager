@@ -18,3 +18,8 @@ final profileNamesProvider = FutureProvider<Map<String, String>>((ref) async {
 final myDisplayNameProvider = FutureProvider<String>((ref) async {
   return ref.watch(profileRepositoryProvider).fetchMyDisplayName();
 });
+
+/// Ist der aktuelle Nutzer Admin?
+final isAdminProvider = FutureProvider<bool>((ref) async {
+  return ref.watch(profileRepositoryProvider).fetchIsAdmin();
+});
