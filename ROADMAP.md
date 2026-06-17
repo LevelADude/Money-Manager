@@ -62,9 +62,11 @@ Kategorien, Buchung bearbeiten/löschen, Attribution, Profil.
 - ⬜ Tags, Split-Buchungen, Belege (Supabase Storage, komprimiert), Export (CSV/PDF).
 
 ## 🔄 Phase G — Qualität & Release
-- ✅ **App-Icon** (grünes €, Android/Windows/Web) + App-Name „Money Manager"
-  (`flutter_launcher_icons`); **Release-Build-Anleitung** in der README
-  (Android-APK + Windows, jeweils mit `--dart-define-from-file`).
+- ✅ **App-Icon** (grünes €, Android/Windows/Web) + App-Name „Money Manager".
+- ✅ **Release-Builds erfolgreich erzeugt**: Windows (`money_manager.exe`, ~32 MB)
+  + Android (`app-release.apk`, ~54 MB). Build-Fixes: `kotlin.incremental=false`
+  (Projekt F: ↔ Pub-Cache C:), Gradle-Heap 4G/Metaspace 1G (OOM), `compileSdk 36`
+  global für alle Plugin-Subprojekte. Anleitung in der README.
 - ⬜ Tests (Modelle/Repos), CI (GitHub Actions), Windows-MSIX-Installer,
   Screenshots.
 
