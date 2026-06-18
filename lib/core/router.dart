@@ -13,6 +13,7 @@ import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
 import '../features/export/export_screen.dart';
 import '../features/more/more_screen.dart';
+import '../features/planning/planning_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/recurring/recurring_form_screen.dart';
 import '../features/recurring/recurring_screen.dart';
@@ -130,6 +131,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'budgets',
                     builder: (c, s) => const BudgetsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'planning',
+                    builder: (c, s) => const PlanningScreen(),
                   ),
                   GoRoute(
                     path: 'recurring',

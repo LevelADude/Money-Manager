@@ -28,6 +28,8 @@ class MoreScreen extends ConsumerWidget {
         children: [
           tile(Icons.search, 'Suche', '/more/search'),
           tile(Icons.savings_outlined, 'Budgets', '/more/budgets'),
+          tile(Icons.calculate_outlined, 'Verfügbar & Fixkosten',
+              '/more/planning'),
           tile(Icons.repeat, 'Daueraufträge', '/more/recurring'),
           tile(Icons.label_outline, 'Kategorien', '/more/categories'),
           tile(Icons.download_outlined, 'Export (CSV)', '/more/export'),
