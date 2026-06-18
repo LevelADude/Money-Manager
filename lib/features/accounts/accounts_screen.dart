@@ -71,6 +71,24 @@ class AccountsScreen extends ConsumerWidget {
           final children = <Widget>[
             _NetWorthCard(totalCents: ref.watch(netWorthProvider(null))),
           ];
+
+          // Vermögen je Person (nur sinnvoll, wenn mehrere Besitzer existieren).
+          final owners = <String>{
+            for (final a in accounts)
+              if (a.ownerId != null) a.ownerId!,
+          }.toList();
+          if (owners.length > 1) {
+            final entries = [
+              for (final o in owners)
+                (
+                  name: memberNames[o]?.isNotEmpty == true
+                      ? memberNames[o]!
+                      : 'Unbekannt',
+                  cents: ref.watch(netWorthProvider(o)),
+                ),
+            ]..sort((a, b) => b.cents.compareTo(a.cents));
+            children.add(_PerPersonCard(entries: entries));
+          }
           for (final type in _order) {
             final group = byType[type];
             if (group == null || group.isEmpty) continue;
@@ -159,6 +177,52 @@ class _NetWorthCard extends StatelessWidget {
                         positive ? Colors.green.shade700 : Colors.red.shade700,
                   ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PerPersonCard extends StatelessWidget {
+  const _PerPersonCard({required this.entries});
+
+  final List<({String name, int cents})> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Vermögen je Person',
+                style: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            for (final e in entries)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(e.name, overflow: TextOverflow.ellipsis),
+                    ),
+                    Text(
+                      formatCents(e.cents),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: e.cents < 0 ? Colors.red.shade700 : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
