@@ -9,6 +9,7 @@ import '../features/accounts/accounts_reorder_screen.dart';
 import '../features/accounts/accounts_screen.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/auth/login_screen.dart';
+import '../features/backup/backup_screen.dart';
 import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
 import '../features/debts/debts_screen.dart';
@@ -160,6 +161,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'trash',
                     builder: (c, s) => const TrashScreen(),
+                  ),
+                  GoRoute(
+                    path: 'backup',
+                    builder: (c, s) => const BackupScreen(),
                   ),
                   GoRoute(
                     path: 'recurring',
