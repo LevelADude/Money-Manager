@@ -8,8 +8,10 @@ import 'package:intl/intl.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../data/models/audit_entry.dart';
 import '../../data/models/category.dart';
 import '../../data/models/transaction_template.dart';
+import '../profile/profile_providers.dart';
 import '../../shared/calculator_sheet.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/money.dart';
@@ -286,6 +288,57 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     ref.invalidate(allTransactionsProvider);
     ref.invalidate(allSplitsProvider);
     if (mounted) context.go(_backTarget);
+  }
+
+  Future<void> _showHistory() async {
+    final repo = ref.read(transactionRepositoryProvider);
+    final names =
+        ref.read(profileNamesProvider).asData?.value ?? const <String, String>{};
+    final df = DateFormat('dd.MM.yyyy HH:mm');
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => FutureBuilder<List<AuditEntry>>(
+        future: repo.historyFor(widget.transactionId!),
+        builder: (ctx, snap) {
+          if (!snap.hasData) {
+            return const SizedBox(
+                height: 160, child: Center(child: CircularProgressIndicator()));
+          }
+          final items = snap.data!;
+          return SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                const ListTile(
+                  title: Text('Verlauf',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                if (items.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('Kein Verlauf vorhanden.'),
+                  ),
+                for (final e in items)
+                  ListTile(
+                    dense: true,
+                    leading: Icon(switch (e.action) {
+                      'insert' => Icons.add_circle_outline,
+                      'delete' => Icons.delete_outline,
+                      'restore' => Icons.restore,
+                      'purge' => Icons.delete_forever,
+                      _ => Icons.edit_outlined,
+                    }),
+                    title: Text(e.actionLabel),
+                    subtitle: Text(
+                        '${names[e.actor] ?? 'Unbekannt'} · ${df.format(e.at.toLocal())}'),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _saveAsTemplate() async {
@@ -731,6 +784,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             icon: const Icon(Icons.bookmark_add_outlined),
             onPressed: _saving ? null : _saveAsTemplate,
           ),
+          if (widget.isEditing)
+            IconButton(
+              tooltip: 'Verlauf',
+              icon: const Icon(Icons.history),
+              onPressed: _showHistory,
+            ),
           if (widget.isEditing)
             IconButton(
               tooltip: 'Duplizieren',

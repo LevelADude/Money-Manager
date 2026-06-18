@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../local/app_cache.dart';
 import '../models/app_transaction.dart';
+import '../models/audit_entry.dart';
 
 /// Zugriff auf die Tabelle `transactions` inkl. Realtime-Stream + Offline-Cache.
 class TransactionRepository {
@@ -171,6 +172,33 @@ class TransactionRepository {
         .delete()
         .not('deleted_at', 'is', null)
         .lt('deleted_at', cutoff);
+  }
+
+  /// Änderungsverlauf einer einzelnen Buchung (neueste zuerst).
+  Future<List<AuditEntry>> historyFor(String rowId) async {
+    final rows = await _client
+        .from('audit_log')
+        .select()
+        .eq('row_id', rowId)
+        .order('at', ascending: false)
+        .limit(100);
+    return [
+      for (final r in rows as List)
+        AuditEntry.fromJson(r as Map<String, dynamic>)
+    ];
+  }
+
+  /// Jüngste Aktivität über alle Buchungen (für den Aktivitäts-Feed).
+  Future<List<AuditEntry>> recentActivity({int limit = 100}) async {
+    final rows = await _client
+        .from('audit_log')
+        .select()
+        .order('at', ascending: false)
+        .limit(limit);
+    return [
+      for (final r in rows as List)
+        AuditEntry.fromJson(r as Map<String, dynamic>)
+    ];
   }
 
   /// Zuletzt verwendete Titel (für Autovervollständigung).
