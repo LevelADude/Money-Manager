@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/app_cache.dart';
 import '../../data/models/app_transaction.dart';
+import '../../data/models/transaction_split.dart';
 import '../../data/repositories/receipt_storage.dart';
+import '../../data/repositories/split_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../auth/auth_providers.dart';
 
@@ -11,6 +13,30 @@ final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
     ref.watch(supabaseClientProvider),
     ref.watch(appCacheProvider),
   );
+});
+
+final splitRepositoryProvider = Provider<SplitRepository>((ref) {
+  return SplitRepository(
+    ref.watch(supabaseClientProvider),
+    ref.watch(appCacheProvider),
+  );
+});
+
+/// Live-Liste ALLER Aufteilungen (für Statistik-Aufschlüsselung + Formular).
+final allSplitsProvider = StreamProvider<List<TransactionSplit>>((ref) {
+  return ref.watch(splitRepositoryProvider).watchAll();
+});
+
+/// Aufteilungen gruppiert nach Buchungs-ID.
+final splitsByTransactionProvider =
+    Provider<Map<String, List<TransactionSplit>>>((ref) {
+  final splits = ref.watch(allSplitsProvider).asData?.value ??
+      const <TransactionSplit>[];
+  final map = <String, List<TransactionSplit>>{};
+  for (final s in splits) {
+    map.putIfAbsent(s.transactionId, () => []).add(s);
+  }
+  return map;
 });
 
 final receiptStorageProvider = Provider<ReceiptStorage>((ref) {

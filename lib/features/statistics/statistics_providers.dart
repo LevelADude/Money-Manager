@@ -36,6 +36,7 @@ final statsProvider = Provider<StatsSummary>((ref) {
       const <AppTransaction>[];
   final accounts =
       ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  final splitsByTx = ref.watch(splitsByTransactionProvider);
 
   var income = 0;
   var expense = 0;
@@ -43,18 +44,31 @@ final statsProvider = Provider<StatsSummary>((ref) {
   final expByCat = <String?, int>{};
   final incByCat = <String?, int>{};
 
+  // Aufschlüsselung nach Kategorie: bei aufgeteilten Buchungen die Splits
+  // verwenden, sonst die eine Kategorie der Buchung.
+  void addByCategory(Map<String?, int> target, AppTransaction t) {
+    final splits = splitsByTx[t.id];
+    if (splits != null && splits.isNotEmpty) {
+      for (final s in splits) {
+        target.update(s.categoryId, (v) => v + s.amountCents,
+            ifAbsent: () => s.amountCents);
+      }
+    } else {
+      target.update(t.categoryId, (v) => v + t.amountCents,
+          ifAbsent: () => t.amountCents);
+    }
+  }
+
   for (final t in txs) {
     if (t.type == TransactionType.transfer) continue; // zählt nicht
     if (!period.contains(t.occurredOn)) continue;
     count++;
     if (t.type == TransactionType.income) {
       income += t.amountCents;
-      incByCat.update(t.categoryId, (v) => v + t.amountCents,
-          ifAbsent: () => t.amountCents);
+      addByCategory(incByCat, t);
     } else {
       expense += t.amountCents;
-      expByCat.update(t.categoryId, (v) => v + t.amountCents,
-          ifAbsent: () => t.amountCents);
+      addByCategory(expByCat, t);
     }
   }
 

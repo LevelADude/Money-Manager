@@ -55,17 +55,24 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   bool _receiptBusy = false;
   Future<String>? _receiptUrlFuture;
   List<String> _tags = [];
+  bool _splitMode = false;
+  final List<_SplitRow> _splitRows = [];
+  bool _splitsPrefilled = false;
 
   @override
   void initState() {
     super.initState();
     _accountId = widget.accountId;
+    _splitsPrefilled = widget.transactionId == null; // nur beim Bearbeiten laden
   }
 
   @override
   void dispose() {
     _amount.dispose();
     _note.dispose();
+    for (final r in _splitRows) {
+      r.dispose();
+    }
     super.dispose();
   }
 
@@ -95,6 +102,42 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         break;
       }
     }
+  }
+
+  /// Beim Bearbeiten vorhandene Aufteilungen laden (sobald der Stream da ist).
+  void _prefillSplits() {
+    if (_splitsPrefilled) return;
+    final data = ref.read(allSplitsProvider).asData;
+    if (data == null) return; // noch nicht geladen → später erneut
+    final mine =
+        data.value.where((s) => s.transactionId == widget.transactionId);
+    if (mine.isNotEmpty) {
+      _splitMode = true;
+      for (final s in mine) {
+        _splitRows.add(_SplitRow(
+          categoryId: s.categoryId,
+          amount: centsToInput(s.amountCents),
+        ));
+      }
+    }
+    _splitsPrefilled = true;
+  }
+
+  void _addSplitRow({String? categoryId, String amount = ''}) {
+    setState(() => _splitRows
+        .add(_SplitRow(categoryId: categoryId, amount: amount)));
+  }
+
+  void _removeSplitRow(int i) {
+    setState(() => _splitRows.removeAt(i).dispose());
+  }
+
+  int get _splitSumCents {
+    var sum = 0;
+    for (final r in _splitRows) {
+      sum += parseToCents(r.amountCtrl.text) ?? 0;
+    }
+    return sum;
   }
 
   void _onTitleSelected(String selected) {
@@ -133,9 +176,40 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       );
       return;
     }
+    // Aufteilungen vorbereiten/prüfen (nur bei Ausgabe/Einnahme).
+    var splitActive = _splitMode && _type != TransactionType.transfer;
+    var splitData = <({String? categoryId, int amountCents, String note})>[];
+    if (splitActive) {
+      splitData = [
+        for (final r in _splitRows)
+          if ((parseToCents(r.amountCtrl.text) ?? 0) > 0)
+            (
+              categoryId: r.categoryId,
+              amountCents: parseToCents(r.amountCtrl.text)!,
+              note: '',
+            ),
+      ];
+      if (splitData.isEmpty) {
+        splitActive = false; // nichts verteilt → wie normale Buchung
+      } else {
+        final sum = splitData.fold<int>(0, (s, e) => s + e.amountCents);
+        if (sum != cents) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                'Summe der Aufteilungen (${formatCents(sum)}) muss dem Betrag '
+                '(${formatCents(cents)}) entsprechen.'),
+          ));
+          return;
+        }
+      }
+    }
+    final categoryToSave = splitActive ? null : _categoryId;
+
     setState(() => _saving = true);
     final repo = ref.read(transactionRepositoryProvider);
+    final splitRepo = ref.read(splitRepositoryProvider);
     try {
+      String txId;
       if (widget.isEditing) {
         await repo.updateTransaction(
           id: widget.transactionId!,
@@ -145,26 +219,33 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           occurredOn: _date,
           title: _titleText,
           note: _note.text.trim(),
-          categoryId: _categoryId,
+          categoryId: categoryToSave,
           transferAccountId: _transferTargetId,
           receiptPath: _receiptPath,
           tags: _tags,
         );
+        txId = widget.transactionId!;
       } else {
-        await repo.addTransaction(
+        txId = await repo.addTransaction(
           accountId: _accountId!,
           type: _type,
           amountCents: cents,
           occurredOn: _date,
           title: _titleText,
           note: _note.text.trim(),
-          categoryId: _categoryId,
+          categoryId: categoryToSave,
           transferAccountId: _transferTargetId,
           receiptPath: _receiptPath,
           tags: _tags,
         );
       }
+      if (splitActive) {
+        await splitRepo.replaceForTransaction(txId, splitData);
+      } else if (widget.isEditing) {
+        await splitRepo.deleteForTransaction(txId);
+      }
       ref.invalidate(allTransactionsProvider);
+      ref.invalidate(allSplitsProvider);
       if (mounted) context.go(_backTarget);
     } catch (e) {
       if (mounted) {
@@ -197,7 +278,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     await ref
         .read(transactionRepositoryProvider)
         .deleteTransaction(widget.transactionId!);
+    await ref
+        .read(splitRepositoryProvider)
+        .deleteForTransaction(widget.transactionId!);
     ref.invalidate(allTransactionsProvider);
+    ref.invalidate(allSplitsProvider);
     if (mounted) context.go(_backTarget);
   }
 
@@ -339,9 +424,115 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
+  void _fillRestIntoLastRow(int rest) {
+    if (_splitRows.isEmpty) {
+      _addSplitRow(amount: centsToInput(rest));
+      return;
+    }
+    final last = _splitRows.last;
+    final cur = parseToCents(last.amountCtrl.text) ?? 0;
+    last.amountCtrl.text = centsToInput(cur + rest);
+    setState(() {});
+  }
+
+  Widget _buildSplitEditor(BuildContext context, List<Category> categories) {
+    final total = parseToCents(_amount.text) ?? 0;
+    final sum = _splitSumCents;
+    final rest = total - sum;
+    final balanced = total > 0 && rest == 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (int i = 0; i < _splitRows.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: DropdownButtonFormField<String?>(
+                    initialValue: categories
+                            .any((c) => c.id == _splitRows[i].categoryId)
+                        ? _splitRows[i].categoryId
+                        : null,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                        labelText: 'Kategorie', isDense: true),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                          value: null, child: Text('Keine')),
+                      for (final c in categories)
+                        DropdownMenuItem<String?>(
+                          value: c.id,
+                          child:
+                              Text(c.name, overflow: TextOverflow.ellipsis),
+                        ),
+                    ],
+                    onChanged: (v) =>
+                        setState(() => _splitRows[i].categoryId = v),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _splitRows[i].amountCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    textAlign: TextAlign.right,
+                    decoration: const InputDecoration(
+                        labelText: 'Betrag', isDense: true, prefixText: '€ '),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Zeile entfernen',
+                  icon: const Icon(Icons.remove_circle_outline),
+                  onPressed: _splitRows.length <= 1
+                      ? null
+                      : () => _removeSplitRow(i),
+                ),
+              ],
+            ),
+          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            TextButton.icon(
+              onPressed: () => _addSplitRow(),
+              icon: const Icon(Icons.add),
+              label: const Text('Zeile'),
+            ),
+            if (rest != 0 && total > 0)
+              TextButton.icon(
+                onPressed: () => _fillRestIntoLastRow(rest),
+                icon: const Icon(Icons.bolt),
+                label: Text('Rest ${formatCents(rest)}'),
+              ),
+          ],
+        ),
+        Text(
+          balanced
+              ? 'Verteilt: ${formatCents(sum)} ✓'
+              : 'Verteilt: ${formatCents(sum)} von ${formatCents(total)}'
+                  ' · Rest ${formatCents(rest)}',
+          style: TextStyle(
+            color: balanced
+                ? Colors.green.shade700
+                : Theme.of(context).colorScheme.error,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     _prefill();
+    // Lädt beim Bearbeiten vorhandene Aufteilungen, sobald der Stream da ist.
+    ref.watch(allSplitsProvider);
+    _prefillSplits();
     final df = DateFormat('dd.MM.yyyy');
     final isTransfer = _type == TransactionType.transfer;
 
@@ -499,24 +690,44 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         onChanged: (v) =>
                             setState(() => _transferTargetId = v),
                       )
-                    else
-                      DropdownButtonFormField<String?>(
-                        initialValue: _categoryId,
-                        decoration: const InputDecoration(
-                          labelText: 'Kategorie',
-                          prefixIcon: Icon(Icons.label_outline),
-                        ),
-                        items: [
-                          const DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text('Keine Kategorie'),
-                          ),
-                          for (final c in categories)
-                            DropdownMenuItem<String?>(
-                                value: c.id, child: Text(c.name)),
-                        ],
-                        onChanged: (v) => setState(() => _categoryId = v),
+                    else ...[
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _splitMode,
+                        onChanged: (v) => setState(() {
+                          _splitMode = v;
+                          if (v && _splitRows.isEmpty) {
+                            final cents = parseToCents(_amount.text) ?? 0;
+                            _splitRows.add(_SplitRow(
+                              categoryId: _categoryId,
+                              amount: cents > 0 ? centsToInput(cents) : '',
+                            ));
+                          }
+                        }),
+                        title: const Text('Auf mehrere Kategorien aufteilen'),
+                        secondary: const Icon(Icons.call_split),
                       ),
+                      if (_splitMode)
+                        _buildSplitEditor(context, categories)
+                      else
+                        DropdownButtonFormField<String?>(
+                          initialValue: _categoryId,
+                          decoration: const InputDecoration(
+                            labelText: 'Kategorie',
+                            prefixIcon: Icon(Icons.label_outline),
+                          ),
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text('Keine Kategorie'),
+                            ),
+                            for (final c in categories)
+                              DropdownMenuItem<String?>(
+                                  value: c.id, child: Text(c.name)),
+                          ],
+                          onChanged: (v) => setState(() => _categoryId = v),
+                        ),
+                    ],
                     const SizedBox(height: 16),
                     Autocomplete<String>(
                       initialValue: TextEditingValue(text: _titleInitial),
@@ -593,4 +804,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             ),
     );
   }
+}
+
+/// Eine Zeile im Split-Editor (Kategorie + Betrag).
+class _SplitRow {
+  _SplitRow({this.categoryId, String amount = ''})
+      : amountCtrl = TextEditingController(text: amount);
+
+  String? categoryId;
+  final TextEditingController amountCtrl;
+
+  void dispose() => amountCtrl.dispose();
 }

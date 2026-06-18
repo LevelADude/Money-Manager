@@ -94,6 +94,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final allTags = ref.watch(allTagsProvider);
+    final splitTxIds = ref.watch(splitsByTransactionProvider).keys.toSet();
     // Tag-Filter aufräumen, falls der Tag nicht mehr existiert.
     if (_tagFilter != null && !allTags.contains(_tagFilter)) {
       _tagFilter = null;
@@ -274,6 +275,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                                 categoryName: t.categoryId == null
                                     ? null
                                     : catNames[t.categoryId],
+                                hasSplit: splitTxIds.contains(t.id),
                                 onTap: () =>
                                     context.go('/transactions/${t.id}'),
                               ),
@@ -339,12 +341,14 @@ class _TxTile extends StatelessWidget {
     required this.accountName,
     required this.categoryName,
     required this.onTap,
+    this.hasSplit = false,
   });
 
   final AppTransaction tx;
   final String accountName;
   final String? categoryName;
   final VoidCallback onTap;
+  final bool hasSplit;
 
   @override
   Widget build(BuildContext context) {
@@ -356,6 +360,7 @@ class _TxTile extends StatelessWidget {
     final sub = [
       if (accountName.isNotEmpty) accountName,
       ?categoryName,
+      if (hasSplit) 'Aufgeteilt',
       for (final t in tx.tags) '#$t',
     ].join('  ·  ');
     final amountText = switch (tx.type) {
@@ -379,6 +384,11 @@ class _TxTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (hasSplit)
+            const Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: Icon(Icons.call_split, size: 16),
+            ),
           if (tx.receiptPath != null)
             const Padding(
               padding: EdgeInsets.only(right: 6),

@@ -63,7 +63,8 @@ class TransactionRepository {
     };
   }
 
-  Future<void> addTransaction({
+  /// Legt eine Buchung an und gibt deren neue ID zurück (für Splits/Belege).
+  Future<String> addTransaction({
     required String accountId,
     required TransactionType type,
     required int amountCents,
@@ -74,8 +75,10 @@ class TransactionRepository {
     String? transferAccountId,
     String? receiptPath,
     List<String> tags = const [],
-  }) {
-    return _client.from('transactions').insert(_payload(
+  }) async {
+    final row = await _client
+        .from('transactions')
+        .insert(_payload(
           accountId: accountId,
           type: type,
           amountCents: amountCents,
@@ -86,7 +89,10 @@ class TransactionRepository {
           transferAccountId: transferAccountId,
           receiptPath: receiptPath,
           tags: tags,
-        ));
+        ))
+        .select('id')
+        .single();
+    return row['id'] as String;
   }
 
   Future<void> updateTransaction({
