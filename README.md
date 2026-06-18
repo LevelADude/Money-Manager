@@ -22,6 +22,15 @@ die Bücher der anderen **sehen und bearbeiten**. Alle Geräte werden über
 
 Warum dieser Stack? → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
+## Screenshots
+
+> Die Bilder werden unter [`docs/screenshots/`](docs/screenshots/) abgelegt
+> (Anleitung zum Erstellen dort). Sobald vorhanden, erscheinen sie hier:
+
+| Konten | Buchungen | Statistik |
+|---|---|---|
+| ![Konten](docs/screenshots/01-konten.png) | ![Buchungen](docs/screenshots/02-buchungen.png) | ![Statistik](docs/screenshots/04-statistik.png) |
+
 ## 🚀 Eigene Instanz (ohne Programmierkenntnisse)
 
 Du möchtest die App mit **deiner eigenen, kostenlosen Datenbank** nutzen – am
