@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../shared/category_icons.dart';
-import '../../shared/money.dart';
+import '../../shared/money_text.dart';
 import '../profile/profile_providers.dart';
 import '../recurring/recurring_providers.dart';
 import '../transactions/transaction_providers.dart';
@@ -169,8 +169,8 @@ class _NetWorthCard extends StatelessWidget {
             Text('Gesamtvermögen',
                 style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 6),
-            Text(
-              formatCents(totalCents),
+            MoneyText(
+              totalCents,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color:
@@ -213,8 +213,8 @@ class _PerPersonCard extends StatelessWidget {
                     Expanded(
                       child: Text(e.name, overflow: TextOverflow.ellipsis),
                     ),
-                    Text(
-                      formatCents(e.cents),
+                    MoneyText(
+                      e.cents,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: e.cents < 0 ? Colors.red.shade700 : null,
@@ -254,8 +254,8 @@ class _CategoryHeader extends StatelessWidget {
                   .textTheme
                   .titleSmall
                   ?.copyWith(fontWeight: FontWeight.bold)),
-          Text(
-            formatCents(cents),
+          MoneyText(
+            cents,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: negative ? Colors.red.shade700 : null,
@@ -303,8 +303,8 @@ class _AccountTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            formatCents(balanceCents),
+          MoneyText(
+            balanceCents,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: negative ? Colors.red.shade700 : null,

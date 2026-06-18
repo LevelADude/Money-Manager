@@ -60,6 +60,20 @@ class SettingsScreen extends ConsumerWidget {
                 ),
             ],
           ),
+          const Divider(height: 40),
+          Text('Privatsphäre',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.bold)),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: settings.hideAmounts,
+            onChanged: notifier.setHideAmounts,
+            secondary: const Icon(Icons.visibility_off_outlined),
+            title: const Text('Beträge verbergen'),
+            subtitle: const Text('Zeigt „••••" statt Geldbeträgen'),
+          ),
         ],
       ),
     );

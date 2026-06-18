@@ -8,14 +8,24 @@ class AppSettings {
   const AppSettings({
     this.themeMode = ThemeMode.system,
     this.seedColor = 0xFF2E7D32,
+    this.hideAmounts = false,
   });
 
   final ThemeMode themeMode;
   final int seedColor;
 
-  AppSettings copyWith({ThemeMode? themeMode, int? seedColor}) => AppSettings(
+  /// Beträge in der Oberfläche verbergen (Privatsphäre).
+  final bool hideAmounts;
+
+  AppSettings copyWith({
+    ThemeMode? themeMode,
+    int? seedColor,
+    bool? hideAmounts,
+  }) =>
+      AppSettings(
         themeMode: themeMode ?? this.themeMode,
         seedColor: seedColor ?? this.seedColor,
+        hideAmounts: hideAmounts ?? this.hideAmounts,
       );
 }
 
@@ -34,6 +44,7 @@ const accentColors = <int>[
 class SettingsNotifier extends Notifier<AppSettings> {
   static const _kMode = 'settings_theme_mode';
   static const _kSeed = 'settings_seed_color';
+  static const _kHide = 'settings_hide_amounts';
 
   @override
   AppSettings build() {
@@ -43,7 +54,13 @@ class SettingsNotifier extends Notifier<AppSettings> {
     return AppSettings(
       themeMode: ThemeMode.values[modeIdx.clamp(0, ThemeMode.values.length - 1)],
       seedColor: seed,
+      hideAmounts: prefs.getBool(_kHide) ?? false,
     );
+  }
+
+  Future<void> setHideAmounts(bool hide) async {
+    await ref.read(sharedPrefsProvider).setBool(_kHide, hide);
+    state = state.copyWith(hideAmounts: hide);
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {

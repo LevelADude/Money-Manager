@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../shared/money.dart';
+import '../../shared/money_text.dart';
 import '../categories/category_providers.dart';
 import 'period_filter.dart';
 import 'statistics_providers.dart';
@@ -104,8 +104,8 @@ class StatisticsScreen extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.account_balance_outlined),
                   title: const Text('Gesamtvermögen'),
-                  trailing: Text(
-                    formatCents(stats.netWorthCents),
+                  trailing: MoneyText(
+                    stats.netWorthCents,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: stats.netWorthCents >= 0
@@ -118,8 +118,8 @@ class StatisticsScreen extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.trending_down),
                   title: const Text('Schulden gesamt'),
-                  trailing: Text(
-                    formatCents(stats.debtCents),
+                  trailing: MoneyText(
+                    stats.debtCents,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: stats.debtCents > 0 ? Colors.red.shade700 : null,
@@ -161,8 +161,8 @@ class _SummaryCard extends StatelessWidget {
           children: [
             Text(label, style: Theme.of(context).textTheme.labelMedium),
             const SizedBox(height: 4),
-            Text(
-              formatCents(cents),
+            MoneyText(
+              cents,
               style: Theme.of(context)
                   .textTheme
                   .titleLarge
@@ -422,8 +422,8 @@ class _CategorySectionState extends State<_CategorySection> {
                               Text('Gesamt',
                                   style:
                                       Theme.of(context).textTheme.labelSmall),
-                              Text(
-                                formatCents(total),
+                              MoneyText(
+                                total,
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleMedium
@@ -491,7 +491,7 @@ class _LegendRow extends StatelessWidget {
                       .bodySmall
                       ?.copyWith(color: Theme.of(context).hintColor)),
               const SizedBox(width: 10),
-              Text(formatCents(cents),
+              MoneyText(cents,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
