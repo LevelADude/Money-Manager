@@ -14,6 +14,7 @@ import '../../data/models/transaction_template.dart';
 import '../profile/profile_providers.dart';
 import '../../shared/calculator_sheet.dart';
 import '../../shared/category_icons.dart';
+import 'comments_section.dart';
 import '../../shared/money.dart';
 import '../../shared/tag_editor.dart';
 import '../accounts/account_providers.dart';
@@ -1050,6 +1051,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           : const Icon(Icons.check),
                       label: const Text('Speichern'),
                     ),
+                    if (widget.isEditing) ...[
+                      const SizedBox(height: 24),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      CommentsSection(transactionId: widget.transactionId!),
+                    ],
                   ],
                 ),
               ),

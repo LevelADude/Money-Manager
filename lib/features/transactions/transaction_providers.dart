@@ -5,6 +5,8 @@ import '../../data/models/app_transaction.dart';
 import '../../data/models/audit_entry.dart';
 import '../../data/models/transaction_split.dart';
 import '../../data/models/transaction_template.dart';
+import '../../data/models/transaction_comment.dart';
+import '../../data/repositories/comment_repository.dart';
 import '../../data/repositories/receipt_storage.dart';
 import '../../data/repositories/split_repository.dart';
 import '../../data/repositories/template_repository.dart';
@@ -91,6 +93,16 @@ final titleSuggestionsProvider = Provider<List<String>>((ref) {
     if (title.isNotEmpty && seen.add(title.toLowerCase())) result.add(title);
   }
   return result;
+});
+
+final commentRepositoryProvider = Provider<CommentRepository>((ref) {
+  return CommentRepository(ref.watch(supabaseClientProvider));
+});
+
+/// Kommentare einer Buchung (Live-Stream).
+final commentsProvider =
+    StreamProvider.family<List<TransactionComment>, String>((ref, txId) {
+  return ref.watch(commentRepositoryProvider).watchForTransaction(txId);
 });
 
 /// Aktivitäts-Feed: jüngste Änderungen über alle Buchungen.

@@ -2,15 +2,12 @@
 -- Money-Manager - setup.sql  (Komplett-Einrichtung der Datenbank)
 -- =====================================================================
 -- Einmalig fuer ein FRISCHES Supabase-Projekt: gesamten Inhalt im SQL-Editor
--- einfuegen und auf "Run" klicken. Legt alle Tabellen, Sicherheitsregeln,
--- den Beleg-Speicher und die Admin-Logik (1. Person = Admin) an.
--- Enthaelt die Migrationen 0001 bis 0014.
+-- einfuegen und auf "Run" klicken.
+-- Enthaelt die Migrationen 0001 bis 0015.
 -- =====================================================================
 
 
--- ###################################################################
 -- ## Migration: 0001_init.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0001_init.sql Â· Initiales Schema
@@ -191,9 +188,7 @@ begin
 end $$;
 
 
--- ###################################################################
 -- ## Migration: 0002_security_hardening.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0002_security_hardening.sql
@@ -214,9 +209,7 @@ revoke execute on function public.set_updated_at()  from public, anon, authentic
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
 
 
--- ###################################################################
 -- ## Migration: 0003_model_v2.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0003_model_v2.sql Â· Datenmodell v2 (Personal-Finance)
@@ -405,9 +398,7 @@ begin
 end $$;
 
 
--- ###################################################################
 -- ## Migration: 0004_budgets.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0004_budgets.sql Â· Monatsbudgets je Kategorie
@@ -445,9 +436,7 @@ begin
 end $$;
 
 
--- ###################################################################
 -- ## Migration: 0005_recurring.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0005_recurring.sql Â· Wiederkehrende Buchungen
@@ -501,9 +490,7 @@ begin
 end $$;
 
 
--- ###################################################################
 -- ## Migration: 0006_receipts.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0006_receipts.sql Â· Belege/Fotos je Buchung
@@ -537,9 +524,7 @@ create policy receipts_delete on storage.objects
   for delete to authenticated using (bucket_id = 'receipts');
 
 
--- ###################################################################
 -- ## Migration: 0007_admin_whitelist.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0007_admin_whitelist.sql Â· Admin-Rechte + E-Mail-Whitelist
@@ -617,9 +602,7 @@ create policy profiles_admin_update on public.profiles
   for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
 
--- ###################################################################
 -- ## Migration: 0008_tags.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0008_tags.sql Â· Tags je Buchung
@@ -636,9 +619,7 @@ create index if not exists transactions_tags_idx
   on public.transactions using gin (tags);
 
 
--- ###################################################################
 -- ## Migration: 0009_splits.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0009_splits.sql Â· Split-Buchungen (Aufteilungen)
@@ -676,9 +657,7 @@ begin
 end $$;
 
 
--- ###################################################################
 -- ## Migration: 0010_category_order.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0010_category_order.sql Â· Sortierreihenfolge je Kategorie
@@ -691,9 +670,7 @@ alter table public.categories
   add column if not exists sort_order integer not null default 0;
 
 
--- ###################################################################
 -- ## Migration: 0011_account_order.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0011_account_order.sql Â· Sortierreihenfolge je Konto
@@ -706,9 +683,7 @@ alter table public.accounts
   add column if not exists sort_order integer not null default 0;
 
 
--- ###################################################################
 -- ## Migration: 0012_templates.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0012_templates.sql Â· Buchungs-Vorlagen (Favoriten)
@@ -747,9 +722,7 @@ begin
 end $$;
 
 
--- ###################################################################
 -- ## Migration: 0013_savings_goals.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0013_savings_goals.sql Â· Sparziele
@@ -784,9 +757,7 @@ begin
 end $$;
 
 
--- ###################################################################
 -- ## Migration: 0014_audit_log.sql
--- ###################################################################
 
 -- =====================================================================
 -- Money-Manager Â· 0014_audit_log.sql Â· Ã„nderungsverlauf (Audit-Log)
@@ -856,6 +827,40 @@ begin
   end if;
   begin
     alter publication supabase_realtime add table public.audit_log;
+  exception when duplicate_object then null; end;
+end $$;
+
+
+-- ## Migration: 0015_comments.sql
+
+-- =====================================================================
+-- Money-Manager Â· 0015_comments.sql Â· Kommentare an Buchungen
+-- =====================================================================
+-- Kommentar-Thread je Buchung (RÃ¼ckfragen klÃ¤ren). Gruppenweit geteilt.
+-- =====================================================================
+
+create table if not exists public.transaction_comments (
+  id             uuid        primary key default gen_random_uuid(),
+  transaction_id uuid        not null references public.transactions(id) on delete cascade,
+  author         uuid        references public.profiles(id) on delete set null default auth.uid(),
+  body           text        not null,
+  created_at     timestamptz not null default now()
+);
+create index if not exists transaction_comments_tx_idx
+  on public.transaction_comments(transaction_id);
+
+alter table public.transaction_comments enable row level security;
+drop policy if exists transaction_comments_all on public.transaction_comments;
+create policy transaction_comments_all on public.transaction_comments
+  for all to authenticated using (true) with check (true);
+
+do $$
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+  begin
+    alter publication supabase_realtime add table public.transaction_comments;
   exception when duplicate_object then null; end;
 end $$;
 
