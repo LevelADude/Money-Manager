@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../features/accounts/account_detail_screen.dart';
 import '../features/accounts/account_form_screen.dart';
+import '../features/accounts/accounts_reorder_screen.dart';
 import '../features/accounts/accounts_screen.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/auth/login_screen.dart';
@@ -54,6 +55,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/',
                 builder: (c, s) => const AccountsScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'account/reorder',
+                    builder: (c, s) => const AccountsReorderScreen(),
+                  ),
                   GoRoute(
                     path: 'account/new',
                     builder: (c, s) => const AccountFormScreen(),

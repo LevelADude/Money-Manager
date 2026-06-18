@@ -12,29 +12,44 @@ class AccountRepository {
 
   /// Erst der gecachte Stand (sofort/offline), dann der Live-Stream
   /// (aktualisiert + persistiert den Cache).
+  List<Account> _sorted(Iterable<Account> accs) {
+    final list = accs.toList()
+      ..sort((a, b) {
+        final c = a.sortOrder.compareTo(b.sortOrder);
+        return c != 0 ? c : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      });
+    return list;
+  }
+
   Stream<List<Account>> watchAccounts() async* {
     final cached = _cache.readRows('accounts');
     if (cached.isNotEmpty) {
-      yield cached
-          .where((r) => r['deleted_at'] == null)
-          .map(Account.fromJson)
-          .toList();
+      yield _sorted(
+          cached.where((r) => r['deleted_at'] == null).map(Account.fromJson));
     }
     try {
       yield* _client
           .from('accounts')
           .stream(primaryKey: ['id'])
-          .order('created_at')
+          .order('sort_order')
           .map((rows) {
         _cache.writeRows('accounts', rows);
-        return rows
-            .where((r) => r['deleted_at'] == null)
-            .map(Account.fromJson)
-            .toList();
+        return _sorted(
+            rows.where((r) => r['deleted_at'] == null).map(Account.fromJson));
       });
     } catch (_) {
       // Offline: beim Cache bleiben.
     }
+  }
+
+  /// Speichert eine neue Reihenfolge (id -> sort_order).
+  Future<void> reorder(List<({String id, int sortOrder})> orders) async {
+    await Future.wait([
+      for (final o in orders)
+        _client
+            .from('accounts')
+            .update({'sort_order': o.sortOrder}).eq('id', o.id),
+    ]);
   }
 
   Future<void> createAccount({

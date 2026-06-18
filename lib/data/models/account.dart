@@ -55,6 +55,7 @@ class Account {
     required this.creditLimitCents,
     required this.includeInNetWorth,
     required this.archived,
+    this.sortOrder = 0,
   });
 
   final String id;
@@ -68,6 +69,7 @@ class Account {
   final int? creditLimitCents;
   final bool includeInNetWorth;
   final bool archived;
+  final int sortOrder;
 
   factory Account.fromJson(Map<String, dynamic> json) => Account(
         id: json['id'] as String,
@@ -81,5 +83,6 @@ class Account {
         creditLimitCents: (json['credit_limit_cents'] as num?)?.toInt(),
         includeInNetWorth: (json['include_in_net_worth'] as bool?) ?? true,
         archived: (json['archived'] as bool?) ?? false,
+        sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       );
 }

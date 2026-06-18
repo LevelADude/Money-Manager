@@ -56,6 +56,11 @@ class AccountsScreen extends ConsumerWidget {
             icon: const Icon(Icons.search),
             onPressed: () => context.go('/more/search'),
           ),
+          IconButton(
+            tooltip: 'Konten sortieren',
+            icon: const Icon(Icons.swap_vert),
+            onPressed: () => context.go('/account/reorder'),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
