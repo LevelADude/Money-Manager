@@ -20,6 +20,7 @@ class Category {
     required this.color,
     required this.isPreset,
     required this.active,
+    this.sortOrder = 0,
   });
 
   final String id;
@@ -30,6 +31,7 @@ class Category {
   final int? color;
   final bool isPreset;
   final bool active;
+  final int sortOrder;
 
   /// Passt diese Kategorie zur gegebenen Buchungsrichtung?
   bool matches(TransactionType type) =>
@@ -44,5 +46,6 @@ class Category {
         color: (json['color'] as num?)?.toInt(),
         isPreset: (json['is_preset'] as bool?) ?? false,
         active: (json['active'] as bool?) ?? true,
+        sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       );
 }

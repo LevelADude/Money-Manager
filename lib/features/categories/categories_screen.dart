@@ -5,7 +5,8 @@ import '../../data/models/category.dart';
 import '../../shared/category_icons.dart';
 import 'category_providers.dart';
 
-/// Gruppenweite Kategorien verwalten (anlegen / aktiv schalten / löschen).
+/// Gruppenweite Kategorien verwalten (anlegen / aktiv schalten / löschen /
+/// Reihenfolge per Drag&Drop festlegen).
 class CategoriesScreen extends ConsumerWidget {
   const CategoriesScreen({super.key});
 
@@ -75,14 +76,16 @@ class CategoriesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Fehler: $e')),
         data: (items) {
-          final expense = items.where((c) => c.kind == CategoryKind.expense).toList();
-          final income = items.where((c) => c.kind == CategoryKind.income).toList();
+          final expense =
+              items.where((c) => c.kind == CategoryKind.expense).toList();
+          final income =
+              items.where((c) => c.kind == CategoryKind.income).toList();
           return ListView(
             children: [
-              _SectionHeader('Ausgaben'),
-              for (final c in expense) _CategoryTile(c),
-              _SectionHeader('Einnahmen'),
-              for (final c in income) _CategoryTile(c),
+              const _SectionHeader('Ausgaben'),
+              _ReorderableCats(items: expense),
+              const _SectionHeader('Einnahmen'),
+              _ReorderableCats(items: income),
               const SizedBox(height: 80),
             ],
           );
@@ -109,9 +112,82 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+/// Sortierbare Liste der Kategorien einer Art. Hält eine lokale Kopie, damit
+/// das Verschieben sofort flüssig wirkt (ohne auf den Server-Stream zu warten).
+class _ReorderableCats extends ConsumerStatefulWidget {
+  const _ReorderableCats({required this.items});
+
+  final List<Category> items;
+
+  @override
+  ConsumerState<_ReorderableCats> createState() => _ReorderableCatsState();
+}
+
+class _ReorderableCatsState extends ConsumerState<_ReorderableCats> {
+  late List<Category> _local = [...widget.items];
+
+  @override
+  void didUpdateWidget(_ReorderableCats old) {
+    super.didUpdateWidget(old);
+    final newIds = widget.items.map((c) => c.id).toList();
+    final curIds = _local.map((c) => c.id).toList();
+    if (_sameOrder(newIds, curIds)) {
+      // Gleiche Reihenfolge: nur Feldwerte (Name/aktiv) übernehmen.
+      _local = [
+        for (final id in curIds) widget.items.firstWhere((c) => c.id == id),
+      ];
+    } else {
+      // Server-Reihenfolge/Bestand hat sich geändert -> übernehmen.
+      _local = [...widget.items];
+    }
+  }
+
+  bool _sameOrder(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  // onReorderItem liefert newIndex bereits passend zum entfernten Element.
+  Future<void> _onReorder(int oldIndex, int newIndex) async {
+    setState(() {
+      final moved = _local.removeAt(oldIndex);
+      _local.insert(newIndex, moved);
+    });
+    await ref.read(categoryRepositoryProvider).reorder([
+      for (var i = 0; i < _local.length; i++) (id: _local[i].id, sortOrder: i),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableListView.builder(
+      shrinkWrap: true,
+      primary: false,
+      physics: const NeverScrollableScrollPhysics(),
+      buildDefaultDragHandles: false,
+      itemCount: _local.length,
+      onReorderItem: _onReorder,
+      itemBuilder: (ctx, i) => _CategoryTile(
+        key: ValueKey(_local[i].id),
+        category: _local[i],
+        index: i,
+      ),
+    );
+  }
+}
+
 class _CategoryTile extends ConsumerWidget {
-  const _CategoryTile(this.category);
+  const _CategoryTile({
+    super.key,
+    required this.category,
+    required this.index,
+  });
+
   final Category category;
+  final int index;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -133,6 +209,13 @@ class _CategoryTile extends ConsumerWidget {
             icon: const Icon(Icons.delete_outline),
             onPressed: () =>
                 ref.read(categoryRepositoryProvider).deleteCategory(category.id),
+          ),
+          ReorderableDragStartListener(
+            index: index,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Icon(Icons.drag_handle),
+            ),
           ),
         ],
       ),

@@ -10,6 +10,7 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
 import '../../shared/calculator_sheet.dart';
+import '../../shared/category_icons.dart';
 import '../../shared/money.dart';
 import '../../shared/tag_editor.dart';
 import '../accounts/account_providers.dart';
@@ -464,8 +465,16 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       for (final c in categories)
                         DropdownMenuItem<String?>(
                           value: c.id,
-                          child:
-                              Text(c.name, overflow: TextOverflow.ellipsis),
+                          child: Row(
+                            children: [
+                              Icon(iconForToken(c.icon), size: 18),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(c.name,
+                                    overflow: TextOverflow.ellipsis),
+                              ),
+                            ],
+                          ),
                         ),
                     ],
                     onChanged: (v) =>
@@ -723,7 +732,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             ),
                             for (final c in categories)
                               DropdownMenuItem<String?>(
-                                  value: c.id, child: Text(c.name)),
+                                value: c.id,
+                                child: Row(
+                                  children: [
+                                    Icon(iconForToken(c.icon), size: 20),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(c.name,
+                                          overflow: TextOverflow.ellipsis),
+                                    ),
+                                  ],
+                                ),
+                              ),
                           ],
                           onChanged: (v) => setState(() => _categoryId = v),
                         ),

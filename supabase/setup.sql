@@ -7,7 +7,7 @@
 --   3. Fertig - alle Tabellen, Sicherheitsregeln, der Beleg-Speicher und die
 --      Admin-Logik (erste registrierte Person = Admin) werden angelegt.
 --
--- Enthaelt die Migrationen 0001-0009 in der richtigen Reihenfolge.
+-- Enthaelt die Migrationen 0001-0010 in der richtigen Reihenfolge.
 -- =====================================================================
 
 
@@ -677,4 +677,19 @@ begin
     alter publication supabase_realtime add table public.transaction_splits;
   exception when duplicate_object then null; end;
 end $$;
+
+
+-- ###################################################################
+-- ## Migration: 0010_category_order.sql
+-- ###################################################################
+
+-- =====================================================================
+-- Money-Manager Â· 0010_category_order.sql Â· Sortierreihenfolge je Kategorie
+-- =====================================================================
+-- Erlaubt es, die Reihenfolge der Kategorien selbst festzulegen (Drag&Drop
+-- in der Kategorie-Verwaltung). Niedrigere Werte zuerst.
+-- =====================================================================
+
+alter table public.categories
+  add column if not exists sort_order integer not null default 0;
 

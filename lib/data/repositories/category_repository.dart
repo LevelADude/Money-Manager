@@ -10,29 +10,47 @@ class CategoryRepository {
   final SupabaseClient _client;
   final AppCache _cache;
 
+  // Sortierung: erst nach selbst festgelegter Reihenfolge, dann nach Name.
+  List<Category> _sorted(Iterable<Category> cats) {
+    final list = cats.toList()
+      ..sort((a, b) {
+        final c = a.sortOrder.compareTo(b.sortOrder);
+        return c != 0 ? c : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      });
+    return list;
+  }
+
   Stream<List<Category>> watchCategories() async* {
     final cached = _cache.readRows('categories');
     if (cached.isNotEmpty) {
-      yield cached
+      yield _sorted(cached
           .where((r) => r['deleted_at'] == null)
-          .map(Category.fromJson)
-          .toList();
+          .map(Category.fromJson));
     }
     try {
       yield* _client
           .from('categories')
           .stream(primaryKey: ['id'])
-          .order('name')
+          .order('sort_order')
           .map((rows) {
         _cache.writeRows('categories', rows);
-        return rows
+        return _sorted(rows
             .where((r) => r['deleted_at'] == null)
-            .map(Category.fromJson)
-            .toList();
+            .map(Category.fromJson));
       });
     } catch (_) {
       // Offline: beim Cache bleiben.
     }
+  }
+
+  /// Speichert eine neue Reihenfolge (id -> sort_order).
+  Future<void> reorder(List<({String id, int sortOrder})> orders) async {
+    await Future.wait([
+      for (final o in orders)
+        _client
+            .from('categories')
+            .update({'sort_order': o.sortOrder}).eq('id', o.id),
+    ]);
   }
 
   Future<void> addCategory({
