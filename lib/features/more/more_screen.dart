@@ -32,6 +32,7 @@ class MoreScreen extends ConsumerWidget {
           tile(Icons.savings_outlined, 'Budgets', '/more/budgets'),
           tile(Icons.calculate_outlined, 'Verfügbar & Fixkosten',
               '/more/planning'),
+          tile(Icons.tune, 'Was-wäre-wenn', '/more/simulator'),
           tile(Icons.event_note_outlined, 'Cashflow-Kalender',
               '/more/cashflow'),
           tile(Icons.flag_outlined, 'Sparziele & Töpfe', '/more/goals'),
