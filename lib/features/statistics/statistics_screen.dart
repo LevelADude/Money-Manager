@@ -7,9 +7,11 @@ import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/app_transaction.dart';
 import '../../shared/mini_line_chart.dart';
+import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
+import '../transactions/person_filter.dart';
 import '../transactions/person_filter_button.dart';
 import 'period_filter.dart';
 import 'statistics_providers.dart';
@@ -90,6 +92,20 @@ class StatisticsScreen extends ConsumerWidget {
     final comparison = ref.watch(periodComparisonProvider);
     final topExpenses = ref.watch(topExpensesProvider);
     final catNames = ref.watch(categoryNamesProvider);
+
+    // Tägliche Ausgaben des laufenden Monats für die Heatmap.
+    final pfTxs = ref.watch(personFilteredTransactionsProvider);
+    final hmNow = DateTime.now();
+    final dailyExpense = <int, int>{};
+    for (final t in pfTxs) {
+      if (t.type != TransactionType.expense) continue;
+      if (t.occurredOn.year != hmNow.year ||
+          t.occurredOn.month != hmNow.month) {
+        continue;
+      }
+      dailyExpense.update(t.occurredOn.day, (v) => v + t.amountCents,
+          ifAbsent: () => t.amountCents);
+    }
     String nameOf(String? id) =>
         id == null ? 'Ohne Kategorie' : (catNames[id] ?? 'Ohne Kategorie');
 
@@ -149,6 +165,12 @@ class StatisticsScreen extends ConsumerWidget {
           _NetWorthTrendCard(history: netWorthHistory),
           const SizedBox(height: 12),
           _MonthlyTrendCard(months: months),
+          const SizedBox(height: 12),
+          _HeatmapCard(
+            year: hmNow.year,
+            month: hmNow.month,
+            daily: dailyExpense,
+          ),
           const SizedBox(height: 12),
           _CategorySection(
             title: 'Ausgaben nach Kategorie',
@@ -310,6 +332,91 @@ class _NetWorthTrendCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
                 labels: [for (final h in history) _monthAbbr[h.month.month - 1]],
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Heatmap der täglichen Ausgaben im laufenden Monat (Kalenderraster).
+class _HeatmapCard extends StatelessWidget {
+  const _HeatmapCard({
+    required this.year,
+    required this.month,
+    required this.daily,
+  });
+
+  final int year;
+  final int month;
+  final Map<int, int> daily;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context).colorScheme.primary;
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    final firstWeekday = DateTime(year, month, 1).weekday; // 1=Mo
+    final maxDay = daily.values.isEmpty
+        ? 1
+        : daily.values.reduce((a, b) => a > b ? a : b);
+
+    final cells = <Widget>[];
+    for (var i = 1; i < firstWeekday; i++) {
+      cells.add(const SizedBox.shrink());
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+      final e = daily[d] ?? 0;
+      final intensity = e == 0 ? 0.0 : (0.18 + 0.82 * (e / maxDay));
+      cells.add(Tooltip(
+        message: e == 0 ? '$d.' : '$d. · ${formatCents(e)}',
+        child: Container(
+          margin: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: e == 0
+                ? base.withValues(alpha: 0.05)
+                : base.withValues(alpha: intensity),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          alignment: Alignment.center,
+          child: Text('$d',
+              style: TextStyle(
+                fontSize: 10,
+                color: intensity > 0.55 ? Colors.white : null,
+              )),
+        ),
+      ));
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Ausgaben-Heatmap (Monat)',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (final w in const ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'])
+                  Expanded(
+                    child: Center(
+                      child: Text(w,
+                          style: Theme.of(context).textTheme.labelSmall),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            GridView.count(
+              crossAxisCount: 7,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: cells,
+            ),
           ],
         ),
       ),
