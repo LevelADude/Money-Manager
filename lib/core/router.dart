@@ -15,6 +15,7 @@ import '../features/backup/backup_screen.dart';
 import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
 import '../features/debts/debts_screen.dart';
+import '../features/export/csv_import_screen.dart';
 import '../features/export/export_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/planning/cashflow_screen.dart';
@@ -207,6 +208,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'export',
                     builder: (c, s) => const ExportScreen(),
+                  ),
+                  GoRoute(
+                    path: 'import',
+                    builder: (c, s) => const CsvImportScreen(),
                   ),
                   GoRoute(
                     path: 'search',

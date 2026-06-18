@@ -41,6 +41,7 @@ class MoreScreen extends ConsumerWidget {
           tile(Icons.repeat, 'Daueraufträge', '/more/recurring'),
           tile(Icons.label_outline, 'Kategorien', '/more/categories'),
           tile(Icons.download_outlined, 'Export (CSV)', '/more/export'),
+          tile(Icons.upload_file_outlined, 'CSV-Import', '/more/import'),
           const Divider(),
           tile(Icons.delete_outline, 'Papierkorb', '/more/trash'),
           tile(Icons.backup_outlined, 'Backup & Wiederherstellung',
