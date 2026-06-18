@@ -29,6 +29,17 @@ class ProfileRepository {
     return (row?['is_admin'] as bool?) ?? false;
   }
 
+  Future<bool> fetchIsReadOnly() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return false;
+    final row = await _client
+        .from('profiles')
+        .select('read_only')
+        .eq('id', uid)
+        .maybeSingle();
+    return (row?['read_only'] as bool?) ?? false;
+  }
+
   Future<String> fetchMyDisplayName() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return '';

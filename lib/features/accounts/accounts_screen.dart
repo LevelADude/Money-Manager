@@ -34,6 +34,7 @@ class AccountsScreen extends ConsumerWidget {
     ref.watch(recurringGenerationProvider);
 
     final accountsAsync = ref.watch(accountsProvider);
+    final readOnly = ref.watch(isReadOnlyProvider).asData?.value ?? false;
     final txs = ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final memberNames =
@@ -63,11 +64,13 @@ class AccountsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/account/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('Konto'),
-      ),
+      floatingActionButton: readOnly
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => context.go('/account/new'),
+              icon: const Icon(Icons.add),
+              label: const Text('Konto'),
+            ),
       body: accountsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Fehler: $e')),

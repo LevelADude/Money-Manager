@@ -28,6 +28,12 @@ class AdminRepository {
         .update({'is_admin': value}).eq('id', profileId);
   }
 
+  Future<void> setReadOnly({required String profileId, required bool value}) {
+    return _client
+        .from('profiles')
+        .update({'read_only': value}).eq('id', profileId);
+  }
+
   /// Löscht ein Auth-Konto über die Edge Function (service_role serverseitig).
   Future<void> deleteUser(String userId) async {
     final res = await _client.functions

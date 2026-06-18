@@ -3,7 +3,7 @@
 -- =====================================================================
 -- Einmalig fuer ein FRISCHES Supabase-Projekt: gesamten Inhalt im SQL-Editor
 -- einfuegen und auf "Run" klicken.
--- Enthaelt die Migrationen 0001 bis 0015.
+-- Enthaelt die Migrationen 0001 bis 0016.
 -- =====================================================================
 
 
@@ -862,5 +862,51 @@ begin
   begin
     alter publication supabase_realtime add table public.transaction_comments;
   exception when duplicate_object then null; end;
+end $$;
+
+
+-- ## Migration: 0016_roles.sql
+
+-- =====================================================================
+-- Money-Manager Â· 0016_roles.sql Â· Nur-Lesen-Rolle
+-- =====================================================================
+-- Mitglieder kÃ¶nnen auf "nur lesen" gesetzt werden (read_only). Solche
+-- Nutzer dÃ¼rfen weiterhin alles sehen, aber keine Daten mehr schreiben.
+-- Durchgesetzt per RESTRICTIVE-Policies (zusÃ¤tzlich zu den bestehenden).
+-- =====================================================================
+
+alter table public.profiles
+  add column if not exists read_only boolean not null default false;
+
+-- true, wenn der aktuelle Nutzer schreiben darf (nicht read_only).
+create or replace function public.is_writer()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select not coalesce(
+    (select read_only from public.profiles where id = auth.uid()), false);
+$$;
+
+-- Schreibrechte fÃ¼r read_only-Nutzer auf den Datentabellen sperren.
+do $$
+declare
+  t text;
+  tbls text[] := array[
+    'transactions','accounts','categories','budgets','recurring_rules',
+    'transaction_splits','savings_goals','transaction_templates',
+    'transaction_comments'
+  ];
+begin
+  foreach t in array tbls loop
+    execute format('drop policy if exists %I on public.%I', t||'_ro_ins', t);
+    execute format('create policy %I on public.%I as restrictive for insert to authenticated with check (public.is_writer())', t||'_ro_ins', t);
+    execute format('drop policy if exists %I on public.%I', t||'_ro_upd', t);
+    execute format('create policy %I on public.%I as restrictive for update to authenticated using (public.is_writer()) with check (public.is_writer())', t||'_ro_upd', t);
+    execute format('drop policy if exists %I on public.%I', t||'_ro_del', t);
+    execute format('create policy %I on public.%I as restrictive for delete to authenticated using (public.is_writer())', t||'_ro_del', t);
+  end loop;
 end $$;
 

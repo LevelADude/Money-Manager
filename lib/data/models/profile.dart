@@ -5,12 +5,14 @@ class Profile {
     required this.displayName,
     required this.isAdmin,
     required this.createdAt,
+    this.readOnly = false,
   });
 
   final String id;
   final String displayName;
   final bool isAdmin;
   final DateTime? createdAt;
+  final bool readOnly;
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
         id: json['id'] as String,
@@ -19,5 +21,6 @@ class Profile {
         createdAt: json['created_at'] == null
             ? null
             : DateTime.tryParse(json['created_at'] as String),
+        readOnly: (json['read_only'] as bool?) ?? false,
       );
 }

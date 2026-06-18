@@ -23,3 +23,8 @@ final myDisplayNameProvider = FutureProvider<String>((ref) async {
 final isAdminProvider = FutureProvider<bool>((ref) async {
   return ref.watch(profileRepositoryProvider).fetchIsAdmin();
 });
+
+/// Hat der aktuelle Nutzer nur Lese-Rechte?
+final isReadOnlyProvider = FutureProvider<bool>((ref) async {
+  return ref.watch(profileRepositoryProvider).fetchIsReadOnly();
+});

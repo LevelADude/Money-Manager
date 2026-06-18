@@ -9,6 +9,7 @@ import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../export/pdf_export.dart';
+import '../profile/profile_providers.dart';
 import 'person_filter.dart';
 import 'person_filter_button.dart';
 import 'transaction_providers.dart';
@@ -154,6 +155,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final catNames = ref.watch(categoryNamesProvider);
     final allTags = ref.watch(allTagsProvider);
     final splitTxIds = ref.watch(splitsByTransactionProvider).keys.toSet();
+    final readOnly = ref.watch(isReadOnlyProvider).asData?.value ?? false;
     // Tag-Filter aufräumen, falls der Tag nicht mehr existiert.
     if (_tagFilter != null && !allTags.contains(_tagFilter)) {
       _tagFilter = null;
@@ -220,11 +222,13 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/transactions/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('Buchung'),
-      ),
+      floatingActionButton: readOnly
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => context.go('/transactions/new'),
+              icon: const Icon(Icons.add),
+              label: const Text('Buchung'),
+            ),
       body: Column(
         children: [
           Padding(

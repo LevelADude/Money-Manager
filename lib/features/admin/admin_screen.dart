@@ -171,30 +171,46 @@ class AdminScreen extends ConsumerWidget {
                     subtitle: Text([
                       if (p.createdAt != null) 'seit ${df.format(p.createdAt!)}',
                       if (p.isAdmin) 'Admin',
+                      if (p.readOnly) 'nur Lesen',
                       if (p.id == myId) 'du',
                     ].join('  ·  ')),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('Admin'),
-                        Switch(
-                          value: p.isAdmin,
-                          onChanged: p.id == myId
-                              ? null // eigene Admin-Rechte nicht entziehen
-                              : (v) async {
-                                  await ref
-                                      .read(adminRepositoryProvider)
-                                      .setAdmin(profileId: p.id, value: v);
-                                  ref.invalidate(allProfilesProvider);
-                                },
+                    trailing: PopupMenuButton<String>(
+                      onSelected: (v) async {
+                        final repo = ref.read(adminRepositoryProvider);
+                        switch (v) {
+                          case 'admin':
+                            await repo.setAdmin(
+                                profileId: p.id, value: !p.isAdmin);
+                            ref.invalidate(allProfilesProvider);
+                          case 'readonly':
+                            await repo.setReadOnly(
+                                profileId: p.id, value: !p.readOnly);
+                            ref.invalidate(allProfilesProvider);
+                          case 'delete':
+                            if (context.mounted) {
+                              await _deleteUser(context, ref, p);
+                            }
+                        }
+                      },
+                      itemBuilder: (ctx) => [
+                        if (p.id != myId)
+                          PopupMenuItem(
+                            value: 'admin',
+                            child: Text(p.isAdmin
+                                ? 'Admin-Recht entziehen'
+                                : 'Zum Admin machen'),
+                          ),
+                        PopupMenuItem(
+                          value: 'readonly',
+                          child: Text(p.readOnly
+                              ? 'Schreibrechte geben'
+                              : 'Auf „nur Lesen" setzen'),
                         ),
-                        IconButton(
-                          tooltip: 'Löschen',
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: p.id == myId
-                              ? null
-                              : () => _deleteUser(context, ref, p),
-                        ),
+                        if (p.id != myId)
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Nutzer löschen'),
+                          ),
                       ],
                     ),
                   ),
