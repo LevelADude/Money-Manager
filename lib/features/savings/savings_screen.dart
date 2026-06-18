@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
+import '../../data/models/app_transaction.dart';
 import '../../data/models/savings_goal.dart';
 import '../../shared/money.dart';
 import '../../shared/money_text.dart';
+import '../transactions/transaction_providers.dart';
 import 'savings_providers.dart';
 
 /// Sparziele: Zielbetrag, Fortschritt, Beiträge ein-/auszahlen.
@@ -121,11 +123,91 @@ class SavingsScreen extends ConsumerWidget {
     }
   }
 
+  /// Rundungs-Sparen: Summe der Aufrundungsdifferenzen (auf den nächsten Euro)
+  /// aller Ausgaben dieses Monats in einen gewählten Topf/ein Sparziel einzahlen.
+  Future<void> _roundupSweep(BuildContext context, WidgetRef ref) async {
+    final txs = ref.read(allTransactionsProvider).asData?.value ??
+        const <AppTransaction>[];
+    final now = DateTime.now();
+    var roundup = 0;
+    for (final t in txs) {
+      if (t.type != TransactionType.expense) continue;
+      if (t.occurredOn.year != now.year || t.occurredOn.month != now.month) {
+        continue;
+      }
+      roundup += (100 - t.amountCents % 100) % 100;
+    }
+    final goals = ref.read(savingsGoalsProvider).asData?.value ?? const [];
+    if (roundup == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Kein Rundungsbetrag in diesem Monat.')));
+      return;
+    }
+    if (goals.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Lege zuerst ein Sparziel oder einen Topf an.')));
+      return;
+    }
+    var chosen = goals.first.id;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Rundungs-Sparen'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Aufrundung der Ausgaben diesen Monat: '
+                  '${formatCents(roundup)}'),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: chosen,
+                decoration: const InputDecoration(labelText: 'Einzahlen in'),
+                items: [
+                  for (final g in goals)
+                    DropdownMenuItem(value: g.id, child: Text(g.name)),
+                ],
+                onChanged: (v) => setState(() => chosen = v ?? chosen),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Abbrechen')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Einzahlen')),
+          ],
+        ),
+      ),
+    );
+    if (ok == true) {
+      final g = goals.firstWhere((e) => e.id == chosen);
+      await ref
+          .read(savingsGoalRepositoryProvider)
+          .addContribution(g.id, g.savedCents, roundup);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('${formatCents(roundup)} in „${g.name}" eingezahlt')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goalsAsync = ref.watch(savingsGoalsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Sparziele & Töpfe')),
+      appBar: AppBar(
+        title: const Text('Sparziele & Töpfe'),
+        actions: [
+          IconButton(
+            tooltip: 'Rundungs-Sparen',
+            icon: const Icon(Icons.savings_outlined),
+            onPressed: () => _roundupSweep(context, ref),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _editGoal(context, ref),
         icon: const Icon(Icons.add),
