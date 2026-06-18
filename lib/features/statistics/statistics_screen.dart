@@ -186,6 +186,12 @@ class StatisticsScreen extends ConsumerWidget {
             onTapEntry: (catId) => _showDrilldown(context, ref, catId, false),
           ),
           const SizedBox(height: 12),
+          _SankeyCard(
+            income: stats.incomeByCategory,
+            expense: stats.expenseByCategory,
+            nameOf: nameOf,
+          ),
+          const SizedBox(height: 12),
           if (topExpenses.isNotEmpty) ...[
             _TopExpensesCard(items: topExpenses),
             const SizedBox(height: 12),
@@ -337,6 +343,191 @@ class _NetWorthTrendCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Geldfluss (vereinfachtes Sankey): Einnahmen-Kategorien → Pool → Ausgaben.
+class _SankeyCard extends StatelessWidget {
+  const _SankeyCard({
+    required this.income,
+    required this.expense,
+    required this.nameOf,
+  });
+
+  final Map<String?, int> income;
+  final Map<String?, int> expense;
+  final String Function(String?) nameOf;
+
+  // Top-N Kategorien + Rest als „Sonstige".
+  List<({String label, int value, Color color})> _entries(
+      Map<String?, int> data, int offset) {
+    final list = data.entries.where((e) => e.value > 0).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final top = list.take(6).toList();
+    final restVal = list.skip(6).fold<int>(0, (s, e) => s + e.value);
+    final result = <({String label, int value, Color color})>[];
+    for (var i = 0; i < top.length; i++) {
+      result.add((
+        label: nameOf(top[i].key),
+        value: top[i].value,
+        color: _palette[(offset + i) % _palette.length],
+      ));
+    }
+    if (restVal > 0) {
+      result.add((
+        label: 'Sonstige',
+        value: restVal,
+        color: _palette[(offset + top.length) % _palette.length],
+      ));
+    }
+    return result;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final left = _entries(income, 0);
+    final right = _entries(expense, 8);
+    if (left.isEmpty && right.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Geldfluss (Einnahmen → Ausgaben)',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 200,
+              child: CustomPaint(
+                size: Size.infinite,
+                painter: _SankeyPainter(
+                  left: [for (final e in left) (value: e.value, color: e.color)],
+                  right: [
+                    for (final e in right) (value: e.value, color: e.color)
+                  ],
+                  poolColor: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _legend(context, 'Einnahmen', left)),
+                Expanded(child: _legend(context, 'Ausgaben', right)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _legend(BuildContext context,
+      String title, List<({String label, int value, Color color})> entries) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        for (final e in entries)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 1),
+            child: Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                      color: e.color, borderRadius: BorderRadius.circular(2)),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(e.label,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _SankeyPainter extends CustomPainter {
+  _SankeyPainter({
+    required this.left,
+    required this.right,
+    required this.poolColor,
+  });
+
+  final List<({int value, Color color})> left;
+  final List<({int value, Color color})> right;
+  final Color poolColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sumLeft = left.fold<int>(0, (s, e) => s + e.value);
+    final sumRight = right.fold<int>(0, (s, e) => s + e.value);
+    final maxTotal = math.max(sumLeft, sumRight);
+    if (maxTotal <= 0) return;
+
+    const nodeW = 12.0;
+    final h = size.height;
+    final leftX = 0.0;
+    final centerX = size.width / 2 - nodeW / 2;
+    final rightX = size.width - nodeW;
+
+    void band(double x1, double ya1, double yb1, double x2, double ya2,
+        double yb2, Color c) {
+      final mid = (x1 + x2) / 2;
+      final p = Path()
+        ..moveTo(x1, ya1)
+        ..cubicTo(mid, ya1, mid, ya2, x2, ya2)
+        ..lineTo(x2, yb2)
+        ..cubicTo(mid, yb2, mid, yb1, x1, yb1)
+        ..close();
+      canvas.drawPath(p, Paint()..color = c.withValues(alpha: 0.35));
+    }
+
+    // Einnahmen links → Pool.
+    var ly = 0.0;
+    for (final e in left) {
+      final segH = e.value / maxTotal * h;
+      canvas.drawRect(
+          Rect.fromLTWH(leftX, ly, nodeW, segH), Paint()..color = e.color);
+      band(leftX + nodeW, ly, ly + segH, centerX, ly, ly + segH, e.color);
+      ly += segH;
+    }
+
+    // Pool (Mitte).
+    final poolH = math.max(sumLeft, sumRight) / maxTotal * h;
+    canvas.drawRect(Rect.fromLTWH(centerX, 0, nodeW, poolH),
+        Paint()..color = poolColor);
+
+    // Pool → Ausgaben rechts.
+    var ry = 0.0;
+    for (final e in right) {
+      final segH = e.value / maxTotal * h;
+      canvas.drawRect(
+          Rect.fromLTWH(rightX, ry, nodeW, segH), Paint()..color = e.color);
+      band(centerX + nodeW, ry, ry + segH, rightX, ry, ry + segH, e.color);
+      ry += segH;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SankeyPainter old) => true;
 }
 
 /// Heatmap der täglichen Ausgaben im laufenden Monat (Kalenderraster).
