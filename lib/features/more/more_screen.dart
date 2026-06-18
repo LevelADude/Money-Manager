@@ -26,6 +26,7 @@ class MoreScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Mehr')),
       body: ListView(
         children: [
+          tile(Icons.search, 'Suche', '/more/search'),
           tile(Icons.savings_outlined, 'Budgets', '/more/budgets'),
           tile(Icons.repeat, 'Daueraufträge', '/more/recurring'),
           tile(Icons.label_outline, 'Kategorien', '/more/categories'),

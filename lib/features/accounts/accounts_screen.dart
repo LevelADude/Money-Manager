@@ -48,7 +48,16 @@ class AccountsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Konten')),
+      appBar: AppBar(
+        title: const Text('Konten'),
+        actions: [
+          IconButton(
+            tooltip: 'Suche',
+            icon: const Icon(Icons.search),
+            onPressed: () => context.go('/more/search'),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/account/new'),
         icon: const Icon(Icons.add),
