@@ -60,6 +60,26 @@ class PlanningScreen extends ConsumerWidget {
     final monthlyFixTotal =
         fixedExpenses.fold<int>(0, (s, r) => s + _monthlyEquivalent(r));
 
+    // Hochrechnung: Ausgaben-Tempo bisher auf den ganzen Monat hochgerechnet.
+    final daysElapsed = now.day;
+    final daysInMonth = lastDay.day;
+    final projectedExpense = daysElapsed > 0
+        ? (expenseMonth / daysElapsed * daysInMonth).round()
+        : expenseMonth;
+    final pm = DateTime(now.year, now.month - 1, 1);
+    var prevMonthExpense = 0;
+    for (final t in txs) {
+      if (t.type == TransactionType.expense &&
+          t.occurredOn.year == pm.year &&
+          t.occurredOn.month == pm.month) {
+        prevMonthExpense += t.amountCents;
+      }
+    }
+    final projDeltaPct = prevMonthExpense > 0
+        ? (projectedExpense - prevMonthExpense) / prevMonthExpense * 100
+        : null;
+    final projectedNet = incomeMonth - projectedExpense;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Verfügbar & Fixkosten')),
       body: ListView(
@@ -87,6 +107,59 @@ class PlanningScreen extends ConsumerWidget {
                   _line(context, 'Einnahmen (Monat)', incomeMonth),
                   _line(context, '− Ausgaben bisher', -expenseMonth),
                   _line(context, '− offene Fixkosten', -upcomingFix),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.trending_up, size: 20),
+                      const SizedBox(width: 8),
+                      Text('Hochrechnung Monatsende',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Ausgaben voraussichtlich'),
+                      MoneyText(projectedExpense,
+                          style:
+                              const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Text(
+                    'bei aktuellem Tempo (Tag $daysElapsed von $daysInMonth)'
+                    '${projDeltaPct == null ? '' : ' · ${projDeltaPct >= 0 ? '+' : ''}${projDeltaPct.round()} % ggü. Vormonat'}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Voraussichtl. Saldo'),
+                      MoneyText(
+                        projectedNet,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: projectedNet >= 0
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
