@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/app_cache.dart';
 import '../../data/models/app_transaction.dart';
+import '../../data/models/audit_entry.dart';
 import '../../data/models/transaction_split.dart';
 import '../../data/models/transaction_template.dart';
 import '../../data/repositories/receipt_storage.dart';
@@ -90,6 +91,11 @@ final titleSuggestionsProvider = Provider<List<String>>((ref) {
     if (title.isNotEmpty && seen.add(title.toLowerCase())) result.add(title);
   }
   return result;
+});
+
+/// Aktivitäts-Feed: jüngste Änderungen über alle Buchungen.
+final recentActivityProvider = FutureProvider<List<AuditEntry>>((ref) {
+  return ref.watch(transactionRepositoryProvider).recentActivity();
 });
 
 /// Papierkorb: gelöschte Buchungen (räumt zugleich Tombstones > 30 Tage auf).

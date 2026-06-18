@@ -7,6 +7,7 @@ import '../features/accounts/account_detail_screen.dart';
 import '../features/accounts/account_form_screen.dart';
 import '../features/accounts/accounts_reorder_screen.dart';
 import '../features/accounts/accounts_screen.dart';
+import '../features/activity/activity_screen.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/reset_password_screen.dart';
@@ -174,6 +175,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'backup',
                     builder: (c, s) => const BackupScreen(),
+                  ),
+                  GoRoute(
+                    path: 'activity',
+                    builder: (c, s) => const ActivityScreen(),
                   ),
                   GoRoute(
                     path: 'recurring',
