@@ -21,6 +21,8 @@ import '../features/export/export_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/planning/cashflow_screen.dart';
 import '../features/planning/planning_screen.dart';
+import '../features/projects/project_detail_screen.dart';
+import '../features/projects/projects_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/recurring/recurring_form_screen.dart';
 import '../features/recurring/recurring_screen.dart';
@@ -176,6 +178,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'simulator',
                     builder: (c, s) => const SimulatorScreen(),
+                  ),
+                  GoRoute(
+                    path: 'projects',
+                    builder: (c, s) => const ProjectsScreen(),
+                    routes: [
+                      GoRoute(
+                        path: ':tag',
+                        builder: (c, s) => ProjectDetailScreen(
+                            tag: Uri.decodeComponent(s.pathParameters['tag']!)),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'trash',
