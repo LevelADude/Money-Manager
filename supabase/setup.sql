@@ -1,13 +1,10 @@
 -- =====================================================================
 -- Money-Manager - setup.sql  (Komplett-Einrichtung der Datenbank)
 -- =====================================================================
--- So benutzt du diese Datei (einmalig, fuer ein FRISCHES Supabase-Projekt):
---   1. Supabase-Dashboard oeffnen -> dein Projekt -> "SQL Editor".
---   2. Den GESAMTEN Inhalt dieser Datei hineinkopieren und auf "Run" klicken.
---   3. Fertig - alle Tabellen, Sicherheitsregeln, der Beleg-Speicher und die
---      Admin-Logik (erste registrierte Person = Admin) werden angelegt.
---
--- Enthaelt die Migrationen 0001-0012 in der richtigen Reihenfolge.
+-- Einmalig fuer ein FRISCHES Supabase-Projekt: gesamten Inhalt im SQL-Editor
+-- einfuegen und auf "Run" klicken. Legt alle Tabellen, Sicherheitsregeln,
+-- den Beleg-Speicher und die Admin-Logik (1. Person = Admin) an.
+-- Enthaelt die Migrationen 0001 bis 0013.
 -- =====================================================================
 
 
@@ -746,6 +743,43 @@ begin
   end if;
   begin
     alter publication supabase_realtime add table public.transaction_templates;
+  exception when duplicate_object then null; end;
+end $$;
+
+
+-- ###################################################################
+-- ## Migration: 0013_savings_goals.sql
+-- ###################################################################
+
+-- =====================================================================
+-- Money-Manager Â· 0013_savings_goals.sql Â· Sparziele
+-- =====================================================================
+-- Sparziele mit Zielbetrag, optionalem Zieldatum und bisher gespartem Betrag.
+-- Gruppenweit geteilt. BeitrÃ¤ge erhÃ¶hen/verringern saved_cents.
+-- =====================================================================
+
+create table if not exists public.savings_goals (
+  id           uuid        primary key default gen_random_uuid(),
+  name         text        not null,
+  target_cents bigint      not null default 0 check (target_cents >= 0),
+  saved_cents  bigint      not null default 0,
+  target_date  date,
+  created_by   uuid        references public.profiles(id) on delete set null default auth.uid(),
+  created_at   timestamptz not null default now()
+);
+
+alter table public.savings_goals enable row level security;
+drop policy if exists savings_goals_all on public.savings_goals;
+create policy savings_goals_all on public.savings_goals
+  for all to authenticated using (true) with check (true);
+
+do $$
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+  begin
+    alter publication supabase_realtime add table public.savings_goals;
   exception when duplicate_object then null; end;
 end $$;
 

@@ -18,6 +18,7 @@ import '../features/planning/planning_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/recurring/recurring_form_screen.dart';
 import '../features/recurring/recurring_screen.dart';
+import '../features/savings/savings_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/statistics/statistics_screen.dart';
@@ -140,6 +141,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'cashflow',
                     builder: (c, s) => const CashflowScreen(),
+                  ),
+                  GoRoute(
+                    path: 'goals',
+                    builder: (c, s) => const SavingsScreen(),
                   ),
                   GoRoute(
                     path: 'recurring',
