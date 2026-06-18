@@ -24,6 +24,7 @@ import '../features/planning/planning_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/recurring/recurring_form_screen.dart';
 import '../features/recurring/recurring_screen.dart';
+import '../features/recurring/subscriptions_screen.dart';
 import '../features/reminders/reminders_screen.dart';
 import '../features/savings/savings_screen.dart';
 import '../features/search/search_screen.dart';
@@ -209,6 +210,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'rules',
                     builder: (c, s) => const CategoryRulesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'subscriptions',
+                    builder: (c, s) => const SubscriptionsScreen(),
                   ),
                   GoRoute(
                     path: 'export',

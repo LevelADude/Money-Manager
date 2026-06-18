@@ -39,6 +39,7 @@ class MoreScreen extends ConsumerWidget {
           tile(Icons.handshake_outlined, 'Ausgleich (wer schuldet wem)',
               '/more/settle'),
           tile(Icons.repeat, 'Daueraufträge', '/more/recurring'),
+          tile(Icons.autorenew, 'Erkannte Abos', '/more/subscriptions'),
           tile(Icons.label_outline, 'Kategorien', '/more/categories'),
           tile(Icons.bolt_outlined, 'Auto-Kategorien (Regeln)', '/more/rules'),
           tile(Icons.download_outlined, 'Export (CSV)', '/more/export'),
