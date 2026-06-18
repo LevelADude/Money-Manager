@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,7 +8,16 @@ import '../categories/category_providers.dart';
 import 'period_filter.dart';
 import 'statistics_providers.dart';
 
-/// Statistik-Fenster: Zeitraum-Summen, Kategorie-Aufschlüsselung, Vermögen/Schulden.
+/// Farbpalette für die Kategorie-Diagramme.
+const _palette = <Color>[
+  Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF9C27B0),
+  Color(0xFFF44336), Color(0xFF00BCD4), Color(0xFF8BC34A), Color(0xFFFFC107),
+  Color(0xFF3F51B5), Color(0xFFE91E63), Color(0xFF009688), Color(0xFF795548),
+  Color(0xFF607D8B), Color(0xFFCDDC39), Color(0xFFFF5722), Color(0xFF673AB7),
+];
+
+/// Statistik-Fenster: Zeitraum-Summen, Kategorie-Diagramme (mit Prozenten),
+/// Vermögen/Schulden.
 class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
 
@@ -23,14 +34,18 @@ class StatisticsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          SegmentedButton<StatsPeriod>(
-            segments: [
-              for (final p in StatsPeriod.values)
-                ButtonSegment(value: p, label: Text(p.label)),
-            ],
-            selected: {period},
-            onSelectionChanged: (s) =>
-                ref.read(periodFilterProvider.notifier).set(s.first),
+          // 5 Zeiträume -> horizontal scrollbar, damit nichts überläuft.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SegmentedButton<StatsPeriod>(
+              segments: [
+                for (final p in StatsPeriod.values)
+                  ButtonSegment(value: p, label: Text(p.label)),
+              ],
+              selected: {period},
+              onSelectionChanged: (s) =>
+                  ref.read(periodFilterProvider.notifier).set(s.first),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -61,18 +76,16 @@ class StatisticsScreen extends ConsumerWidget {
                 : Colors.red.shade700,
           ),
           const SizedBox(height: 16),
-          _BarSection(
+          _CategorySection(
             title: 'Ausgaben nach Kategorie',
             data: stats.expenseByCategory,
             nameOf: nameOf,
-            color: Colors.red.shade600,
           ),
           const SizedBox(height: 12),
-          _BarSection(
+          _CategorySection(
             title: 'Einnahmen nach Kategorie',
             data: stats.incomeByCategory,
             nameOf: nameOf,
-            color: Colors.green.shade600,
           ),
           const SizedBox(height: 12),
           Card(
@@ -152,24 +165,24 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _BarSection extends StatelessWidget {
-  const _BarSection({
+/// Donut-Diagramm + Legende (Name · Prozent · Betrag) je Kategorie.
+class _CategorySection extends StatelessWidget {
+  const _CategorySection({
     required this.title,
     required this.data,
     required this.nameOf,
-    required this.color,
   });
 
   final String title;
   final Map<String?, int> data;
   final String Function(String?) nameOf;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final entries = data.entries.toList()
+    final entries = data.entries.where((e) => e.value > 0).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final max = entries.isEmpty ? 0 : entries.first.value;
+    final total = entries.fold<int>(0, (s, e) => s + e.value);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -181,43 +194,180 @@ class _BarSection extends StatelessWidget {
                     .textTheme
                     .titleSmall
                     ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             if (entries.isEmpty)
-              const Text('Keine Daten.')
-            else
-              for (final e in entries)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Text('Keine Daten.'),
+              )
+            else ...[
+              Center(
+                child: SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(nameOf(e.key),
-                                overflow: TextOverflow.ellipsis),
-                          ),
-                          Text(formatCents(e.value),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: max == 0 ? 0 : e.value / max,
-                          minHeight: 8,
-                          color: color,
-                          backgroundColor: color.withValues(alpha: 0.15),
+                      CustomPaint(
+                        size: const Size(160, 160),
+                        painter: _DonutPainter(
+                          values: [for (final e in entries) e.value],
+                          colors: [
+                            for (var i = 0; i < entries.length; i++)
+                              _palette[i % _palette.length],
+                          ],
+                          strokeWidth: 24,
                         ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Gesamt',
+                              style: Theme.of(context).textTheme.labelSmall),
+                          Text(
+                            formatCents(total),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 12),
+              for (var i = 0; i < entries.length; i++)
+                _LegendRow(
+                  color: _palette[i % _palette.length],
+                  name: nameOf(entries[i].key),
+                  cents: entries[i].value,
+                  percent: total == 0 ? 0 : entries[i].value / total * 100,
+                ),
+            ],
           ],
         ),
       ),
     );
   }
+}
+
+class _LegendRow extends StatelessWidget {
+  const _LegendRow({
+    required this.color,
+    required this.name,
+    required this.cents,
+    required this.percent,
+  });
+
+  final Color color;
+  final String name;
+  final int cents;
+  final double percent;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = percent >= 10 || percent == 0
+        ? '${percent.round()} %'
+        : '${percent.toStringAsFixed(1)} %';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
+              Text(pct,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: Theme.of(context).hintColor)),
+              const SizedBox(width: 10),
+              Text(formatCents(cents),
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (percent / 100).clamp(0.0, 1.0),
+              minHeight: 6,
+              color: color,
+              backgroundColor: color.withValues(alpha: 0.15),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  _DonutPainter({
+    required this.values,
+    required this.colors,
+    required this.strokeWidth,
+  });
+
+  final List<int> values;
+  final List<Color> colors;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (math.min(size.width, size.height) - strokeWidth) / 2;
+    final total = values.fold<int>(0, (s, v) => s + v);
+    if (total <= 0) {
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = Colors.grey.shade300
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth,
+      );
+      return;
+    }
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    var start = -math.pi / 2;
+    for (var i = 0; i < values.length; i++) {
+      final sweep = values[i] / total * 2 * math.pi;
+      canvas.drawArc(
+        rect,
+        start,
+        sweep,
+        false,
+        Paint()
+          ..color = colors[i % colors.length]
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.butt,
+      );
+      start += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DonutPainter old) =>
+      !_listEquals(old.values, values) || !_listEquals(old.colors, colors);
+}
+
+bool _listEquals<T>(List<T> a, List<T> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
