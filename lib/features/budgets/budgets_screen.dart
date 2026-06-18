@@ -68,18 +68,19 @@ class BudgetsScreen extends ConsumerWidget {
     final totalSpent =
         budgets.keys.fold<int>(0, (s, id) => s + (spent[id] ?? 0));
 
+    final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final daysLeft = daysInMonth - now.day + 1;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Budgets')),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.pie_chart_outline),
-              title: const Text('Diesen Monat (mit Budget)'),
-              subtitle: Text(
-                  '${formatCents(totalSpent)} von ${formatCents(totalBudget)}'),
-            ),
+          _OverallBudgetCard(
+            totalSpent: totalSpent,
+            totalBudget: totalBudget,
+            daysLeft: daysLeft,
           ),
           const SizedBox(height: 8),
           for (final cat in cats)
@@ -95,6 +96,78 @@ class BudgetsScreen extends ConsumerWidget {
                       .deleteBudget(budgets[cat.id]!.id),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _OverallBudgetCard extends StatelessWidget {
+  const _OverallBudgetCard({
+    required this.totalSpent,
+    required this.totalBudget,
+    required this.daysLeft,
+  });
+
+  final int totalSpent;
+  final int totalBudget;
+  final int daysLeft;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasBudget = totalBudget > 0;
+    final frac = hasBudget ? (totalSpent / totalBudget).clamp(0.0, 1.0) : 0.0;
+    final pct = hasBudget ? (totalSpent / totalBudget * 100).round() : 0;
+    final remaining = totalBudget - totalSpent;
+    final over = remaining < 0;
+    final color = over
+        ? Colors.red.shade600
+        : (pct >= 90 ? Colors.orange.shade700 : Colors.green.shade600);
+    final perDay = (!over && daysLeft > 0) ? remaining ~/ daysLeft : 0;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text('Diesen Monat (mit Budget)',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                if (hasBudget)
+                  Text('$pct %',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: color)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: LinearProgressIndicator(
+                value: frac,
+                minHeight: 10,
+                color: color,
+                backgroundColor: color.withValues(alpha: 0.15),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text('${formatCents(totalSpent)} von ${formatCents(totalBudget)}'),
+            if (hasBudget)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  over
+                      ? 'Budget um ${formatCents(-remaining)} überschritten'
+                      : 'Noch ${formatCents(remaining)} · $daysLeft Tage übrig'
+                          ' · ${formatCents(perDay)}/Tag',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: over ? Colors.red.shade700 : null),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -123,7 +196,12 @@ class _BudgetTile extends StatelessWidget {
     final frac = (hasBudget && amount > 0)
         ? (spentCents / amount).clamp(0.0, 1.0)
         : 0.0;
-    final color = over ? Colors.red.shade600 : Colors.green.shade600;
+    final pct = (hasBudget && amount > 0)
+        ? (spentCents / amount * 100).round()
+        : 0;
+    final color = over
+        ? Colors.red.shade600
+        : (pct >= 90 ? Colors.orange.shade700 : Colors.green.shade600);
 
     return Card(
       child: Padding(
@@ -172,12 +250,19 @@ class _BudgetTile extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${formatCents(spentCents)} von ${formatCents(amount)}'),
-                  if (over)
-                    Text('überschritten',
-                        style: TextStyle(
-                            color: Colors.red.shade700,
-                            fontWeight: FontWeight.bold)),
+                  Text(
+                      '${formatCents(spentCents)} von ${formatCents(amount)} · $pct %'),
+                  Text(
+                    over
+                        ? '+${formatCents(spentCents - amount)} über'
+                        : 'noch ${formatCents(amount - spentCents)}',
+                    style: TextStyle(
+                      color: over
+                          ? Colors.red.shade700
+                          : (pct >= 90 ? Colors.orange.shade800 : null),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ] else
