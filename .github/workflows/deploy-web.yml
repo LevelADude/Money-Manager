@@ -35,8 +35,11 @@ jobs:
 
       # base-href entspricht dem Repo-Namen, damit es auch in Forks passt
       # (Seite liegt unter https://<user>.github.io/<repo>/).
+      # --no-web-resources-cdn: CanvasKit/Schriften lokal mitliefern statt von
+      # gstatic.com laden. Sonst bleibt die Seite weiss, wenn gstatic langsam
+      # oder gesperrt ist (haengt beim Engine-Start). Funktioniert so auch offline.
       - name: Build web
-        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+        run: flutter build web --release --no-web-resources-cdn --base-href "/${{ github.event.repository.name }}/"
 
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -34,8 +34,42 @@
 
   <title>Money Manager</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #fafafa; }
+    @media (prefers-color-scheme: dark) { html, body { background: #121212; } }
+    #boot {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+      color: #2E7D32; text-align: center; padding: 24px;
+    }
+    #boot .spin {
+      width: 42px; height: 42px; border: 4px solid rgba(46,125,50,.25);
+      border-top-color: #2E7D32; border-radius: 50%;
+      animation: boot-spin 1s linear infinite;
+    }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    #boot .err {
+      display: none; max-width: 680px; color: #b00020; background: #fff;
+      border: 1px solid #f3c2c2; border-radius: 8px; padding: 12px 14px;
+      font-size: 13px; white-space: pre-wrap; text-align: left;
+      overflow: auto; max-height: 50vh;
+    }
+    @media (prefers-color-scheme: dark) {
+      #boot .err { background: #1e1e1e; border-color: #5c2b2b; }
+    }
+  </style>
 </head>
 <body>
+  <!-- Wird angezeigt, bis Flutter den ersten Frame rendert. Bei einem
+       Startfehler erscheint hier der Fehlertext (statt eines weissen Bildschirms). -->
+  <div id="boot">
+    <div class="spin"></div>
+    <div>Money Manager wird geladen…</div>
+    <pre id="boot-error" class="err"></pre>
+  </div>
+
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
@@ -44,6 +78,36 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <script>
+    (function () {
+      var boot = document.getElementById('boot');
+      var box = document.getElementById('boot-error');
+      function show(msg) {
+        if (!box) return;
+        box.style.display = 'block';
+        box.textContent = (box.textContent ? box.textContent + '\n\n' : '') + msg;
+      }
+      // Wenn Flutter den ersten Frame zeigt, Ladeanzeige entfernen.
+      window.addEventListener('flutter-first-frame', function () {
+        if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
+      });
+      // Startfehler sichtbar machen, damit kein stummer weisser Bildschirm bleibt.
+      window.addEventListener('error', function (e) {
+        show('Fehler beim Laden: ' + (e && e.message ? e.message : e));
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        show('Fehler beim Laden: ' +
+          (e && e.reason ? (e.reason.message || e.reason) : 'unbekannt'));
+      });
+      // Falls nach 20 s noch nichts gerendert wurde: Hinweis geben.
+      setTimeout(function () {
+        if (document.getElementById('boot')) {
+          show('Die App braucht ungewoehnlich lange. Bitte Seite neu laden ' +
+            '(Strg+Shift+R) oder pruefe die Internetverbindung.');
+        }
+      }, 20000);
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
