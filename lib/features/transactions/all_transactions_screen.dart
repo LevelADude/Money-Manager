@@ -8,6 +8,7 @@ import '../../data/models/app_transaction.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
+import '../export/pdf_export.dart';
 import 'transaction_providers.dart';
 
 enum _PeriodView { day, week, month, year }
@@ -67,6 +68,49 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           _anchor = DateTime(_anchor.year + dir, 1, 1);
       }
     });
+  }
+
+  Future<void> _sharePeriodPdf({
+    required List<AppTransaction> items,
+    required Map<String, String> accountNames,
+    required Map<String, String> catNames,
+    required int income,
+    required int expense,
+  }) async {
+    final df = DateFormat('dd.MM.yyyy');
+    final sorted = [...items]
+      ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
+    final rows = [
+      for (final t in sorted)
+        [
+          df.format(t.occurredOn),
+          t.type.label,
+          accountNames[t.accountId] ?? '',
+          t.categoryId == null ? '' : (catNames[t.categoryId] ?? ''),
+          t.title,
+          switch (t.type) {
+            TransactionType.income => '+${formatCents(t.amountCents)}',
+            TransactionType.expense => '-${formatCents(t.amountCents)}',
+            TransactionType.transfer => formatCents(t.amountCents),
+          },
+        ],
+    ];
+    try {
+      await shareTransactionsPdf(
+        heading: 'Money Manager – Buchungen',
+        periodLabel: '${_label()} · ${items.length} Buchungen',
+        rows: rows,
+        incomeText: formatCents(income),
+        expenseText: formatCents(expense),
+        balanceText: formatCents(income - expense),
+        filename: 'money-manager-${_view.name}.pdf',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('PDF-Fehler: $e')));
+      }
+    }
   }
 
   String _label() {
@@ -137,7 +181,24 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Buchungen')),
+      appBar: AppBar(
+        title: const Text('Buchungen'),
+        actions: [
+          IconButton(
+            tooltip: 'Zeitraum als PDF',
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: filtered.isEmpty
+                ? null
+                : () => _sharePeriodPdf(
+                      items: filtered,
+                      accountNames: accountNames,
+                      catNames: catNames,
+                      income: income,
+                      expense: expense,
+                    ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/transactions/new'),
         icon: const Icon(Icons.add),

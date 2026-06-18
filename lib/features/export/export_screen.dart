@@ -8,12 +8,15 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../profile/profile_providers.dart';
 import '../transactions/transaction_providers.dart';
+import 'pdf_export.dart';
 
-/// Exportiert alle Buchungen als CSV (Semikolon-getrennt, Excel-freundlich).
+/// Exportiert alle Buchungen als CSV (Semikolon-getrennt, Excel-freundlich)
+/// oder als PDF-Bericht (Tabelle + Summen).
 class ExportScreen extends ConsumerWidget {
   const ExportScreen({super.key});
 
@@ -62,6 +65,57 @@ class ExportScreen extends ConsumerWidget {
     return sb.toString();
   }
 
+  Future<void> _exportPdf(BuildContext context, WidgetRef ref) async {
+    final txs = ref.read(allTransactionsProvider).asData?.value ??
+        const <AppTransaction>[];
+    final accounts =
+        ref.read(accountsProvider).asData?.value ?? const <Account>[];
+    final accountNames = {for (final a in accounts) a.id: a.name};
+    final catNames = ref.read(categoryNamesProvider);
+    final df = DateFormat('dd.MM.yyyy');
+
+    final sorted = [...txs]
+      ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
+
+    var income = 0;
+    var expense = 0;
+    final rows = <List<String>>[];
+    for (final t in sorted) {
+      if (t.type == TransactionType.income) income += t.amountCents;
+      if (t.type == TransactionType.expense) expense += t.amountCents;
+      final amount = switch (t.type) {
+        TransactionType.income => '+${formatCents(t.amountCents)}',
+        TransactionType.expense => '-${formatCents(t.amountCents)}',
+        TransactionType.transfer => formatCents(t.amountCents),
+      };
+      rows.add([
+        df.format(t.occurredOn),
+        t.type.label,
+        accountNames[t.accountId] ?? '',
+        t.categoryId == null ? '' : (catNames[t.categoryId] ?? ''),
+        t.title,
+        amount,
+      ]);
+    }
+
+    try {
+      await shareTransactionsPdf(
+        heading: 'Money Manager – Buchungen',
+        periodLabel: '${rows.length} Buchungen · Stand ${df.format(DateTime.now())}',
+        rows: rows,
+        incomeText: formatCents(income),
+        expenseText: formatCents(expense),
+        balanceText: formatCents(income - expense),
+        filename: 'money-manager-buchungen.pdf',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('PDF-Fehler: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final txCount =
@@ -70,13 +124,13 @@ class ExportScreen extends ConsumerWidget {
     final previewLines = const LineSplitter().convert(csv).take(40).join('\n');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Export (CSV)')),
+      appBar: AppBar(title: const Text('Export (CSV / PDF)')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('$txCount Buchungen · Semikolon-getrennt (Excel/Sheets)',
+            Text('$txCount Buchungen · CSV (Excel/Sheets) oder PDF-Bericht',
                 style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 12),
             Row(
@@ -95,7 +149,7 @@ class ExportScreen extends ConsumerWidget {
                             }
                           },
                     icon: const Icon(Icons.copy_all_outlined),
-                    label: const Text('Kopieren'),
+                    label: const Text('CSV kopieren'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -105,10 +159,16 @@ class ExportScreen extends ConsumerWidget {
                         ? null
                         : () => _share(context, csv),
                     icon: const Icon(Icons.ios_share),
-                    label: const Text('Teilen / Speichern'),
+                    label: const Text('CSV teilen'),
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            FilledButton.tonalIcon(
+              onPressed: txCount == 0 ? null : () => _exportPdf(context, ref),
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              label: const Text('Als PDF teilen / drucken'),
             ),
             const SizedBox(height: 16),
             Text('Vorschau (erste Zeilen):',
