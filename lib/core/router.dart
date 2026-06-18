@@ -14,6 +14,7 @@ import '../features/auth/reset_password_screen.dart';
 import '../features/backup/backup_screen.dart';
 import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
+import '../features/categories/category_rules_screen.dart';
 import '../features/debts/debts_screen.dart';
 import '../features/export/csv_import_screen.dart';
 import '../features/export/export_screen.dart';
@@ -204,6 +205,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'categories',
                     builder: (c, s) => const CategoriesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'rules',
+                    builder: (c, s) => const CategoryRulesScreen(),
                   ),
                   GoRoute(
                     path: 'export',

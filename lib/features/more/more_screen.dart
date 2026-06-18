@@ -40,6 +40,7 @@ class MoreScreen extends ConsumerWidget {
               '/more/settle'),
           tile(Icons.repeat, 'Daueraufträge', '/more/recurring'),
           tile(Icons.label_outline, 'Kategorien', '/more/categories'),
+          tile(Icons.bolt_outlined, 'Auto-Kategorien (Regeln)', '/more/rules'),
           tile(Icons.download_outlined, 'Export (CSV)', '/more/export'),
           tile(Icons.upload_file_outlined, 'CSV-Import', '/more/import'),
           const Divider(),

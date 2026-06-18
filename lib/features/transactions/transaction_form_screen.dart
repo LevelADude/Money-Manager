@@ -145,10 +145,22 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     return sum;
   }
 
-  void _onTitleSelected(String selected) {
+  void _onTitleSelected(String selected) => _applyAutoCategory(selected);
+
+  /// Setzt automatisch eine Kategorie: erst Regeln (Stichwort enthalten),
+  /// dann die zuletzt für genau diesen Titel verwendete Kategorie.
+  void _applyAutoCategory(String title) {
     if (_type == TransactionType.transfer || _categoryId != null) return;
-    final suggestion =
-        ref.read(titleCategoryProvider)[selected.trim().toLowerCase()];
+    final t = title.trim().toLowerCase();
+    if (t.isEmpty) return;
+    final rules = ref.read(categoryRulesProvider).asData?.value ?? const [];
+    for (final r in rules) {
+      if (r.keyword.isNotEmpty && t.contains(r.keyword.toLowerCase())) {
+        setState(() => _categoryId = r.categoryId);
+        return;
+      }
+    }
+    final suggestion = ref.read(titleCategoryProvider)[t];
     if (suggestion != null) setState(() => _categoryId = suggestion);
   }
 
@@ -1000,6 +1012,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           controller: controller,
                           focusNode: focusNode,
                           textCapitalization: TextCapitalization.sentences,
+                          onChanged: _applyAutoCategory,
                           decoration: const InputDecoration(
                             labelText: 'Titel (z. B. Aldi, Rewe, Aral)',
                             prefixIcon: Icon(Icons.storefront_outlined),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/local/app_cache.dart';
 import '../../data/repositories/category_repository.dart';
 import '../../data/models/category.dart';
+import '../../data/models/category_rule.dart';
 import '../auth/auth_providers.dart';
 
 final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
@@ -21,4 +22,9 @@ final categoriesProvider = StreamProvider<List<Category>>((ref) {
 final categoryNamesProvider = Provider<Map<String, String>>((ref) {
   final cats = ref.watch(categoriesProvider).asData?.value ?? const <Category>[];
   return {for (final c in cats) c.id: c.name};
+});
+
+/// Auto-Kategorisierungs-Regeln (Live).
+final categoryRulesProvider = StreamProvider<List<CategoryRule>>((ref) {
+  return ref.watch(categoryRepositoryProvider).watchRules();
 });

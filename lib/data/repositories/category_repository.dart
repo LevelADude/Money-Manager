@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../local/app_cache.dart';
 import '../models/category.dart';
+import '../models/category_rule.dart';
 
 /// Zugriff auf die Tabelle `categories` (gruppenweit) inkl. Stream + Cache.
 class CategoryRepository {
@@ -68,6 +69,39 @@ class CategoryRepository {
 
   Future<void> setActive({required String id, required bool active}) {
     return _client.from('categories').update({'active': active}).eq('id', id);
+  }
+
+  // ----- Auto-Kategorisierungs-Regeln -----
+
+  Stream<List<CategoryRule>> watchRules() async* {
+    final cached = _cache.readRows('category_rules');
+    if (cached.isNotEmpty) {
+      yield cached.map(CategoryRule.fromJson).toList();
+    }
+    try {
+      yield* _client
+          .from('category_rules')
+          .stream(primaryKey: ['id'])
+          .order('keyword')
+          .map((rows) {
+        _cache.writeRows('category_rules', rows);
+        return rows.map(CategoryRule.fromJson).toList();
+      });
+    } catch (_) {
+      // Offline: beim Cache bleiben.
+    }
+  }
+
+  Future<void> addRule({required String keyword, required String categoryId}) {
+    return _client.from('category_rules').insert({
+      'keyword': keyword.trim(),
+      'category_id': categoryId,
+    });
+  }
+
+  Future<void> deleteRule(String id) async {
+    await _client.from('category_rules').delete().eq('id', id);
+    _cache.removeFromCache('category_rules', id);
   }
 
   /// Soft-Delete (Tombstone); Buchungen behalten ihre (nun verwaiste) Referenz.
