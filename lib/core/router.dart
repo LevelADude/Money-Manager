@@ -26,6 +26,7 @@ import '../features/settle/settle_screen.dart';
 import '../features/statistics/statistics_screen.dart';
 import '../features/transactions/all_transactions_screen.dart';
 import '../features/transactions/transaction_form_screen.dart';
+import '../features/transactions/trash_screen.dart';
 import 'main_scaffold.dart';
 
 /// go_router mit persistenter Menüleiste (StatefulShellRoute) + Auth-Redirect.
@@ -155,6 +156,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'settle',
                     builder: (c, s) => const SettleScreen(),
+                  ),
+                  GoRoute(
+                    path: 'trash',
+                    builder: (c, s) => const TrashScreen(),
                   ),
                   GoRoute(
                     path: 'recurring',

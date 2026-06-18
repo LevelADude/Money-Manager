@@ -134,6 +134,45 @@ class TransactionRepository {
     _cache.removeFromCache('transactions', id);
   }
 
+  /// Gelöschte (Tombstone-)Buchungen für den Papierkorb, neueste zuerst.
+  Future<List<({AppTransaction tx, DateTime deletedAt})>>
+      deletedTransactions() async {
+    final rows = await _client
+        .from('transactions')
+        .select()
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', ascending: false)
+        .limit(200);
+    return [
+      for (final r in rows as List)
+        (
+          tx: AppTransaction.fromJson(r as Map<String, dynamic>),
+          deletedAt: DateTime.parse((r)['deleted_at'] as String),
+        ),
+    ];
+  }
+
+  /// Stellt eine gelöschte Buchung wieder her.
+  Future<void> restoreTransaction(String id) async {
+    await _client.from('transactions').update({'deleted_at': null}).eq('id', id);
+  }
+
+  /// Entfernt eine Buchung endgültig (inkl. Splits via FK-Cascade).
+  Future<void> purgeTransaction(String id) async {
+    await _client.from('transactions').delete().eq('id', id);
+    _cache.removeFromCache('transactions', id);
+  }
+
+  /// Räumt Tombstones auf, die älter als [age] sind (endgültig).
+  Future<void> purgeOlderThan(Duration age) async {
+    final cutoff = DateTime.now().toUtc().subtract(age).toIso8601String();
+    await _client
+        .from('transactions')
+        .delete()
+        .not('deleted_at', 'is', null)
+        .lt('deleted_at', cutoff);
+  }
+
   /// Zuletzt verwendete Titel (für Autovervollständigung).
   Future<List<String>> recentTitles({int limit = 50}) async {
     final rows = await _client

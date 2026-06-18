@@ -92,6 +92,14 @@ final titleSuggestionsProvider = Provider<List<String>>((ref) {
   return result;
 });
 
+/// Papierkorb: gelöschte Buchungen (räumt zugleich Tombstones > 30 Tage auf).
+final deletedTransactionsProvider =
+    FutureProvider<List<({AppTransaction tx, DateTime deletedAt})>>((ref) async {
+  final repo = ref.watch(transactionRepositoryProvider);
+  await repo.purgeOlderThan(const Duration(days: 30));
+  return repo.deletedTransactions();
+});
+
 /// Alle bisher vergebenen Tags (alphabetisch, eindeutig) – für Vorschläge
 /// im Formular und den Tag-Filter in „Buchungen".
 final allTagsProvider = Provider<List<String>>((ref) {

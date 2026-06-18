@@ -40,6 +40,7 @@ class MoreScreen extends ConsumerWidget {
           tile(Icons.label_outline, 'Kategorien', '/more/categories'),
           tile(Icons.download_outlined, 'Export (CSV)', '/more/export'),
           const Divider(),
+          tile(Icons.delete_outline, 'Papierkorb', '/more/trash'),
           tile(Icons.palette_outlined, 'Einstellungen', '/more/settings'),
           tile(Icons.account_circle_outlined, 'Profil', '/more/profile'),
           if (isAdmin)
