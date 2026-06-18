@@ -34,6 +34,8 @@ class MoreScreen extends ConsumerWidget {
               '/more/cashflow'),
           tile(Icons.flag_outlined, 'Sparziele & Töpfe', '/more/goals'),
           tile(Icons.trending_down, 'Schulden & Kredite', '/more/debts'),
+          tile(Icons.handshake_outlined, 'Ausgleich (wer schuldet wem)',
+              '/more/settle'),
           tile(Icons.repeat, 'Daueraufträge', '/more/recurring'),
           tile(Icons.label_outline, 'Kategorien', '/more/categories'),
           tile(Icons.download_outlined, 'Export (CSV)', '/more/export'),

@@ -22,6 +22,7 @@ import '../features/recurring/recurring_screen.dart';
 import '../features/savings/savings_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/settle/settle_screen.dart';
 import '../features/statistics/statistics_screen.dart';
 import '../features/transactions/all_transactions_screen.dart';
 import '../features/transactions/transaction_form_screen.dart';
@@ -150,6 +151,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'debts',
                     builder: (c, s) => const DebtsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'settle',
+                    builder: (c, s) => const SettleScreen(),
                   ),
                   GoRoute(
                     path: 'recurring',
