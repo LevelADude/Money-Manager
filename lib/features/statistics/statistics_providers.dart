@@ -30,6 +30,53 @@ class StatsSummary {
   int get balanceCents => incomeCents - expenseCents;
 }
 
+/// Summen je Monat (für den Monatstrend, unabhängig vom gewählten Zeitraum).
+class MonthTotals {
+  const MonthTotals({
+    required this.month,
+    required this.incomeCents,
+    required this.expenseCents,
+  });
+
+  final DateTime month; // erster Tag des Monats
+  final int incomeCents;
+  final int expenseCents;
+
+  int get netCents => incomeCents - expenseCents;
+}
+
+/// Einnahmen/Ausgaben der letzten 12 Monate (ältester zuerst).
+final monthlyTotalsProvider = Provider<List<MonthTotals>>((ref) {
+  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+      const <AppTransaction>[];
+  final now = DateTime.now();
+  final months = [for (var i = 11; i >= 0; i--) DateTime(now.year, now.month - i, 1)];
+  final income = {for (final m in months) _key(m): 0};
+  final expense = {for (final m in months) _key(m): 0};
+
+  for (final t in txs) {
+    if (t.type == TransactionType.transfer) continue;
+    final k = _key(DateTime(t.occurredOn.year, t.occurredOn.month, 1));
+    if (!income.containsKey(k)) continue; // außerhalb des 12-Monats-Fensters
+    if (t.type == TransactionType.income) {
+      income[k] = income[k]! + t.amountCents;
+    } else {
+      expense[k] = expense[k]! + t.amountCents;
+    }
+  }
+
+  return [
+    for (final m in months)
+      MonthTotals(
+        month: m,
+        incomeCents: income[_key(m)]!,
+        expenseCents: expense[_key(m)]!,
+      ),
+  ];
+});
+
+String _key(DateTime m) => '${m.year}-${m.month}';
+
 final statsProvider = Provider<StatsSummary>((ref) {
   final period = ref.watch(periodFilterProvider);
   final txs = ref.watch(allTransactionsProvider).asData?.value ??
