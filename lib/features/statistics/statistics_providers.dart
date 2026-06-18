@@ -77,6 +77,134 @@ final monthlyTotalsProvider = Provider<List<MonthTotals>>((ref) {
 
 String _key(DateTime m) => '${m.year}-${m.month}';
 
+/// Zeitfenster (start inкl., end exkl.) des aktuellen bzw. vorherigen Zeitraums.
+({DateTime start, DateTime end})? rangeFor(StatsPeriod p, DateTime now,
+    {required bool previous}) {
+  switch (p) {
+    case StatsPeriod.thisDay:
+      final base = DateTime(now.year, now.month, now.day)
+          .add(Duration(days: previous ? -1 : 0));
+      return (start: base, end: base.add(const Duration(days: 1)));
+    case StatsPeriod.thisWeek:
+      final today = DateTime(now.year, now.month, now.day);
+      final startThis = today.subtract(Duration(days: today.weekday - 1));
+      final start = startThis.add(Duration(days: previous ? -7 : 0));
+      return (start: start, end: start.add(const Duration(days: 7)));
+    case StatsPeriod.thisMonth:
+      final m = DateTime(now.year, now.month + (previous ? -1 : 0), 1);
+      return (start: m, end: DateTime(m.year, m.month + 1, 1));
+    case StatsPeriod.thisYear:
+      final y = DateTime(now.year + (previous ? -1 : 0), 1, 1);
+      return (start: y, end: DateTime(y.year + 1, 1, 1));
+    case StatsPeriod.all:
+      return null;
+  }
+}
+
+/// Vergleich des gewählten Zeitraums mit dem vorherigen (Vortag/-woche/-monat/-jahr).
+class PeriodComparison {
+  const PeriodComparison({
+    required this.curExpense,
+    required this.prevExpense,
+    required this.curIncome,
+    required this.prevIncome,
+    required this.hasPrevious,
+    required this.prevLabel,
+  });
+
+  final int curExpense;
+  final int prevExpense;
+  final int curIncome;
+  final int prevIncome;
+  final bool hasPrevious;
+  final String prevLabel;
+
+  /// Veränderung Ausgaben in Prozent (null wenn kein Vorwert).
+  double? get expenseDeltaPct =>
+      prevExpense == 0 ? null : (curExpense - prevExpense) / prevExpense * 100;
+  double? get incomeDeltaPct =>
+      prevIncome == 0 ? null : (curIncome - prevIncome) / prevIncome * 100;
+}
+
+final periodComparisonProvider = Provider<PeriodComparison>((ref) {
+  final p = ref.watch(periodFilterProvider);
+  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+      const <AppTransaction>[];
+  final now = DateTime.now();
+  final cur = rangeFor(p, now, previous: false);
+  final prev = rangeFor(p, now, previous: true);
+
+  ({int income, int expense}) sums(({DateTime start, DateTime end})? r) {
+    if (r == null) return (income: 0, expense: 0);
+    var inc = 0;
+    var exp = 0;
+    for (final t in txs) {
+      if (t.occurredOn.isBefore(r.start) || !t.occurredOn.isBefore(r.end)) {
+        continue;
+      }
+      if (t.type == TransactionType.income) inc += t.amountCents;
+      if (t.type == TransactionType.expense) exp += t.amountCents;
+    }
+    return (income: inc, expense: exp);
+  }
+
+  final c = sums(cur);
+  final pv = sums(prev);
+  final label = switch (p) {
+    StatsPeriod.thisDay => 'Vortag',
+    StatsPeriod.thisWeek => 'Vorwoche',
+    StatsPeriod.thisMonth => 'Vormonat',
+    StatsPeriod.thisYear => 'Vorjahr',
+    StatsPeriod.all => '',
+  };
+
+  return PeriodComparison(
+    curExpense: c.expense,
+    prevExpense: pv.expense,
+    curIncome: c.income,
+    prevIncome: pv.income,
+    hasPrevious: prev != null,
+    prevLabel: label,
+  );
+});
+
+/// Buchungen einer Kategorie im gewählten Zeitraum (für Drill-down).
+/// [expense] = true: Ausgaben, sonst Einnahmen. [categoryId] null = "Ohne".
+List<AppTransaction> categoryDrilldown(
+  WidgetRef ref, {
+  required String? categoryId,
+  required bool expense,
+}) {
+  final p = ref.read(periodFilterProvider);
+  final txs = ref.read(allTransactionsProvider).asData?.value ??
+      const <AppTransaction>[];
+  final splitsByTx = ref.read(splitsByTransactionProvider);
+  final type = expense ? TransactionType.expense : TransactionType.income;
+  final result = txs.where((t) {
+    if (t.type != type) return false;
+    if (!p.contains(t.occurredOn)) return false;
+    final splits = splitsByTx[t.id];
+    if (splits != null && splits.isNotEmpty) {
+      return splits.any((s) => s.categoryId == categoryId);
+    }
+    return t.categoryId == categoryId;
+  }).toList()
+    ..sort((a, b) => b.amountCents.compareTo(a.amountCents));
+  return result;
+}
+
+/// Größte Einzel-Ausgaben im gewählten Zeitraum.
+final topExpensesProvider = Provider<List<AppTransaction>>((ref) {
+  final p = ref.watch(periodFilterProvider);
+  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+      const <AppTransaction>[];
+  final list = txs
+      .where((t) => t.type == TransactionType.expense && p.contains(t.occurredOn))
+      .toList()
+    ..sort((a, b) => b.amountCents.compareTo(a.amountCents));
+  return list.take(5).toList();
+});
+
 final statsProvider = Provider<StatsSummary>((ref) {
   final period = ref.watch(periodFilterProvider);
   final txs = ref.watch(allTransactionsProvider).asData?.value ??
