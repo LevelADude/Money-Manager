@@ -9,6 +9,8 @@ import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../export/pdf_export.dart';
+import 'person_filter.dart';
+import 'person_filter_button.dart';
 import 'transaction_providers.dart';
 
 enum _PeriodView { day, week, month, year }
@@ -145,8 +147,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final txs = ref.watch(allTransactionsProvider).asData?.value ??
-        const <AppTransaction>[];
+    final txs = ref.watch(personFilteredTransactionsProvider);
     final accounts =
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
@@ -198,6 +199,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       appBar: AppBar(
         title: const Text('Buchungen'),
         actions: [
+          const PersonFilterButton(),
           IconButton(
             tooltip: 'Heute',
             icon: const Icon(Icons.today_outlined),

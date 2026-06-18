@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
-import '../accounts/account_providers.dart';
+import '../transactions/person_filter.dart';
 import '../transactions/transaction_providers.dart';
 import 'period_filter.dart';
 
@@ -47,8 +46,7 @@ class MonthTotals {
 
 /// Einnahmen/Ausgaben der letzten 12 Monate (ältester zuerst).
 final monthlyTotalsProvider = Provider<List<MonthTotals>>((ref) {
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
-      const <AppTransaction>[];
+  final txs = ref.watch(personFilteredTransactionsProvider);
   final now = DateTime.now();
   final months = [for (var i = 11; i >= 0; i--) DateTime(now.year, now.month - i, 1)];
   final income = {for (final m in months) _key(m): 0};
@@ -128,8 +126,7 @@ class PeriodComparison {
 
 final periodComparisonProvider = Provider<PeriodComparison>((ref) {
   final p = ref.watch(periodFilterProvider);
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
-      const <AppTransaction>[];
+  final txs = ref.watch(personFilteredTransactionsProvider);
   final now = DateTime.now();
   final cur = rangeFor(p, now, previous: false);
   final prev = rangeFor(p, now, previous: true);
@@ -176,8 +173,7 @@ List<AppTransaction> categoryDrilldown(
   required bool expense,
 }) {
   final p = ref.read(periodFilterProvider);
-  final txs = ref.read(allTransactionsProvider).asData?.value ??
-      const <AppTransaction>[];
+  final txs = ref.read(personFilteredTransactionsProvider);
   final splitsByTx = ref.read(splitsByTransactionProvider);
   final type = expense ? TransactionType.expense : TransactionType.income;
   final result = txs.where((t) {
@@ -196,8 +192,7 @@ List<AppTransaction> categoryDrilldown(
 /// Größte Einzel-Ausgaben im gewählten Zeitraum.
 final topExpensesProvider = Provider<List<AppTransaction>>((ref) {
   final p = ref.watch(periodFilterProvider);
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
-      const <AppTransaction>[];
+  final txs = ref.watch(personFilteredTransactionsProvider);
   final list = txs
       .where((t) => t.type == TransactionType.expense && p.contains(t.occurredOn))
       .toList()
@@ -207,10 +202,8 @@ final topExpensesProvider = Provider<List<AppTransaction>>((ref) {
 
 final statsProvider = Provider<StatsSummary>((ref) {
   final period = ref.watch(periodFilterProvider);
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
-      const <AppTransaction>[];
-  final accounts =
-      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  final txs = ref.watch(personFilteredTransactionsProvider);
+  final accounts = ref.watch(personFilteredAccountsProvider);
   final splitsByTx = ref.watch(splitsByTransactionProvider);
 
   var income = 0;

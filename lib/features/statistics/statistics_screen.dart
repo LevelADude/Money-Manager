@@ -9,6 +9,7 @@ import '../../data/models/app_transaction.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
+import '../transactions/person_filter_button.dart';
 import 'period_filter.dart';
 import 'statistics_providers.dart';
 
@@ -91,7 +92,10 @@ class StatisticsScreen extends ConsumerWidget {
         id == null ? 'Ohne Kategorie' : (catNames[id] ?? 'Ohne Kategorie');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistik')),
+      appBar: AppBar(
+        title: const Text('Statistik'),
+        actions: const [PersonFilterButton()],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
