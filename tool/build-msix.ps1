@@ -30,8 +30,28 @@ Write-Host "1/3  Windows-Release bauen (mit Supabase-Konfig) ..."
 
 Write-Host "2/3  MSIX-Manifest + Assets erzeugen ..."
 # Erzeugt AppxManifest.xml + Logos im Release-Ordner. Das eingebaute Packen
-# schlägt ggf. fehl (Side-by-Side) -> ignorieren, wir packen selbst.
-& $dart run msix:create --build-windows false --output-path "$root\build\windows\msix" --output-name MoneyManager
+# schlägt auf manchen Systemen fehl (Side-by-Side) -> wir fangen den Fehler ab
+# und packen anschließend selbst mit den Windows-SDK-Tools (Schritt 3).
+try {
+  $ErrorActionPreference = "Continue"
+  & $dart run msix:create --build-windows false --output-path "$root\build\windows\msix" --output-name MoneyManager
+} catch {
+  Write-Host "   (eingebautes Packen uebersprungen: $($_.Exception.Message))"
+} finally {
+  $ErrorActionPreference = "Stop"
+}
+if (-not (Test-Path "$root\build\windows\x64\runner\Release\AppxManifest.xml")) {
+  throw "AppxManifest.xml wurde nicht erzeugt - msix:create ist komplett fehlgeschlagen."
+}
+
+# Publisher im Manifest exakt an das Signatur-Zertifikat angleichen, sonst
+# scheitert signtool mit 0x8007000b (Publisher-Mismatch).
+$cer = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("$root\windows\certs\mm.cer")
+$manifestPath = "$root\build\windows\x64\runner\Release\AppxManifest.xml"
+[xml]$mx = Get-Content $manifestPath
+$mx.Package.Identity.Publisher = $cer.Subject
+$mx.Save($manifestPath)
+Write-Host "     Manifest-Publisher = $($cer.Subject)"
 
 Write-Host "3/3  Mit Windows-SDK packen + signieren ..."
 $make = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter makeappx.exe -ErrorAction SilentlyContinue |
