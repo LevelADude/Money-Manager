@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/local/app_cache.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/transaction_split.dart';
+import '../../data/models/transaction_template.dart';
 import '../../data/repositories/receipt_storage.dart';
 import '../../data/repositories/split_repository.dart';
+import '../../data/repositories/template_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../auth/auth_providers.dart';
 
@@ -20,6 +22,18 @@ final splitRepositoryProvider = Provider<SplitRepository>((ref) {
     ref.watch(supabaseClientProvider),
     ref.watch(appCacheProvider),
   );
+});
+
+final templateRepositoryProvider = Provider<TemplateRepository>((ref) {
+  return TemplateRepository(
+    ref.watch(supabaseClientProvider),
+    ref.watch(appCacheProvider),
+  );
+});
+
+/// Live-Liste aller Buchungs-Vorlagen.
+final templatesProvider = StreamProvider<List<TransactionTemplate>>((ref) {
+  return ref.watch(templateRepositoryProvider).watchAll();
 });
 
 /// Live-Liste ALLER Aufteilungen (für Statistik-Aufschlüsselung + Formular).

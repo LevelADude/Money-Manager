@@ -7,7 +7,7 @@
 --   3. Fertig - alle Tabellen, Sicherheitsregeln, der Beleg-Speicher und die
 --      Admin-Logik (erste registrierte Person = Admin) werden angelegt.
 --
--- Enthaelt die Migrationen 0001-0011 in der richtigen Reihenfolge.
+-- Enthaelt die Migrationen 0001-0012 in der richtigen Reihenfolge.
 -- =====================================================================
 
 
@@ -707,4 +707,45 @@ alter table public.categories
 
 alter table public.accounts
   add column if not exists sort_order integer not null default 0;
+
+
+-- ###################################################################
+-- ## Migration: 0012_templates.sql
+-- ###################################################################
+
+-- =====================================================================
+-- Money-Manager Â· 0012_templates.sql Â· Buchungs-Vorlagen (Favoriten)
+-- =====================================================================
+-- Wiederverwendbare Vorlagen fÃ¼r hÃ¤ufige Buchungen (z. B. â€žWocheneinkauf").
+-- Gruppenweit geteilt. Keine Auswirkung auf Salden â€“ nur zum VorbefÃ¼llen.
+-- =====================================================================
+
+create table if not exists public.transaction_templates (
+  id           uuid        primary key default gen_random_uuid(),
+  name         text        not null,
+  account_id   uuid        references public.accounts(id) on delete set null,
+  type         text        not null default 'expense',
+  amount_cents bigint      not null default 0,
+  category_id  uuid        references public.categories(id) on delete set null,
+  title        text        not null default '',
+  note         text        not null default '',
+  tags         text[]      not null default '{}',
+  created_by   uuid        references public.profiles(id) on delete set null default auth.uid(),
+  created_at   timestamptz not null default now()
+);
+
+alter table public.transaction_templates enable row level security;
+drop policy if exists transaction_templates_all on public.transaction_templates;
+create policy transaction_templates_all on public.transaction_templates
+  for all to authenticated using (true) with check (true);
+
+do $$
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+  begin
+    alter publication supabase_realtime add table public.transaction_templates;
+  exception when duplicate_object then null; end;
+end $$;
 

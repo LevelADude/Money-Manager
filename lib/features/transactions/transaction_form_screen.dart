@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
+import '../../data/models/transaction_template.dart';
 import '../../shared/calculator_sheet.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/money.dart';
@@ -285,6 +286,159 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     ref.invalidate(allTransactionsProvider);
     ref.invalidate(allSplitsProvider);
     if (mounted) context.go(_backTarget);
+  }
+
+  Future<void> _saveAsTemplate() async {
+    final nameCtrl = TextEditingController(text: _titleText);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Als Vorlage speichern'),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Name der Vorlage'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()),
+            child: const Text('Speichern'),
+          ),
+        ],
+      ),
+    );
+    if (name == null || name.isEmpty) return;
+    await ref.read(templateRepositoryProvider).add(
+          name: name,
+          accountId: _accountId,
+          type: _type,
+          amountCents: parseToCents(_amount.text) ?? 0,
+          categoryId: _categoryId,
+          title: _titleText,
+          note: _note.text.trim(),
+          tags: _tags,
+        );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vorlage gespeichert')),
+      );
+    }
+  }
+
+  Future<void> _pickTemplate() async {
+    final chosen = await showModalBottomSheet<TransactionTemplate>(
+      context: context,
+      builder: (ctx) => Consumer(
+        builder: (ctx, ref2, _) {
+          final templates =
+              ref2.watch(templatesProvider).asData?.value ?? const [];
+          return SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                const ListTile(
+                  title: Text('Vorlage wählen'),
+                  dense: true,
+                ),
+                if (templates.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                        'Noch keine Vorlagen. Speichere eine über das '
+                        'Lesezeichen-Symbol oben.'),
+                  ),
+                for (final t in templates)
+                  ListTile(
+                    leading: const Icon(Icons.bookmark_outline),
+                    title: Text(t.name),
+                    subtitle: Text(formatCents(t.amountCents)),
+                    onTap: () => Navigator.pop(ctx, t),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () =>
+                          ref2.read(templateRepositoryProvider).delete(t.id),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    if (chosen != null) _applyTemplate(chosen);
+  }
+
+  void _applyTemplate(TransactionTemplate t) {
+    setState(() {
+      _type = t.type;
+      if (t.accountId != null) _accountId = t.accountId;
+      _amount.text = t.amountCents > 0 ? centsToInput(t.amountCents) : '';
+      _categoryId = t.categoryId;
+      _titleInitial = t.title;
+      _titleCtrl?.text = t.title;
+      _note.text = t.note;
+      _tags = [...t.tags];
+      _splitMode = false;
+    });
+  }
+
+  /// Legt eine Kopie der aktuellen Buchung an und öffnet sie zum Bearbeiten.
+  Future<void> _duplicate() async {
+    final cents = parseToCents(_amount.text);
+    if (cents == null || cents <= 0 || _accountId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte zuerst gültige Werte eingeben.')),
+      );
+      return;
+    }
+    final splitActive = _splitMode && _type != TransactionType.transfer;
+    final splitData = <({String? categoryId, int amountCents, String note})>[];
+    if (splitActive) {
+      for (final r in _splitRows) {
+        final c = parseToCents(r.amountCtrl.text) ?? 0;
+        if (c > 0) {
+          splitData.add((categoryId: r.categoryId, amountCents: c, note: ''));
+        }
+      }
+    }
+    setState(() => _saving = true);
+    try {
+      final repo = ref.read(transactionRepositoryProvider);
+      final newId = await repo.addTransaction(
+        accountId: _accountId!,
+        type: _type,
+        amountCents: cents,
+        occurredOn: _date,
+        title: _titleText,
+        note: _note.text.trim(),
+        categoryId: splitActive ? null : _categoryId,
+        transferAccountId: _transferTargetId,
+        tags: _tags,
+      );
+      if (splitData.isNotEmpty) {
+        await ref
+            .read(splitRepositoryProvider)
+            .replaceForTransaction(newId, splitData);
+      }
+      ref.invalidate(allTransactionsProvider);
+      ref.invalidate(allSplitsProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Buchung dupliziert')),
+        );
+        context.go('/transactions/$newId');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+      }
+    }
   }
 
   Future<ImageSource?> _chooseSource() {
@@ -572,6 +726,17 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       appBar: AppBar(
         title: Text(widget.isEditing ? 'Buchung bearbeiten' : 'Neue Buchung'),
         actions: [
+          IconButton(
+            tooltip: 'Als Vorlage speichern',
+            icon: const Icon(Icons.bookmark_add_outlined),
+            onPressed: _saving ? null : _saveAsTemplate,
+          ),
+          if (widget.isEditing)
+            IconButton(
+              tooltip: 'Duplizieren',
+              icon: const Icon(Icons.copy_all_outlined),
+              onPressed: _saving ? null : _duplicate,
+            ),
           if (widget.isEditing)
             IconButton(
               tooltip: 'Löschen',
@@ -594,6 +759,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (!widget.isEditing) ...[
+                      OutlinedButton.icon(
+                        onPressed: _pickTemplate,
+                        icon: const Icon(Icons.bookmarks_outlined),
+                        label: const Text('Aus Vorlage'),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     SegmentedButton<TransactionType>(
                       segments: const [
                         ButtonSegment(
