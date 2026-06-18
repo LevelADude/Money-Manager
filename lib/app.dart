@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router.dart';
 import 'core/theme.dart';
+import 'features/settings/lock_gate.dart';
 import 'features/settings/settings_providers.dart';
 
 class MoneyManagerApp extends ConsumerWidget {
@@ -20,6 +21,7 @@ class MoneyManagerApp extends ConsumerWidget {
       darkTheme: AppTheme.dark(seed),
       themeMode: settings.themeMode,
       routerConfig: router,
+      builder: (context, child) => LockGate(child: child ?? const SizedBox()),
     );
   }
 }

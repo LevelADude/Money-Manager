@@ -74,9 +74,97 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Beträge verbergen'),
             subtitle: const Text('Zeigt „••••" statt Geldbeträgen'),
           ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: settings.lockEnabled,
+            onChanged: (v) async {
+              if (v) {
+                final pin = await _askNewPin(context);
+                if (pin != null) await notifier.setPin(pin);
+              } else {
+                await notifier.disableLock();
+              }
+            },
+            secondary: const Icon(Icons.lock_outline),
+            title: const Text('App-Sperre (PIN)'),
+            subtitle: const Text('PIN-Abfrage beim Start und nach Pause'),
+          ),
+          if (settings.lockEnabled)
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final pin = await _askNewPin(context);
+                    if (pin != null) await notifier.setPin(pin);
+                  },
+                  icon: const Icon(Icons.password),
+                  label: const Text('PIN ändern'),
+                ),
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  /// Dialog zum Festlegen einer neuen PIN (4–6 Ziffern, zweimal eingeben).
+  Future<String?> _askNewPin(BuildContext context) async {
+    final pin1 = TextEditingController();
+    final pin2 = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('PIN festlegen'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: pin1,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 6,
+                decoration: const InputDecoration(labelText: 'PIN (4–6 Ziffern)'),
+                validator: (v) {
+                  final t = (v ?? '').trim();
+                  if (t.length < 4) return 'Mindestens 4 Ziffern';
+                  if (int.tryParse(t) == null) return 'Nur Ziffern';
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: pin2,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 6,
+                decoration: const InputDecoration(labelText: 'PIN wiederholen'),
+                validator: (v) =>
+                    (v ?? '').trim() != pin1.text.trim() ? 'Stimmt nicht überein' : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, pin1.text.trim());
+              }
+            },
+            child: const Text('Speichern'),
+          ),
+        ],
+      ),
+    );
+    return result;
   }
 }
 

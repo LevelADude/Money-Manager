@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,6 +13,7 @@ class AppSettings {
     this.themeMode = ThemeMode.system,
     this.seedColor = 0xFF2E7D32,
     this.hideAmounts = false,
+    this.lockEnabled = false,
   });
 
   final ThemeMode themeMode;
@@ -17,15 +22,20 @@ class AppSettings {
   /// Beträge in der Oberfläche verbergen (Privatsphäre).
   final bool hideAmounts;
 
+  /// App-Sperre per PIN aktiv.
+  final bool lockEnabled;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     int? seedColor,
     bool? hideAmounts,
+    bool? lockEnabled,
   }) =>
       AppSettings(
         themeMode: themeMode ?? this.themeMode,
         seedColor: seedColor ?? this.seedColor,
         hideAmounts: hideAmounts ?? this.hideAmounts,
+        lockEnabled: lockEnabled ?? this.lockEnabled,
       );
 }
 
@@ -45,6 +55,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kMode = 'settings_theme_mode';
   static const _kSeed = 'settings_seed_color';
   static const _kHide = 'settings_hide_amounts';
+  static const _kPinHash = 'settings_pin_hash';
+  static const _kPinSalt = 'settings_pin_salt';
 
   @override
   AppSettings build() {
@@ -55,12 +67,41 @@ class SettingsNotifier extends Notifier<AppSettings> {
       themeMode: ThemeMode.values[modeIdx.clamp(0, ThemeMode.values.length - 1)],
       seedColor: seed,
       hideAmounts: prefs.getBool(_kHide) ?? false,
+      lockEnabled: prefs.getString(_kPinHash) != null,
     );
   }
 
   Future<void> setHideAmounts(bool hide) async {
     await ref.read(sharedPrefsProvider).setBool(_kHide, hide);
     state = state.copyWith(hideAmounts: hide);
+  }
+
+  String _hash(String pin, String salt) =>
+      sha256.convert(utf8.encode('$salt:$pin')).toString();
+
+  /// Setzt/ändert die PIN und aktiviert die App-Sperre.
+  Future<void> setPin(String pin) async {
+    final prefs = ref.read(sharedPrefsProvider);
+    final salt = base64Url.encode(
+        List<int>.generate(16, (_) => Random.secure().nextInt(256)));
+    await prefs.setString(_kPinSalt, salt);
+    await prefs.setString(_kPinHash, _hash(pin, salt));
+    state = state.copyWith(lockEnabled: true);
+  }
+
+  Future<void> disableLock() async {
+    final prefs = ref.read(sharedPrefsProvider);
+    await prefs.remove(_kPinHash);
+    await prefs.remove(_kPinSalt);
+    state = state.copyWith(lockEnabled: false);
+  }
+
+  bool verifyPin(String pin) {
+    final prefs = ref.read(sharedPrefsProvider);
+    final salt = prefs.getString(_kPinSalt);
+    final hash = prefs.getString(_kPinHash);
+    if (salt == null || hash == null) return true;
+    return _hash(pin, salt) == hash;
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
