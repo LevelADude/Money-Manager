@@ -11,6 +11,7 @@ import '../features/admin/admin_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
+import '../features/debts/debts_screen.dart';
 import '../features/export/export_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/planning/cashflow_screen.dart';
@@ -145,6 +146,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'goals',
                     builder: (c, s) => const SavingsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'debts',
+                    builder: (c, s) => const DebtsScreen(),
                   ),
                   GoRoute(
                     path: 'recurring',
