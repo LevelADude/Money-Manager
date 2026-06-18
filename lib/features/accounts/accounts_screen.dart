@@ -8,6 +8,7 @@ import '../../shared/category_icons.dart';
 import '../../shared/money_text.dart';
 import '../profile/profile_providers.dart';
 import '../recurring/recurring_providers.dart';
+import '../reminders/reminders_providers.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
 
@@ -52,6 +53,18 @@ class AccountsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Konten'),
         actions: [
+          Builder(builder: (context) {
+            final count = ref.watch(remindersProvider).length;
+            return IconButton(
+              tooltip: 'Erinnerungen',
+              icon: Badge(
+                isLabelVisible: count > 0,
+                label: Text('$count'),
+                child: const Icon(Icons.notifications_outlined),
+              ),
+              onPressed: () => context.go('/more/reminders'),
+            );
+          }),
           IconButton(
             tooltip: 'Suche',
             icon: const Icon(Icons.search),

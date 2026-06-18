@@ -22,6 +22,7 @@ import '../features/planning/planning_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/recurring/recurring_form_screen.dart';
 import '../features/recurring/recurring_screen.dart';
+import '../features/reminders/reminders_screen.dart';
 import '../features/savings/savings_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/settings/settings_screen.dart';
@@ -179,6 +180,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'activity',
                     builder: (c, s) => const ActivityScreen(),
+                  ),
+                  GoRoute(
+                    path: 'reminders',
+                    builder: (c, s) => const RemindersScreen(),
                   ),
                   GoRoute(
                     path: 'recurring',
