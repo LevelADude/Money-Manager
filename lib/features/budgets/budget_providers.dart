@@ -5,6 +5,8 @@ import '../../data/models/app_transaction.dart';
 import '../../data/models/budget.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../auth/auth_providers.dart';
+import '../currency/currency_providers.dart';
+import '../settings/settings_providers.dart';
 import '../transactions/transaction_providers.dart';
 
 final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
@@ -30,6 +32,9 @@ final monthlySpentByCategoryProvider = Provider<Map<String, int>>((ref) {
   final txs = ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
   final splitsByTx = ref.watch(splitsByTransactionProvider);
+  final convert = ref.watch(converterProvider);
+  final curOf = ref.watch(accountCurrencyProvider);
+  final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
   final now = DateTime.now();
   final map = <String, int>{};
   for (final t in txs) {
@@ -37,17 +42,19 @@ final monthlySpentByCategoryProvider = Provider<Map<String, int>>((ref) {
     if (t.occurredOn.year != now.year || t.occurredOn.month != now.month) {
       continue;
     }
+    final code = curOf[t.accountId] ?? base;
     final splits = splitsByTx[t.id];
     if (splits != null && splits.isNotEmpty) {
       for (final s in splits) {
         if (s.categoryId == null) continue;
-        map.update(s.categoryId!, (v) => v + s.amountCents,
-            ifAbsent: () => s.amountCents);
+        final v = convert(s.amountCents, code);
+        map.update(s.categoryId!, (x) => x + v, ifAbsent: () => v);
       }
     } else {
       final cat = t.categoryId;
       if (cat == null) continue;
-      map.update(cat, (v) => v + t.amountCents, ifAbsent: () => t.amountCents);
+      final v = convert(t.amountCents, code);
+      map.update(cat, (x) => x + v, ifAbsent: () => v);
     }
   }
   return map;

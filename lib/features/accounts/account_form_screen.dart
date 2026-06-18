@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/account.dart';
 import '../../shared/money.dart';
+import '../currency/currency_providers.dart';
 import 'account_providers.dart';
 
 /// Konto anlegen oder bearbeiten.
@@ -24,6 +25,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   final _opening = TextEditingController(text: '0,00');
   final _creditLimit = TextEditingController();
   AccountType _type = AccountType.bank;
+  String _currency = 'EUR';
   bool _includeInNetWorth = true;
   bool _saving = false;
   bool _prefilled = false;
@@ -43,6 +45,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       if (a.id == widget.accountId) {
         _name.text = a.name;
         _type = a.type;
+        _currency = a.currency;
         _opening.text = centsToInput(a.openingBalanceCents);
         _creditLimit.text =
             a.creditLimitCents == null ? '' : centsToInput(a.creditLimitCents!);
@@ -68,6 +71,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           type: _type,
           openingBalanceCents: openingCents,
           includeInNetWorth: _includeInNetWorth,
+          currency: _currency,
           creditLimitCents: creditCents,
         );
       } else {
@@ -76,6 +80,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           type: _type,
           openingBalanceCents: openingCents,
           includeInNetWorth: _includeInNetWorth,
+          currency: _currency,
           creditLimitCents: creditCents,
         );
       }
@@ -127,6 +132,22 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                     DropdownMenuItem(value: t, child: Text(t.label)),
                 ],
                 onChanged: (v) => setState(() => _type = v ?? AccountType.bank),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: supportedCurrencies.contains(_currency)
+                    ? _currency
+                    : 'EUR',
+                decoration: const InputDecoration(
+                  labelText: 'Währung',
+                  prefixIcon: Icon(Icons.currency_exchange),
+                ),
+                items: [
+                  for (final c in supportedCurrencies)
+                    DropdownMenuItem(
+                        value: c, child: Text('$c (${currencySymbol(c)})')),
+                ],
+                onChanged: (v) => setState(() => _currency = v ?? 'EUR'),
               ),
               const SizedBox(height: 16),
               TextFormField(

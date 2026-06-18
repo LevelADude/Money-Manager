@@ -13,6 +13,7 @@ class MoneyText extends ConsumerWidget {
     this.style,
     this.prefix = '',
     this.textAlign,
+    this.currency,
   });
 
   final int cents;
@@ -20,10 +21,15 @@ class MoneyText extends ConsumerWidget {
   final String prefix;
   final TextAlign? textAlign;
 
+  /// Wenn gesetzt, wird in dieser Währung formatiert (statt Hauptwährung).
+  final String? currency;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hide = ref.watch(settingsProvider.select((s) => s.hideAmounts));
-    final text = hide ? '••••' : '$prefix${formatCents(cents)}';
+    final value =
+        currency == null ? formatCents(cents) : formatMoney(cents, currency!);
+    final text = hide ? '••••' : '$prefix$value';
     return Text(text, style: style, textAlign: textAlign);
   }
 }

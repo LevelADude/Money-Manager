@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/app_cache.dart';
+import '../../shared/money.dart' show gBaseCurrency;
 
 /// App-Einstellungen (Theme-Modus + Akzentfarbe), lokal gespeichert.
 class AppSettings {
@@ -14,6 +15,7 @@ class AppSettings {
     this.seedColor = 0xFF2E7D32,
     this.hideAmounts = false,
     this.lockEnabled = false,
+    this.baseCurrency = 'EUR',
   });
 
   final ThemeMode themeMode;
@@ -25,17 +27,22 @@ class AppSettings {
   /// App-Sperre per PIN aktiv.
   final bool lockEnabled;
 
+  /// Hauptwährung für Summen/Umrechnung.
+  final String baseCurrency;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     int? seedColor,
     bool? hideAmounts,
     bool? lockEnabled,
+    String? baseCurrency,
   }) =>
       AppSettings(
         themeMode: themeMode ?? this.themeMode,
         seedColor: seedColor ?? this.seedColor,
         hideAmounts: hideAmounts ?? this.hideAmounts,
         lockEnabled: lockEnabled ?? this.lockEnabled,
+        baseCurrency: baseCurrency ?? this.baseCurrency,
       );
 }
 
@@ -57,18 +64,28 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kHide = 'settings_hide_amounts';
   static const _kPinHash = 'settings_pin_hash';
   static const _kPinSalt = 'settings_pin_salt';
+  static const _kBaseCur = 'settings_base_currency';
 
   @override
   AppSettings build() {
     final prefs = ref.watch(sharedPrefsProvider);
     final modeIdx = prefs.getInt(_kMode) ?? ThemeMode.system.index;
     final seed = prefs.getInt(_kSeed) ?? 0xFF2E7D32;
+    final base = prefs.getString(_kBaseCur) ?? 'EUR';
+    gBaseCurrency = base; // globalen Formatter aktualisieren
     return AppSettings(
       themeMode: ThemeMode.values[modeIdx.clamp(0, ThemeMode.values.length - 1)],
       seedColor: seed,
       hideAmounts: prefs.getBool(_kHide) ?? false,
       lockEnabled: prefs.getString(_kPinHash) != null,
+      baseCurrency: base,
     );
+  }
+
+  Future<void> setBaseCurrency(String code) async {
+    await ref.read(sharedPrefsProvider).setString(_kBaseCur, code);
+    gBaseCurrency = code;
+    state = state.copyWith(baseCurrency: code);
   }
 
   Future<void> setHideAmounts(bool hide) async {

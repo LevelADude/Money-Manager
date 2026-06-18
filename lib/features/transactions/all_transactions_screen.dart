@@ -6,10 +6,13 @@ import 'package:intl/intl.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../shared/money.dart';
+import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
+import '../currency/currency_providers.dart';
 import '../export/pdf_export.dart';
 import '../profile/profile_providers.dart';
+import '../settings/settings_providers.dart';
 import 'person_filter.dart';
 import 'person_filter_button.dart';
 import 'transaction_providers.dart';
@@ -156,6 +159,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final allTags = ref.watch(allTagsProvider);
     final splitTxIds = ref.watch(splitsByTransactionProvider).keys.toSet();
     final readOnly = ref.watch(isReadOnlyProvider).asData?.value ?? false;
+    final convert = ref.watch(converterProvider);
+    final baseCur = ref.watch(settingsProvider.select((s) => s.baseCurrency));
+    final curOf = {for (final a in accounts) a.id: a.currency};
     // Tag-Filter aufräumen, falls der Tag nicht mehr existiert.
     if (_tagFilter != null && !allTags.contains(_tagFilter)) {
       _tagFilter = null;
@@ -185,8 +191,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     var income = 0;
     var expense = 0;
     for (final t in filtered) {
-      if (t.type == TransactionType.income) income += t.amountCents;
-      if (t.type == TransactionType.expense) expense += t.amountCents;
+      final a = convert(t.amountCents, curOf[t.accountId] ?? baseCur);
+      if (t.type == TransactionType.income) income += a;
+      if (t.type == TransactionType.expense) expense += a;
     }
 
     // nach Tag gruppieren
@@ -360,6 +367,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                                 categoryName: t.categoryId == null
                                     ? null
                                     : catNames[t.categoryId],
+                                currency: curOf[t.accountId] ?? baseCur,
                                 hasSplit: splitTxIds.contains(t.id),
                                 onTap: () =>
                                     context.go('/transactions/${t.id}'),
@@ -415,6 +423,7 @@ class _TxTile extends StatelessWidget {
     required this.accountName,
     required this.categoryName,
     required this.onTap,
+    required this.currency,
     this.hasSplit = false,
   });
 
@@ -422,6 +431,7 @@ class _TxTile extends StatelessWidget {
   final String accountName;
   final String? categoryName;
   final VoidCallback onTap;
+  final String currency;
   final bool hasSplit;
 
   @override
@@ -437,10 +447,10 @@ class _TxTile extends StatelessWidget {
       if (hasSplit) 'Aufgeteilt',
       for (final t in tx.tags) '#$t',
     ].join('  ·  ');
-    final amountText = switch (tx.type) {
-      TransactionType.income => '+${formatCents(tx.amountCents)}',
-      TransactionType.expense => '-${formatCents(tx.amountCents)}',
-      TransactionType.transfer => formatCents(tx.amountCents),
+    final prefix = switch (tx.type) {
+      TransactionType.income => '+',
+      TransactionType.expense => '-',
+      TransactionType.transfer => '',
     };
     return ListTile(
       dense: true,
@@ -468,7 +478,9 @@ class _TxTile extends StatelessWidget {
               padding: EdgeInsets.only(right: 6),
               child: Icon(Icons.attach_file, size: 16),
             ),
-          Text(amountText,
+          MoneyText(tx.amountCents,
+              prefix: prefix,
+              currency: currency,
               style: TextStyle(fontWeight: FontWeight.bold, color: color)),
         ],
       ),

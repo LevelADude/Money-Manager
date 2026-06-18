@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../shared/money.dart';
+import '../currency/currency_providers.dart';
 import 'settings_providers.dart';
 
 /// Einstellungen: Erscheinungsbild (Theme-Modus + Akzentfarbe).
@@ -73,6 +76,40 @@ class SettingsScreen extends ConsumerWidget {
             secondary: const Icon(Icons.visibility_off_outlined),
             title: const Text('Beträge verbergen'),
             subtitle: const Text('Zeigt „••••" statt Geldbeträgen'),
+          ),
+          const Divider(height: 40),
+          Text('Währung',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            initialValue: supportedCurrencies.contains(settings.baseCurrency)
+                ? settings.baseCurrency
+                : 'EUR',
+            decoration: const InputDecoration(
+              labelText: 'Hauptwährung',
+              prefixIcon: Icon(Icons.payments_outlined),
+              helperText: 'Summen werden in diese Währung umgerechnet.',
+            ),
+            items: [
+              for (final c in supportedCurrencies)
+                DropdownMenuItem(
+                    value: c, child: Text('$c (${currencySymbol(c)})')),
+            ],
+            onChanged: (v) {
+              if (v != null) notifier.setBaseCurrency(v);
+            },
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => context.go('/more/exchange-rates'),
+              icon: const Icon(Icons.currency_exchange),
+              label: const Text('Wechselkurse verwalten'),
+            ),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,

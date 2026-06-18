@@ -80,11 +80,12 @@ class AccountRepository {
     required AccountType type,
     required int openingBalanceCents,
     required bool includeInNetWorth,
+    String? currency,
     String? icon,
     int? color,
     int? creditLimitCents,
   }) {
-    return _client.from('accounts').update({
+    final data = <String, dynamic>{
       'name': name,
       'type': accountTypeToDb(type),
       'opening_balance_cents': openingBalanceCents,
@@ -92,7 +93,9 @@ class AccountRepository {
       'icon': icon,
       'color': color,
       'credit_limit_cents': creditLimitCents,
-    }).eq('id', id);
+    };
+    if (currency != null) data['currency'] = currency;
+    return _client.from('accounts').update(data).eq('id', id);
   }
 
   Future<void> setArchived({required String id, required bool archived}) {

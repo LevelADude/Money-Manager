@@ -3,9 +3,26 @@ import 'package:intl/intl.dart';
 /// Geldbeträge werden intern als **Ganzzahl in Cent** gespeichert
 /// (exakt + speichersparend). Hier Konvertierung/Formatierung + ein kleiner
 /// sicherer Rechner fürs Betragsfeld.
-final NumberFormat _eur = NumberFormat.currency(locale: 'de_DE', symbol: '€');
 
-String formatCents(int cents) => _eur.format(cents / 100);
+/// Aktuelle Hauptwährung (wird aus den Einstellungen gesetzt). [formatCents]
+/// formatiert standardmäßig in dieser Währung.
+String gBaseCurrency = 'EUR';
+
+const currencySymbols = <String, String>{
+  'EUR': '€', 'USD': '\$', 'GBP': '£', 'CHF': 'CHF', 'JPY': '¥', 'PLN': 'zł',
+  'SEK': 'kr', 'NOK': 'kr', 'DKK': 'kr', 'CZK': 'Kč', 'TRY': '₺', 'CAD': 'CA\$',
+  'AUD': 'A\$', 'USDT': 'USDT',
+};
+
+String currencySymbol(String code) => currencySymbols[code] ?? code;
+
+/// Formatiert Cent in der angegebenen Währung.
+String formatMoney(int cents, String code) =>
+    NumberFormat.currency(locale: 'de_DE', symbol: currencySymbol(code))
+        .format(cents / 100);
+
+/// Formatiert in der Hauptwährung.
+String formatCents(int cents) => formatMoney(cents, gBaseCurrency);
 
 /// Cent -> bearbeitbarer Eingabe-String ("12,50").
 String centsToInput(int cents) =>

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/app_transaction.dart';
+import '../currency/currency_providers.dart';
+import '../settings/settings_providers.dart';
 import '../transactions/person_filter.dart';
 import '../transactions/transaction_providers.dart';
 import 'period_filter.dart';
@@ -47,6 +49,9 @@ class MonthTotals {
 /// Einnahmen/Ausgaben der letzten 12 Monate (ältester zuerst).
 final monthlyTotalsProvider = Provider<List<MonthTotals>>((ref) {
   final txs = ref.watch(personFilteredTransactionsProvider);
+  final convert = ref.watch(converterProvider);
+  final curOf = ref.watch(accountCurrencyProvider);
+  final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
   final now = DateTime.now();
   final months = [for (var i = 11; i >= 0; i--) DateTime(now.year, now.month - i, 1)];
   final income = {for (final m in months) _key(m): 0};
@@ -56,10 +61,11 @@ final monthlyTotalsProvider = Provider<List<MonthTotals>>((ref) {
     if (t.type == TransactionType.transfer) continue;
     final k = _key(DateTime(t.occurredOn.year, t.occurredOn.month, 1));
     if (!income.containsKey(k)) continue; // außerhalb des 12-Monats-Fensters
+    final amount = convert(t.amountCents, curOf[t.accountId] ?? base);
     if (t.type == TransactionType.income) {
-      income[k] = income[k]! + t.amountCents;
+      income[k] = income[k]! + amount;
     } else {
-      expense[k] = expense[k]! + t.amountCents;
+      expense[k] = expense[k]! + amount;
     }
   }
 
@@ -80,6 +86,7 @@ final netWorthHistoryProvider =
     Provider<List<({DateTime month, int cents})>>((ref) {
   final accounts = ref.watch(personFilteredAccountsProvider);
   final txs = ref.watch(personFilteredTransactionsProvider);
+  final convert = ref.watch(converterProvider);
   final now = DateTime.now();
   final result = <({DateTime month, int cents})>[];
   for (var i = 11; i >= 0; i--) {
@@ -91,7 +98,7 @@ final netWorthHistoryProvider =
       for (final t in txs) {
         if (!t.occurredOn.isAfter(monthEnd)) b += t.signedCentsFor(a.id);
       }
-      total += b;
+      total += convert(b, a.currency);
     }
     result.add((month: monthEnd, cents: total));
   }
@@ -150,6 +157,9 @@ class PeriodComparison {
 final periodComparisonProvider = Provider<PeriodComparison>((ref) {
   final p = ref.watch(periodFilterProvider);
   final txs = ref.watch(personFilteredTransactionsProvider);
+  final convert = ref.watch(converterProvider);
+  final curOf = ref.watch(accountCurrencyProvider);
+  final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
   final now = DateTime.now();
   final cur = rangeFor(p, now, previous: false);
   final prev = rangeFor(p, now, previous: true);
@@ -162,8 +172,9 @@ final periodComparisonProvider = Provider<PeriodComparison>((ref) {
       if (t.occurredOn.isBefore(r.start) || !t.occurredOn.isBefore(r.end)) {
         continue;
       }
-      if (t.type == TransactionType.income) inc += t.amountCents;
-      if (t.type == TransactionType.expense) exp += t.amountCents;
+      final amount = convert(t.amountCents, curOf[t.accountId] ?? base);
+      if (t.type == TransactionType.income) inc += amount;
+      if (t.type == TransactionType.expense) exp += amount;
     }
     return (income: inc, expense: exp);
   }
@@ -228,6 +239,10 @@ final statsProvider = Provider<StatsSummary>((ref) {
   final txs = ref.watch(personFilteredTransactionsProvider);
   final accounts = ref.watch(personFilteredAccountsProvider);
   final splitsByTx = ref.watch(splitsByTransactionProvider);
+  final convert = ref.watch(converterProvider);
+  final curOf = ref.watch(accountCurrencyProvider);
+  final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
+  String cur(AppTransaction t) => curOf[t.accountId] ?? base;
 
   var income = 0;
   var expense = 0;
@@ -235,18 +250,19 @@ final statsProvider = Provider<StatsSummary>((ref) {
   final expByCat = <String?, int>{};
   final incByCat = <String?, int>{};
 
-  // Aufschlüsselung nach Kategorie: bei aufgeteilten Buchungen die Splits
-  // verwenden, sonst die eine Kategorie der Buchung.
+  // Aufschlüsselung nach Kategorie (in Hauptwährung): bei aufgeteilten
+  // Buchungen die Splits verwenden, sonst die eine Kategorie der Buchung.
   void addByCategory(Map<String?, int> target, AppTransaction t) {
+    final code = cur(t);
     final splits = splitsByTx[t.id];
     if (splits != null && splits.isNotEmpty) {
       for (final s in splits) {
-        target.update(s.categoryId, (v) => v + s.amountCents,
-            ifAbsent: () => s.amountCents);
+        final v = convert(s.amountCents, code);
+        target.update(s.categoryId, (x) => x + v, ifAbsent: () => v);
       }
     } else {
-      target.update(t.categoryId, (v) => v + t.amountCents,
-          ifAbsent: () => t.amountCents);
+      final v = convert(t.amountCents, code);
+      target.update(t.categoryId, (x) => x + v, ifAbsent: () => v);
     }
   }
 
@@ -254,16 +270,17 @@ final statsProvider = Provider<StatsSummary>((ref) {
     if (t.type == TransactionType.transfer) continue; // zählt nicht
     if (!period.contains(t.occurredOn)) continue;
     count++;
+    final amount = convert(t.amountCents, cur(t));
     if (t.type == TransactionType.income) {
-      income += t.amountCents;
+      income += amount;
       addByCategory(incByCat, t);
     } else {
-      expense += t.amountCents;
+      expense += amount;
       addByCategory(expByCat, t);
     }
   }
 
-  // Vermögen + Schulden über alle Zeit (Salden je Konto).
+  // Vermögen + Schulden über alle Zeit (Salden je Konto, in Hauptwährung).
   var netWorth = 0;
   var debt = 0;
   for (final a in accounts) {
@@ -272,8 +289,9 @@ final statsProvider = Provider<StatsSummary>((ref) {
     for (final t in txs) {
       bal += t.signedCentsFor(a.id);
     }
-    if (a.includeInNetWorth) netWorth += bal;
-    if (bal < 0) debt += -bal;
+    final baseBal = convert(bal, a.currency);
+    if (a.includeInNetWorth) netWorth += baseBal;
+    if (baseBal < 0) debt += -baseBal;
   }
 
   return StatsSummary(

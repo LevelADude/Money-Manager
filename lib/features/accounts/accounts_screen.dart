@@ -6,6 +6,7 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/money_text.dart';
+import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
 import '../recurring/recurring_providers.dart';
 import '../reminders/reminders_providers.dart';
@@ -36,6 +37,7 @@ class AccountsScreen extends ConsumerWidget {
 
     final accountsAsync = ref.watch(accountsProvider);
     final readOnly = ref.watch(isReadOnlyProvider).asData?.value ?? false;
+    final convert = ref.watch(converterProvider);
     final txs = ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final memberNames =
@@ -122,8 +124,8 @@ class AccountsScreen extends ConsumerWidget {
           for (final type in _order) {
             final group = byType[type];
             if (group == null || group.isEmpty) continue;
-            final subtotal =
-                group.fold<int>(0, (s, a) => s + balanceOf(a));
+            final subtotal = group.fold<int>(
+                0, (s, a) => s + convert(balanceOf(a), a.currency));
             children.add(_CategoryHeader(
               label: type.label,
               cents: subtotal,
@@ -133,6 +135,7 @@ class AccountsScreen extends ConsumerWidget {
               children.add(_AccountTile(
                 account: a,
                 balanceCents: balanceOf(a),
+                currency: a.currency,
                 ownerName: memberNames[a.ownerId] ?? '',
                 onTap: () => context.go('/account/${a.id}'),
                 onEdit: () => context.go('/account/${a.id}/edit'),
@@ -301,6 +304,7 @@ class _AccountTile extends StatelessWidget {
   const _AccountTile({
     required this.account,
     required this.balanceCents,
+    required this.currency,
     required this.ownerName,
     required this.onTap,
     required this.onEdit,
@@ -310,6 +314,7 @@ class _AccountTile extends StatelessWidget {
 
   final Account account;
   final int balanceCents;
+  final String currency;
   final String ownerName;
   final VoidCallback onTap;
   final VoidCallback onEdit;
@@ -335,6 +340,7 @@ class _AccountTile extends StatelessWidget {
         children: [
           MoneyText(
             balanceCents,
+            currency: currency,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: negative ? Colors.red.shade700 : null,

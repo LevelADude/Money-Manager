@@ -15,6 +15,7 @@ import '../features/backup/backup_screen.dart';
 import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
 import '../features/categories/category_rules_screen.dart';
+import '../features/currency/exchange_rates_screen.dart';
 import '../features/debts/debts_screen.dart';
 import '../features/export/csv_import_screen.dart';
 import '../features/export/export_screen.dart';
@@ -248,6 +249,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'settings',
                     builder: (c, s) => const SettingsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'exchange-rates',
+                    builder: (c, s) => const ExchangeRatesScreen(),
                   ),
                   GoRoute(
                     path: 'profile',

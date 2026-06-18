@@ -5,6 +5,7 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/repositories/account_repository.dart';
 import '../auth/auth_providers.dart';
+import '../currency/currency_providers.dart';
 import '../transactions/transaction_providers.dart';
 
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
@@ -45,6 +46,7 @@ final netWorthProvider = Provider.family<int, String?>((ref, ownerId) {
   final accounts = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
   final txs = ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
+  final convert = ref.watch(converterProvider);
   var total = 0;
   for (final a in accounts) {
     if (!a.includeInNetWorth || a.archived) continue;
@@ -53,7 +55,7 @@ final netWorthProvider = Provider.family<int, String?>((ref, ownerId) {
     for (final t in txs) {
       sum += t.signedCentsFor(a.id);
     }
-    total += sum;
+    total += convert(sum, a.currency); // in Hauptwährung umrechnen
   }
   return total;
 });
