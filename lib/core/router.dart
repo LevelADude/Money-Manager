@@ -15,6 +15,7 @@ import '../features/more/more_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/recurring/recurring_form_screen.dart';
 import '../features/recurring/recurring_screen.dart';
+import '../features/settings/settings_screen.dart';
 import '../features/statistics/statistics_screen.dart';
 import '../features/transactions/all_transactions_screen.dart';
 import '../features/transactions/transaction_form_screen.dart';
@@ -146,6 +147,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'export',
                     builder: (c, s) => const ExportScreen(),
+                  ),
+                  GoRoute(
+                    path: 'settings',
+                    builder: (c, s) => const SettingsScreen(),
                   ),
                   GoRoute(
                     path: 'profile',
