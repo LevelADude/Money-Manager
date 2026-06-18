@@ -86,6 +86,7 @@ class StatisticsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final period = ref.watch(periodFilterProvider);
+    final anchor = ref.watch(statsAnchorProvider);
     final stats = ref.watch(statsProvider);
     final months = ref.watch(monthlyTotalsProvider);
     final netWorthHistory = ref.watch(netWorthHistoryProvider);
@@ -93,9 +94,9 @@ class StatisticsScreen extends ConsumerWidget {
     final topExpenses = ref.watch(topExpensesProvider);
     final catNames = ref.watch(categoryNamesProvider);
 
-    // Tägliche Ausgaben des laufenden Monats für die Heatmap.
+    // Tägliche Ausgaben des angezeigten Monats für die Heatmap.
     final pfTxs = ref.watch(personFilteredTransactionsProvider);
-    final hmNow = DateTime.now();
+    final hmNow = anchor;
     final dailyExpense = <int, int>{};
     for (final t in pfTxs) {
       if (t.type != TransactionType.expense) continue;
@@ -129,6 +130,8 @@ class StatisticsScreen extends ConsumerWidget {
                   ref.read(periodFilterProvider.notifier).set(s.first),
             ),
           ),
+          const SizedBox(height: 8),
+          _PeriodNavBar(period: period, anchor: anchor),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -234,6 +237,76 @@ class StatisticsScreen extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Zeigt den aktuell dargestellten Zeitraum an und erlaubt das Blättern
+/// (vorige/nächste Periode). Bei „Gesamt" gibt es nichts zu blättern.
+class _PeriodNavBar extends ConsumerWidget {
+  const _PeriodNavBar({required this.period, required this.anchor});
+
+  final StatsPeriod period;
+  final DateTime anchor;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final label = period.labelFor(anchor);
+    if (period == StatsPeriod.all) {
+      return Center(
+        child: Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+      );
+    }
+
+    // Ist der angezeigte Zeitraum der aktuelle? Dann kein „Vorblättern" in die
+    // Zukunft und kein „Heute"-Knopf.
+    final now = DateTime.now();
+    final range = rangeFor(period, anchor, previous: false);
+    final isCurrent = range == null ||
+        (!now.isBefore(range.start) && now.isBefore(range.end));
+    final notifier = ref.read(statsAnchorProvider.notifier);
+
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          tooltip: 'Zurück',
+          onPressed: () => notifier.shift(period, -1),
+        ),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              if (!isCurrent)
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 28),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: notifier.reset,
+                  child: const Text('Heute'),
+                ),
+            ],
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          tooltip: 'Vor',
+          // Nicht in die Zukunft blättern.
+          onPressed: isCurrent ? null : () => notifier.shift(period, 1),
+        ),
+      ],
     );
   }
 }

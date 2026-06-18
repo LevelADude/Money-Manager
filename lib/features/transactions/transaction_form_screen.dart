@@ -178,6 +178,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Future<void> _save() async {
+    // Re-Entry-Schutz: verhindert doppelte Buchungen bei schnellem Doppel-Tipp
+    // (der Button-Disable greift erst nach dem Rebuild – diese Sperre sofort).
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
     final cents = parseToCents(_amount.text);
     if (cents == null || cents <= 0) return;
@@ -454,6 +457,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   /// Legt eine Kopie der aktuellen Buchung an und öffnet sie zum Bearbeiten.
   Future<void> _duplicate() async {
+    if (_saving) return; // Re-Entry-Schutz gegen Doppel-Anlage
     final cents = parseToCents(_amount.text);
     if (cents == null || cents <= 0 || _accountId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -508,19 +512,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Future<ImageSource?> _chooseSource() {
-    final mobile = !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS);
+    // Kamera auf Handy UND im Web/PWA (Browser-Kamera). Nur Desktop kann nicht.
+    final canCamera = kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
     return showModalBottomSheet<ImageSource>(
       context: context,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (mobile)
+            if (canCamera)
               ListTile(
                 leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('Kamera'),
+                title: const Text('Kamera (Foto aufnehmen)'),
                 onTap: () => Navigator.pop(ctx, ImageSource.camera),
               ),
             ListTile(

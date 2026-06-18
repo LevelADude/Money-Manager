@@ -129,6 +129,12 @@ final netWorthHistoryProvider =
   }
 }
 
+/// Prüft, ob [d] im Zeitfenster [r] liegt (null = "Gesamt", alles zählt).
+bool _inRange(({DateTime start, DateTime end})? r, DateTime d) {
+  if (r == null) return true;
+  return !d.isBefore(r.start) && d.isBefore(r.end);
+}
+
 /// Vergleich des gewählten Zeitraums mit dem vorherigen (Vortag/-woche/-monat/-jahr).
 class PeriodComparison {
   const PeriodComparison({
@@ -160,9 +166,9 @@ final periodComparisonProvider = Provider<PeriodComparison>((ref) {
   final convert = ref.watch(converterProvider);
   final curOf = ref.watch(accountCurrencyProvider);
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
-  final now = DateTime.now();
-  final cur = rangeFor(p, now, previous: false);
-  final prev = rangeFor(p, now, previous: true);
+  final anchor = ref.watch(statsAnchorProvider);
+  final cur = rangeFor(p, anchor, previous: false);
+  final prev = rangeFor(p, anchor, previous: true);
 
   ({int income, int expense}) sums(({DateTime start, DateTime end})? r) {
     if (r == null) return (income: 0, expense: 0);
@@ -207,12 +213,14 @@ List<AppTransaction> categoryDrilldown(
   required bool expense,
 }) {
   final p = ref.read(periodFilterProvider);
+  final anchor = ref.read(statsAnchorProvider);
+  final range = rangeFor(p, anchor, previous: false);
   final txs = ref.read(personFilteredTransactionsProvider);
   final splitsByTx = ref.read(splitsByTransactionProvider);
   final type = expense ? TransactionType.expense : TransactionType.income;
   final result = txs.where((t) {
     if (t.type != type) return false;
-    if (!p.contains(t.occurredOn)) return false;
+    if (!_inRange(range, t.occurredOn)) return false;
     final splits = splitsByTx[t.id];
     if (splits != null && splits.isNotEmpty) {
       return splits.any((s) => s.categoryId == categoryId);
@@ -226,9 +234,12 @@ List<AppTransaction> categoryDrilldown(
 /// Größte Einzel-Ausgaben im gewählten Zeitraum.
 final topExpensesProvider = Provider<List<AppTransaction>>((ref) {
   final p = ref.watch(periodFilterProvider);
+  final anchor = ref.watch(statsAnchorProvider);
+  final range = rangeFor(p, anchor, previous: false);
   final txs = ref.watch(personFilteredTransactionsProvider);
   final list = txs
-      .where((t) => t.type == TransactionType.expense && p.contains(t.occurredOn))
+      .where((t) =>
+          t.type == TransactionType.expense && _inRange(range, t.occurredOn))
       .toList()
     ..sort((a, b) => b.amountCents.compareTo(a.amountCents));
   return list.take(5).toList();
@@ -236,6 +247,8 @@ final topExpensesProvider = Provider<List<AppTransaction>>((ref) {
 
 final statsProvider = Provider<StatsSummary>((ref) {
   final period = ref.watch(periodFilterProvider);
+  final anchor = ref.watch(statsAnchorProvider);
+  final range = rangeFor(period, anchor, previous: false);
   final txs = ref.watch(personFilteredTransactionsProvider);
   final accounts = ref.watch(personFilteredAccountsProvider);
   final splitsByTx = ref.watch(splitsByTransactionProvider);
@@ -268,7 +281,7 @@ final statsProvider = Provider<StatsSummary>((ref) {
 
   for (final t in txs) {
     if (t.type == TransactionType.transfer) continue; // zählt nicht
-    if (!period.contains(t.occurredOn)) continue;
+    if (!_inRange(range, t.occurredOn)) continue;
     count++;
     final amount = convert(t.amountCents, cur(t));
     if (t.type == TransactionType.income) {
