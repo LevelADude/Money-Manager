@@ -31,6 +31,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   final _query = TextEditingController();
   _PeriodView _view = _PeriodView.month;
   DateTime _anchor = DateTime.now();
+  String? _tagFilter;
 
   @override
   void dispose() {
@@ -92,6 +93,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
+    final allTags = ref.watch(allTagsProvider);
+    // Tag-Filter aufräumen, falls der Tag nicht mehr existiert.
+    if (_tagFilter != null && !allTags.contains(_tagFilter)) {
+      _tagFilter = null;
+    }
 
     final (start, end) = _range();
     final q = _query.text.trim().toLowerCase();
@@ -100,13 +106,18 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       if (t.occurredOn.isBefore(start) || !t.occurredOn.isBefore(end)) {
         return false;
       }
+      if (_tagFilter != null &&
+          !t.tags.any((x) => x.toLowerCase() == _tagFilter!.toLowerCase())) {
+        return false;
+      }
       if (q.isEmpty) return true;
       final cat = t.categoryId == null ? '' : (catNames[t.categoryId] ?? '');
       final acc = accountNames[t.accountId] ?? '';
       return t.title.toLowerCase().contains(q) ||
           t.note.toLowerCase().contains(q) ||
           cat.toLowerCase().contains(q) ||
-          acc.toLowerCase().contains(q);
+          acc.toLowerCase().contains(q) ||
+          t.tags.any((x) => x.toLowerCase().contains(q));
     }).toList();
 
     var income = 0;
@@ -201,6 +212,26 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               ),
             ),
           ),
+          if (allTags.isNotEmpty)
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  for (final tag in allTags)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: FilterChip(
+                        label: Text(tag),
+                        selected: _tagFilter == tag,
+                        onSelected: (sel) =>
+                            setState(() => _tagFilter = sel ? tag : null),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           const Divider(height: 1),
           Expanded(
             child: RefreshIndicator(
@@ -325,6 +356,7 @@ class _TxTile extends StatelessWidget {
     final sub = [
       if (accountName.isNotEmpty) accountName,
       ?categoryName,
+      for (final t in tx.tags) '#$t',
     ].join('  ·  ');
     final amountText = switch (tx.type) {
       TransactionType.income => '+${formatCents(tx.amountCents)}',

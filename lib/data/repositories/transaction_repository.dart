@@ -46,6 +46,7 @@ class TransactionRepository {
     String? categoryId,
     String? transferAccountId,
     String? receiptPath,
+    List<String> tags = const [],
   }) {
     final isTransfer = type == TransactionType.transfer;
     return {
@@ -58,6 +59,7 @@ class TransactionRepository {
       'category_id': isTransfer ? null : categoryId,
       'transfer_account_id': isTransfer ? transferAccountId : null,
       'receipt_path': receiptPath,
+      'tags': tags,
     };
   }
 
@@ -71,6 +73,7 @@ class TransactionRepository {
     String? categoryId,
     String? transferAccountId,
     String? receiptPath,
+    List<String> tags = const [],
   }) {
     return _client.from('transactions').insert(_payload(
           accountId: accountId,
@@ -82,6 +85,7 @@ class TransactionRepository {
           categoryId: categoryId,
           transferAccountId: transferAccountId,
           receiptPath: receiptPath,
+          tags: tags,
         ));
   }
 
@@ -96,6 +100,7 @@ class TransactionRepository {
     String? categoryId,
     String? transferAccountId,
     String? receiptPath,
+    List<String> tags = const [],
   }) {
     return _client
         .from('transactions')
@@ -109,6 +114,7 @@ class TransactionRepository {
           categoryId: categoryId,
           transferAccountId: transferAccountId,
           receiptPath: receiptPath,
+          tags: tags,
         ))
         .eq('id', id);
   }

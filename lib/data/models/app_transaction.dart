@@ -36,6 +36,7 @@ class AppTransaction {
     required this.note,
     required this.createdBy,
     required this.receiptPath,
+    this.tags = const [],
   });
 
   final String id;
@@ -49,6 +50,7 @@ class AppTransaction {
   final String note;
   final String? createdBy;
   final String? receiptPath;
+  final List<String> tags;
 
   /// Vorzeichenbehafteter Betrag aus Sicht eines bestimmten Kontos.
   /// WICHTIG: zählt nur für das Konto, zu dem die Buchung gehört (bzw. das
@@ -79,5 +81,23 @@ class AppTransaction {
         note: (json['note'] as String?) ?? '',
         createdBy: json['created_by'] as String?,
         receiptPath: json['receipt_path'] as String?,
+        tags: _parseTags(json['tags']),
       );
+
+  static List<String> _parseTags(dynamic raw) {
+    if (raw is List) {
+      return raw.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+    }
+    // Postgres-Array kann als String "{a,b}" über manche Pfade kommen.
+    if (raw is String && raw.startsWith('{') && raw.endsWith('}')) {
+      final inner = raw.substring(1, raw.length - 1);
+      if (inner.isEmpty) return const [];
+      return inner
+          .split(',')
+          .map((s) => s.replaceAll('"', '').trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    }
+    return const [];
+  }
 }

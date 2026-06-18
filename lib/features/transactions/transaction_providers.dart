@@ -52,6 +52,23 @@ final titleSuggestionsProvider = Provider<List<String>>((ref) {
   return result;
 });
 
+/// Alle bisher vergebenen Tags (alphabetisch, eindeutig) – für Vorschläge
+/// im Formular und den Tag-Filter in „Buchungen".
+final allTagsProvider = Provider<List<String>>((ref) {
+  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+      const <AppTransaction>[];
+  final seen = <String, String>{}; // kleingeschrieben -> Originalschreibweise
+  for (final t in txs) {
+    for (final tag in t.tags) {
+      final k = tag.trim().toLowerCase();
+      if (k.isNotEmpty) seen.putIfAbsent(k, () => tag.trim());
+    }
+  }
+  final result = seen.values.toList()
+    ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  return result;
+});
+
 /// Map: Titel (kleingeschrieben) -> zuletzt dafür verwendete Kategorie-ID.
 /// Für den Kategorie-Vorschlag, wenn ein bekannter Titel gewählt wird.
 final titleCategoryProvider = Provider<Map<String, String>>((ref) {

@@ -7,7 +7,7 @@
 --   3. Fertig - alle Tabellen, Sicherheitsregeln, der Beleg-Speicher und die
 --      Admin-Logik (erste registrierte Person = Admin) werden angelegt.
 --
--- Enthaelt die Migrationen 0001-0007 in der richtigen Reihenfolge.
+-- Enthaelt die Migrationen 0001-0008 in der richtigen Reihenfolge.
 -- =====================================================================
 
 
@@ -618,4 +618,23 @@ create trigger on_auth_user_whitelist
 drop policy if exists profiles_admin_update on public.profiles;
 create policy profiles_admin_update on public.profiles
   for update to authenticated using (public.is_admin()) with check (public.is_admin());
+
+
+-- ###################################################################
+-- ## Migration: 0008_tags.sql
+-- ###################################################################
+
+-- =====================================================================
+-- Money-Manager Â· 0008_tags.sql Â· Tags je Buchung
+-- =====================================================================
+-- Frei vergebbare Schlagworte je Buchung als Text-Array (einfach, keine
+-- Joins, gut filterbar). Beispiel: {'Urlaub','GeschÃ¤ftlich'}.
+-- =====================================================================
+
+alter table public.transactions
+  add column if not exists tags text[] not null default '{}';
+
+-- GIN-Index fÃ¼r schnelles Filtern nach Tag (tags @> '{...}').
+create index if not exists transactions_tags_idx
+  on public.transactions using gin (tags);
 

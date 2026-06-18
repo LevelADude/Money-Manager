@@ -11,6 +11,7 @@ import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
 import '../../shared/calculator_sheet.dart';
 import '../../shared/money.dart';
+import '../../shared/tag_editor.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import 'transaction_providers.dart';
@@ -53,6 +54,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String? _receiptPath;
   bool _receiptBusy = false;
   Future<String>? _receiptUrlFuture;
+  List<String> _tags = [];
 
   @override
   void initState() {
@@ -84,6 +86,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _transferTargetId = t.transferAccountId;
         _accountId = t.accountId;
         _receiptPath = t.receiptPath;
+        _tags = List.of(t.tags);
         if (_receiptPath != null) {
           _receiptUrlFuture =
               ref.read(receiptStorageProvider).signedUrl(_receiptPath!);
@@ -145,6 +148,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           categoryId: _categoryId,
           transferAccountId: _transferTargetId,
           receiptPath: _receiptPath,
+          tags: _tags,
         );
       } else {
         await repo.addTransaction(
@@ -157,6 +161,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           categoryId: _categoryId,
           transferAccountId: _transferTargetId,
           receiptPath: _receiptPath,
+          tags: _tags,
         );
       }
       ref.invalidate(allTransactionsProvider);
@@ -548,6 +553,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         alignLabelWithHint: true,
                         prefixIcon: Icon(Icons.notes),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    TagEditor(
+                      tags: _tags,
+                      suggestions: ref.watch(allTagsProvider),
+                      onChanged: (t) => setState(() => _tags = t),
                     ),
                     const SizedBox(height: 16),
                     _buildReceiptSection(context),
