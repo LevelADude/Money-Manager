@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/app_transaction.dart';
+import '../../shared/mini_line_chart.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
@@ -85,6 +86,7 @@ class StatisticsScreen extends ConsumerWidget {
     final period = ref.watch(periodFilterProvider);
     final stats = ref.watch(statsProvider);
     final months = ref.watch(monthlyTotalsProvider);
+    final netWorthHistory = ref.watch(netWorthHistoryProvider);
     final comparison = ref.watch(periodComparisonProvider);
     final topExpenses = ref.watch(topExpensesProvider);
     final catNames = ref.watch(categoryNamesProvider);
@@ -144,6 +146,8 @@ class StatisticsScreen extends ConsumerWidget {
             _ComparisonCard(comparison: comparison),
           ],
           const SizedBox(height: 16),
+          _NetWorthTrendCard(history: netWorthHistory),
+          const SizedBox(height: 12),
           _MonthlyTrendCard(months: months),
           const SizedBox(height: 12),
           _CategorySection(
@@ -234,6 +238,78 @@ class _SummaryCard extends StatelessWidget {
                   .titleLarge
                   ?.copyWith(fontWeight: FontWeight.bold, color: color),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Vermögensverlauf: Liniendiagramm des Gesamtvermögens über 12 Monate.
+class _NetWorthTrendCard extends StatelessWidget {
+  const _NetWorthTrendCard({required this.history});
+
+  final List<({DateTime month, int cents})> history;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasData = history.length >= 2;
+    final current = history.isEmpty ? 0 : history.last.cents;
+    final first = history.isEmpty ? 0 : history.first.cents;
+    final delta = current - first;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Vermögensverlauf (12 Monate)',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold)),
+                ),
+                MoneyText(current,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: current >= 0
+                            ? Colors.green.shade700
+                            : Colors.red.shade700)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(delta >= 0 ? Icons.trending_up : Icons.trending_down,
+                      size: 16,
+                      color: delta >= 0
+                          ? Colors.green.shade700
+                          : Colors.red.shade700),
+                  const SizedBox(width: 4),
+                  MoneyText(delta,
+                      prefix: delta >= 0 ? '+' : '',
+                      style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (!hasData)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text('Noch zu wenige Daten.'),
+              )
+            else
+              MiniLineChart(
+                values: [for (final h in history) h.cents],
+                color: Theme.of(context).colorScheme.primary,
+                labels: [for (final h in history) _monthAbbr[h.month.month - 1]],
+              ),
           ],
         ),
       ),

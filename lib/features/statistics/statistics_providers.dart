@@ -75,6 +75,29 @@ final monthlyTotalsProvider = Provider<List<MonthTotals>>((ref) {
 
 String _key(DateTime m) => '${m.year}-${m.month}';
 
+/// Gesamtvermögen zum Monatsende der letzten 12 Monate (Vermögensverlauf).
+final netWorthHistoryProvider =
+    Provider<List<({DateTime month, int cents})>>((ref) {
+  final accounts = ref.watch(personFilteredAccountsProvider);
+  final txs = ref.watch(personFilteredTransactionsProvider);
+  final now = DateTime.now();
+  final result = <({DateTime month, int cents})>[];
+  for (var i = 11; i >= 0; i--) {
+    final monthEnd = DateTime(now.year, now.month - i + 1, 0);
+    var total = 0;
+    for (final a in accounts) {
+      if (!a.includeInNetWorth || a.archived) continue;
+      var b = a.openingBalanceCents;
+      for (final t in txs) {
+        if (!t.occurredOn.isAfter(monthEnd)) b += t.signedCentsFor(a.id);
+      }
+      total += b;
+    }
+    result.add((month: monthEnd, cents: total));
+  }
+  return result;
+});
+
 /// Zeitfenster (start inкl., end exkl.) des aktuellen bzw. vorherigen Zeitraums.
 ({DateTime start, DateTime end})? rangeFor(StatsPeriod p, DateTime now,
     {required bool previous}) {
