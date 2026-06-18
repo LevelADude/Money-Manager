@@ -212,9 +212,19 @@ Richtiger Installer mit Startmenü-Eintrag und sauberem De-/Installieren.
 
 Der vollständige Plan bis zum Release steht in [ROADMAP.md](ROADMAP.md).
 
-- **Phase 1 – Grundgerüst:** ✅ Auth, Bücher, Buchungen, Supabase + RLS + Realtime
-- **Phase 2 – Kernfunktionen:** ✅ Kategorien (verwalten + im Formular), Buchungen bearbeiten/löschen, Attribution („erfasst von …" / Besitzer), Profil (Anzeigename), Bücher verwalten (umbenennen/archivieren/löschen)
-- **Phase 3 – Auswertungen & UX:** ⬜ Zeitraum-Filter, Summen + Kategorien-Aufschlüsselung, Diagramme, Suche, Lokalisierung
-- **Phase 4 – Auth & Sicherheit:** ⬜ E-Mail-Bestätigung, Passwort-Reset, Session-Handling
-- **Phase 5 – Qualität & Release:** ⬜ Tests, CI, App-Icon, Release-Builds (Windows MSIX, Android APK/AAB)
-- **Phase 6 – Optional:** ⬜ wiederkehrende Buchungen, Belege, Budgets, Export, Mehrwährung
+- **Grundgerüst & Kern:** ✅ Auth, Konten (mit Typen/Kategorien + Gesamtvermögen),
+  Buchungen (Ausgabe/Einnahme/Übertrag), Kategorien, Attribution, Profil,
+  Supabase + RLS + Realtime, Offline-Cache (Local-First)
+- **Erfassung:** ✅ Taschenrechner-Feld, Titel-Vorschläge, Belege/Fotos,
+  **Tags**, **Split-Buchungen** (Aufteilen auf mehrere Kategorien)
+- **Auswertung:** ✅ Buchungen nach **Zeitraum** (Tag/Woche/Monat/Jahr) mit
+  Vor-/Zurück + Summen, Statistik (Kategorie-Aufschlüsselung, split-bewusst),
+  Budgets, wiederkehrende Buchungen, Suche/Filter, **CSV- & PDF-Export**
+- **Plattformen:** ✅ Windows (.exe + signierte MSIX), Android (APK), Web
+  (responsiv) + **PWA** („Zum Home-Bildschirm", auch iPhone/Safari)
+- **Self-Hosting:** ✅ Onboarding (eigene Supabase-Verbindung), `setup.sql`,
+  GitHub-Pages-Deploy, Endnutzer-Anleitung
+- **Qualität:** ✅ Unit-Tests + GitHub-Actions-CI (analyze + test)
+- **Admin:** ✅ Flag in DB (1. Nutzer = Admin), E-Mail-Whitelist,
+  Nutzerverwaltung via Edge Function
+- **Optional/künftig:** ⬜ Mehrwährung, Passwort-Reset-Flow, weitere Diagramme
