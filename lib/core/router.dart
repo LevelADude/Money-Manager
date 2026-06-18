@@ -9,6 +9,7 @@ import '../features/accounts/accounts_reorder_screen.dart';
 import '../features/accounts/accounts_screen.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/auth/login_screen.dart';
+import '../features/auth/reset_password_screen.dart';
 import '../features/backup/backup_screen.dart';
 import '../features/budgets/budgets_screen.dart';
 import '../features/categories/categories_screen.dart';
@@ -46,12 +47,20 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final loggedIn = Supabase.instance.client.auth.currentSession != null;
       final atLogin = state.matchedLocation == '/login';
+      final atReset = state.matchedLocation == '/reset-password';
+      // Nach Klick auf den Passwort-Reset-Link: zum Neu-Passwort-Setzen.
+      final recovering =
+          authNotifier.value?.event == AuthChangeEvent.passwordRecovery;
+      if (recovering) return atReset ? null : '/reset-password';
       if (!loggedIn) return atLogin ? null : '/login';
       if (atLogin) return '/';
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (c, s) => const LoginScreen()),
+      GoRoute(
+          path: '/reset-password',
+          builder: (c, s) => const ResetPasswordScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => MainScaffold(shell: shell),
         branches: [

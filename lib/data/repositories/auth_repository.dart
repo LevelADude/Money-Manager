@@ -14,7 +14,7 @@ class AuthRepository {
     return _client.auth.signInWithPassword(email: email, password: password);
   }
 
-  Future<void> signUp({
+  Future<AuthResponse> signUp({
     required String email,
     required String password,
     String? displayName,
@@ -24,6 +24,16 @@ class AuthRepository {
       password: password,
       data: displayName == null ? null : {'display_name': displayName},
     );
+  }
+
+  /// Sendet eine Passwort-zurücksetzen-E-Mail (Link führt zur App zurück).
+  Future<void> resetPassword(String email) {
+    return _client.auth.resetPasswordForEmail(email);
+  }
+
+  /// Setzt das Passwort des aktuell (Recovery-)angemeldeten Nutzers neu.
+  Future<void> updatePassword(String newPassword) {
+    return _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
   Future<void> signOut() => _client.auth.signOut();

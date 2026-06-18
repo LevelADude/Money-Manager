@@ -34,11 +34,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final auth = ref.read(authRepositoryProvider);
     try {
       if (_isSignUp) {
-        await auth.signUp(
+        final res = await auth.signUp(
           email: _email.text.trim(),
           password: _password.text,
           displayName: _name.text.trim().isEmpty ? null : _name.text.trim(),
         );
+        // Wenn E-Mail-Bestätigung aktiv ist, gibt es noch keine Session.
+        if (res.session == null && mounted) {
+          setState(() => _isSignUp = false);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Fast geschafft! Bitte bestätige deine E-Mail, dann anmelden.'),
+          ));
+        }
       } else {
         await auth.signIn(email: _email.text.trim(), password: _password.text);
       }
@@ -56,6 +64,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _forgotPassword() async {
+    final emailCtrl = TextEditingController(text: _email.text.trim());
+    final email = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Passwort zurücksetzen'),
+        content: TextField(
+          controller: emailCtrl,
+          keyboardType: TextInputType.emailAddress,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'E-Mail',
+            prefixIcon: Icon(Icons.email_outlined),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Abbrechen')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, emailCtrl.text.trim()),
+              child: const Text('Link senden')),
+        ],
+      ),
+    );
+    if (email == null || !email.contains('@')) return;
+    try {
+      await ref.read(authRepositoryProvider).resetPassword(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('E-Mail zum Zurücksetzen gesendet (falls registriert).')));
+      }
+    } catch (e) {
+      _showError('Fehler: $e');
+    }
   }
 
   @override
@@ -140,6 +185,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           : 'Neu hier? Konto erstellen',
                     ),
                   ),
+                  if (!_isSignUp)
+                    TextButton(
+                      onPressed: _loading ? null : _forgotPassword,
+                      child: const Text('Passwort vergessen?'),
+                    ),
                 ],
               ),
             ),
