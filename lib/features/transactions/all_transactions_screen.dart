@@ -18,6 +18,20 @@ const _monthNames = [
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
 ];
 
+const _weekdayNames = [
+  'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag',
+  'Freitag', 'Samstag', 'Sonntag',
+];
+
+/// Deutscher Datums-Header ohne intl-Locale-Daten (die nicht initialisiert
+/// sind) – z. B. "Montag, 18.06.2026".
+String _germanDate(DateTime d) {
+  final wd = _weekdayNames[d.weekday - 1]; // weekday: 1=Mo … 7=So
+  final dd = d.day.toString().padLeft(2, '0');
+  final mm = d.month.toString().padLeft(2, '0');
+  return '$wd, $dd.$mm.${d.year}';
+}
+
 /// "Buchungen"-Tab: nach Zeitraum (Tag/Woche/Monat/Jahr) mit ◀▶, Summen und
 /// nach Datum gruppierter Liste. Plus Suche + globaler "+".
 class AllTransactionsScreen extends ConsumerStatefulWidget {
@@ -185,6 +199,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         title: const Text('Buchungen'),
         actions: [
           IconButton(
+            tooltip: 'Heute',
+            icon: const Icon(Icons.today_outlined),
+            onPressed: () => setState(() => _anchor = DateTime.now()),
+          ),
+          IconButton(
             tooltip: 'Zeitraum als PDF',
             icon: const Icon(Icons.picture_as_pdf_outlined),
             onPressed: filtered.isEmpty
@@ -321,8 +340,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                               padding:
                                   const EdgeInsets.fromLTRB(16, 12, 16, 4),
                               child: Text(
-                                DateFormat('EEEE, dd.MM.yyyy', 'de')
-                                    .formatSafe(day),
+                                _germanDate(day),
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelLarge
@@ -350,17 +368,6 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         ],
       ),
     );
-  }
-}
-
-/// Sichere Datumsformatierung ohne geladene Locale-Daten (Fallback dd.MM.yyyy).
-extension on DateFormat {
-  String formatSafe(DateTime d) {
-    try {
-      return format(d);
-    } catch (_) {
-      return DateFormat('dd.MM.yyyy').format(d);
-    }
   }
 }
 
