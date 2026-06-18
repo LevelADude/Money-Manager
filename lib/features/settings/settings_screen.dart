@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../shared/money.dart';
+import '../currency/add_currency.dart';
 import '../currency/currency_providers.dart';
 import 'settings_providers.dart';
 
@@ -84,23 +85,40 @@ class SettingsScreen extends ConsumerWidget {
                   .titleSmall
                   ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: supportedCurrencies.contains(settings.baseCurrency)
-                ? settings.baseCurrency
-                : 'EUR',
-            decoration: const InputDecoration(
-              labelText: 'Hauptwährung',
-              prefixIcon: Icon(Icons.payments_outlined),
-              helperText: 'Summen werden in diese Währung umgerechnet.',
-            ),
-            items: [
-              for (final c in supportedCurrencies)
-                DropdownMenuItem(
-                    value: c, child: Text('$c (${currencySymbol(c)})')),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue:
+                      ref.watch(allCurrenciesProvider).contains(settings.baseCurrency)
+                          ? settings.baseCurrency
+                          : 'EUR',
+                  decoration: const InputDecoration(
+                    labelText: 'Hauptwährung',
+                    prefixIcon: Icon(Icons.payments_outlined),
+                    helperText: 'Summen werden in diese Währung umgerechnet.',
+                  ),
+                  items: [
+                    for (final c in ref.watch(allCurrenciesProvider))
+                      DropdownMenuItem(
+                          value: c, child: Text('$c (${currencySymbol(c)})')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) notifier.setBaseCurrency(v);
+                  },
+                ),
+              ),
+              IconButton(
+                tooltip: 'Eigene Währung hinzufügen',
+                icon: const Icon(Icons.add),
+                onPressed: () async {
+                  final code = await showAddCurrencyDialog(context);
+                  if (code != null) {
+                    await ref.read(customCurrenciesProvider.notifier).add(code);
+                  }
+                },
+              ),
             ],
-            onChanged: (v) {
-              if (v != null) notifier.setBaseCurrency(v);
-            },
           ),
           const SizedBox(height: 8),
           Align(

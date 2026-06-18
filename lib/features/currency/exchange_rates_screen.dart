@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shared/money.dart';
 import '../settings/settings_providers.dart';
+import 'add_currency.dart';
 import 'currency_providers.dart';
 
 /// Wechselkurse verwalten: wie viele Einheiten der Hauptwährung 1 Einheit einer
@@ -95,13 +96,23 @@ class ExchangeRatesScreen extends ConsumerWidget {
           Wrap(
             spacing: 8,
             children: [
-              for (final c in supportedCurrencies)
+              for (final c in ref.watch(allCurrenciesProvider))
                 if (c != base && !codes.contains(c))
                   ActionChip(
                     label: Text(c),
                     avatar: const Icon(Icons.add, size: 16),
                     onPressed: () => _editRate(context, ref, c, 0),
                   ),
+              ActionChip(
+                label: const Text('Eigene…'),
+                avatar: const Icon(Icons.add, size: 16),
+                onPressed: () async {
+                  final code = await showAddCurrencyDialog(context);
+                  if (code == null) return;
+                  await ref.read(customCurrenciesProvider.notifier).add(code);
+                  if (context.mounted) await _editRate(context, ref, code, 0);
+                },
+              ),
             ],
           ),
         ],

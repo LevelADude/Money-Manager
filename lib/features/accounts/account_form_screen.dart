@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/account.dart';
 import '../../shared/money.dart';
+import '../currency/add_currency.dart';
 import '../currency/currency_providers.dart';
 import 'account_providers.dart';
 
@@ -134,21 +135,43 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                 onChanged: (v) => setState(() => _type = v ?? AccountType.bank),
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: supportedCurrencies.contains(_currency)
-                    ? _currency
-                    : 'EUR',
-                decoration: const InputDecoration(
-                  labelText: 'Währung',
-                  prefixIcon: Icon(Icons.currency_exchange),
-                ),
-                items: [
-                  for (final c in supportedCurrencies)
-                    DropdownMenuItem(
-                        value: c, child: Text('$c (${currencySymbol(c)})')),
-                ],
-                onChanged: (v) => setState(() => _currency = v ?? 'EUR'),
-              ),
+              Consumer(builder: (context, ref, _) {
+                final all = ref.watch(allCurrenciesProvider);
+                final value = all.contains(_currency) ? _currency : 'EUR';
+                return Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: value,
+                        decoration: const InputDecoration(
+                          labelText: 'Währung',
+                          prefixIcon: Icon(Icons.currency_exchange),
+                        ),
+                        items: [
+                          for (final c in all)
+                            DropdownMenuItem(
+                                value: c,
+                                child: Text('$c (${currencySymbol(c)})')),
+                        ],
+                        onChanged: (v) => setState(() => _currency = v ?? 'EUR'),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Eigene Währung hinzufügen',
+                      icon: const Icon(Icons.add),
+                      onPressed: () async {
+                        final code = await showAddCurrencyDialog(context);
+                        if (code != null) {
+                          await ref
+                              .read(customCurrenciesProvider.notifier)
+                              .add(code);
+                          setState(() => _currency = code);
+                        }
+                      },
+                    ),
+                  ],
+                );
+              }),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _opening,

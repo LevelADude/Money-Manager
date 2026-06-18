@@ -12,6 +12,38 @@ const supportedCurrencies = <String>[
   'TRY', 'CAD', 'AUD', 'USDT',
 ];
 
+/// Vom Nutzer hinzugefügte eigene Währungscodes (lokal gespeichert).
+class CustomCurrenciesNotifier extends Notifier<List<String>> {
+  static const _k = 'settings_custom_currencies';
+
+  @override
+  List<String> build() =>
+      ref.watch(sharedPrefsProvider).getStringList(_k) ?? const [];
+
+  Future<void> add(String code) async {
+    final c = code.trim().toUpperCase();
+    if (c.isEmpty || supportedCurrencies.contains(c) || state.contains(c)) {
+      return;
+    }
+    final next = [...state, c];
+    await ref.read(sharedPrefsProvider).setStringList(_k, next);
+    state = next;
+  }
+}
+
+final customCurrenciesProvider =
+    NotifierProvider<CustomCurrenciesNotifier, List<String>>(
+        CustomCurrenciesNotifier.new);
+
+/// Alle wählbaren Währungen: Standard + eigene + in Konten benutzte.
+final allCurrenciesProvider = Provider<List<String>>((ref) {
+  final custom = ref.watch(customCurrenciesProvider);
+  final accs = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  final extras = <String>{...custom, for (final a in accs) a.currency}
+    ..removeAll(supportedCurrencies);
+  return [...supportedCurrencies, ...(extras.toList()..sort())];
+});
+
 /// Wechselkurse: wie viele Einheiten der Hauptwährung 1 Einheit der Währung
 /// wert ist (Hauptwährung selbst = 1.0). Lokal in shared_preferences.
 class ExchangeRatesNotifier extends Notifier<Map<String, double>> {
