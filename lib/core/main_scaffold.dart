@@ -1,22 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../shared/data_refresh.dart';
 import '../shared/responsive.dart';
 
 /// Persistente Menüleiste: untere NavigationBar (schmal/Handy) bzw. seitliche
 /// NavigationRail (breit/Desktop). Hält die vier Hauptbereiche. Der Inhalt wird
 /// auf breiten Bildschirmen zentriert und in der Breite begrenzt (responsive).
-class MainScaffold extends StatelessWidget {
+///
+/// Lädt zusätzlich die Daten neu, sobald die App wieder in den Vordergrund
+/// kommt (Lifecycle „resumed") – so sind beim Öffnen immer die neuesten Daten da.
+class MainScaffold extends ConsumerStatefulWidget {
   const MainScaffold({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
+  @override
+  ConsumerState<MainScaffold> createState() => _MainScaffoldState();
+}
+
+class _MainScaffoldState extends ConsumerState<MainScaffold>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      refreshAllData(ref);
+    }
+  }
+
   void _goBranch(int index) {
-    shell.goBranch(index, initialLocation: index == shell.currentIndex);
+    widget.shell
+        .goBranch(index, initialLocation: index == widget.shell.currentIndex);
   }
 
   @override
   Widget build(BuildContext context) {
+    final shell = widget.shell;
     final items = <({IconData icon, IconData active, String label})>[
       (
         icon: Icons.account_balance_wallet_outlined,

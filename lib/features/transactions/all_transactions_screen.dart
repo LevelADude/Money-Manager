@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../shared/data_refresh.dart';
 import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
@@ -216,6 +217,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         actions: [
           const ProfileSwitcher(),
           IconButton(
+            tooltip: 'Aktualisieren',
+            icon: const Icon(Icons.refresh),
+            onPressed: () => refreshAllData(ref),
+          ),
+          IconButton(
             tooltip: 'Heute',
             icon: const Icon(Icons.today_outlined),
             onPressed: () => setState(() => _anchor = DateTime.now()),
@@ -336,8 +342,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                ref.invalidate(allTransactionsProvider);
-                ref.invalidate(accountsProvider);
+                refreshAllData(ref);
                 await Future<void>.delayed(const Duration(milliseconds: 300));
               },
               child: filtered.isEmpty

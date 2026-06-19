@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../shared/category_icons.dart';
+import '../../shared/data_refresh.dart';
 import '../../shared/money_text.dart';
 import '../auth/auth_providers.dart';
 import '../currency/currency_providers.dart';
@@ -63,6 +64,16 @@ class AccountsScreen extends ConsumerWidget {
         title: const Text('Konten'),
         actions: [
           const ProfileSwitcher(),
+          IconButton(
+            tooltip: 'Aktualisieren',
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              refreshAllData(ref);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Aktualisiert')),
+              );
+            },
+          ),
           Builder(builder: (context) {
             final count = ref.watch(remindersProvider).length;
             return IconButton(

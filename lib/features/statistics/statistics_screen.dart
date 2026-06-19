@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/app_transaction.dart';
+import '../../shared/data_refresh.dart';
 import '../../shared/mini_line_chart.dart';
 import '../../shared/money.dart';
 import '../../shared/money_text.dart';
@@ -113,7 +114,14 @@ class StatisticsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Statistik'),
-        actions: const [ProfileSwitcher()],
+        actions: [
+          const ProfileSwitcher(),
+          IconButton(
+            tooltip: 'Aktualisieren',
+            icon: const Icon(Icons.refresh),
+            onPressed: () => refreshAllData(ref),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(12),
