@@ -35,6 +35,21 @@
   <title>Money Manager</title>
   <link rel="manifest" href="manifest.json">
 
+  <!--
+    Passkeys-Stub. passkeys_web wird transitiv ueber supabase_flutter
+    eingebunden und ruft bei der Plugin-Registrierung PasskeyAuthenticator.init()
+    auf. Ist window.PasskeyAuthenticator undefined, stuerzt die App beim Start ab
+    ("Cannot read properties of undefined (reading 'init')") -> weisser
+    Bildschirm. Wir nutzen keine Passkeys (Login per E-Mail/Passwort + PIN),
+    daher reicht ein No-Op-Objekt. Kein externer Code, synchron im <head>,
+    damit das Objekt vor der Flutter-Plugin-Registrierung existiert.
+  -->
+  <script>
+    window.PasskeyAuthenticator = window.PasskeyAuthenticator || {
+      init: function () {}
+    };
+  </script>
+
   <style>
     html, body { margin: 0; padding: 0; height: 100%; background: #fafafa; }
     @media (prefers-color-scheme: dark) { html, body { background: #121212; } }
