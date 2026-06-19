@@ -3,6 +3,19 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Entfernt doppelte Roh-Zeilen anhand ihrer `id` (erste gewinnt, Reihenfolge
+/// bleibt). Schutz gegen doppelte Anzeige UND doppelte Verrechnung, falls der
+/// Supabase-Realtime-Stream (oder der Cache) dieselbe Zeile mehrfach liefert –
+/// das ist sicherheitskritisch, weil Salden/Summen sonst doppelt zählen.
+List<Map<String, dynamic>> dedupRowsById(List<Map<String, dynamic>> rows) {
+  final seen = <Object?>{};
+  final out = <Map<String, dynamic>>[];
+  for (final r in rows) {
+    if (seen.add(r['id'])) out.add(r);
+  }
+  return out;
+}
+
 /// Wird in `main()` per Override mit der echten Instanz versorgt.
 final sharedPrefsProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('sharedPrefsProvider muss in main() überschrieben werden');
@@ -23,7 +36,8 @@ class AppCache {
 
   final SharedPreferences _prefs;
 
-  String _key(String table) => 'cache_v3_$table';
+  // v4: dedupliziert gespeicherte Zeilen (alte, evtl. doppelte Caches verwerfen).
+  String _key(String table) => 'cache_v4_$table';
 
   /// Liefert die zuletzt gecachten Roh-Zeilen einer Tabelle (oder leer).
   List<Map<String, dynamic>> readRows(String table) {

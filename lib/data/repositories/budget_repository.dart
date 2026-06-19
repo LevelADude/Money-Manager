@@ -20,8 +20,9 @@ class BudgetRepository {
     }
     try {
       yield* _client.from('budgets').stream(primaryKey: ['id']).map((rows) {
-        _cache.writeRows('budgets', rows);
-        return rows
+        final unique = dedupRowsById(rows);
+        _cache.writeRows('budgets', unique);
+        return unique
             .where((r) => r['deleted_at'] == null)
             .map(Budget.fromJson)
             .toList();

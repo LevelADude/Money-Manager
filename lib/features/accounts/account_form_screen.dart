@@ -58,6 +58,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   }
 
   Future<void> _save() async {
+    // Re-Entry-Schutz: verhindert doppelte Konten bei schnellem Doppel-Tipp
+    // (der Button-Disable greift erst nach dem Rebuild – diese Sperre sofort).
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
     final openingCents = parseToCents(_opening.text) ?? 0;
     final creditCents =

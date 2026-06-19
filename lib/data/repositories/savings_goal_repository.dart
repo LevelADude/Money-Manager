@@ -21,8 +21,9 @@ class SavingsGoalRepository {
           .stream(primaryKey: ['id'])
           .order('created_at')
           .map((rows) {
-        _cache.writeRows('savings_goals', rows);
-        return rows.map(SavingsGoal.fromJson).toList();
+        final unique = dedupRowsById(rows);
+        _cache.writeRows('savings_goals', unique);
+        return unique.map(SavingsGoal.fromJson).toList();
       });
     } catch (_) {
       // Offline: beim Cache bleiben.

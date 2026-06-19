@@ -26,8 +26,9 @@ class TransactionRepository {
           .stream(primaryKey: ['id'])
           .order('occurred_on')
           .map((rows) {
-        _cache.writeRows('transactions', rows);
-        return rows
+        final unique = dedupRowsById(rows);
+        _cache.writeRows('transactions', unique);
+        return unique
             .where((r) => r['deleted_at'] == null)
             .map(AppTransaction.fromJson)
             .toList();

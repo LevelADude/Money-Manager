@@ -34,8 +34,9 @@ class CategoryRepository {
           .stream(primaryKey: ['id'])
           .order('sort_order')
           .map((rows) {
-        _cache.writeRows('categories', rows);
-        return _sorted(rows
+        final unique = dedupRowsById(rows);
+        _cache.writeRows('categories', unique);
+        return _sorted(unique
             .where((r) => r['deleted_at'] == null)
             .map(Category.fromJson));
       });
@@ -84,8 +85,9 @@ class CategoryRepository {
           .stream(primaryKey: ['id'])
           .order('keyword')
           .map((rows) {
-        _cache.writeRows('category_rules', rows);
-        return rows.map(CategoryRule.fromJson).toList();
+        final unique = dedupRowsById(rows);
+        _cache.writeRows('category_rules', unique);
+        return unique.map(CategoryRule.fromJson).toList();
       });
     } catch (_) {
       // Offline: beim Cache bleiben.

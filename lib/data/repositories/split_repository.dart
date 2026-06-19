@@ -21,8 +21,9 @@ class SplitRepository {
       yield* _client
           .from('transaction_splits')
           .stream(primaryKey: ['id']).map((rows) {
-        _cache.writeRows('transaction_splits', rows);
-        return rows.map(TransactionSplit.fromJson).toList();
+        final unique = dedupRowsById(rows);
+        _cache.writeRows('transaction_splits', unique);
+        return unique.map(TransactionSplit.fromJson).toList();
       });
     } catch (_) {
       // Offline: beim Cache bleiben.

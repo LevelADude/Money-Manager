@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../local/app_cache.dart';
 import '../models/transaction_comment.dart';
 
 /// Zugriff auf `transaction_comments` (Kommentar-Thread je Buchung).
@@ -14,7 +15,8 @@ class CommentRepository {
         .stream(primaryKey: ['id'])
         .eq('transaction_id', transactionId)
         .order('created_at')
-        .map((rows) => rows.map(TransactionComment.fromJson).toList());
+        .map((rows) =>
+            dedupRowsById(rows).map(TransactionComment.fromJson).toList());
   }
 
   Future<void> add(String transactionId, String body) {

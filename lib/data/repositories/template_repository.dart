@@ -22,8 +22,9 @@ class TemplateRepository {
           .stream(primaryKey: ['id'])
           .order('name')
           .map((rows) {
-        _cache.writeRows('transaction_templates', rows);
-        return rows.map(TransactionTemplate.fromJson).toList();
+        final unique = dedupRowsById(rows);
+        _cache.writeRows('transaction_templates', unique);
+        return unique.map(TransactionTemplate.fromJson).toList();
       });
     } catch (_) {
       // Offline: beim Cache bleiben.

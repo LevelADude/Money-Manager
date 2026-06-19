@@ -33,9 +33,10 @@ class AccountRepository {
           .stream(primaryKey: ['id'])
           .order('sort_order')
           .map((rows) {
-        _cache.writeRows('accounts', rows);
+        final unique = dedupRowsById(rows);
+        _cache.writeRows('accounts', unique);
         return _sorted(
-            rows.where((r) => r['deleted_at'] == null).map(Account.fromJson));
+            unique.where((r) => r['deleted_at'] == null).map(Account.fromJson));
       });
     } catch (_) {
       // Offline: beim Cache bleiben.

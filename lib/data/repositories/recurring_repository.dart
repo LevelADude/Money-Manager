@@ -27,8 +27,9 @@ class RecurringRepository {
           .stream(primaryKey: ['id'])
           .order('next_due')
           .map((rows) {
-        _cache.writeRows('recurring_rules', rows);
-        return rows
+        final unique = dedupRowsById(rows);
+        _cache.writeRows('recurring_rules', unique);
+        return unique
             .where((r) => r['deleted_at'] == null)
             .map(RecurringRule.fromJson)
             .toList();
