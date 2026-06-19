@@ -38,6 +38,10 @@ class ProfileSwitcher extends ConsumerWidget {
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold));
     }
 
+    // Andere Personen, auf die ich Zugriff habe (eigene Konten ausgenommen).
+    final otherOwners = [for (final o in options) if (o.id != myId) o];
+    final hasOthers = otherOwners.isNotEmpty;
+
     return PopupMenuButton<String?>(
       tooltip: 'Person wechseln',
       offset: const Offset(0, 48),
@@ -57,18 +61,20 @@ class ProfileSwitcher extends ConsumerWidget {
             checked: selected == myId,
             child: Text('$myName (ich)'),
           ),
-        CheckedPopupMenuItem<String?>(
-          value: null,
-          checked: selected == null,
-          child: const Text('Alle Personen'),
-        ),
-        for (final o in options)
-          if (o.id != myId)
-            CheckedPopupMenuItem<String?>(
-              value: o.id,
-              checked: selected == o.id,
-              child: Text(o.name),
-            ),
+        // „Alle Personen" nur anzeigen, wenn es überhaupt andere gibt – sonst
+        // wäre es identisch zur Eigenansicht (und schien „ohne Funktion").
+        if (hasOthers)
+          CheckedPopupMenuItem<String?>(
+            value: null,
+            checked: selected == null,
+            child: const Text('Alle Personen (gesamt)'),
+          ),
+        for (final o in otherOwners)
+          CheckedPopupMenuItem<String?>(
+            value: o.id,
+            checked: selected == o.id,
+            child: Text(o.name),
+          ),
       ],
     );
   }

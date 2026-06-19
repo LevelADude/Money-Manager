@@ -95,17 +95,16 @@ class StatisticsScreen extends ConsumerWidget {
     final topExpenses = ref.watch(topExpensesProvider);
     final catNames = ref.watch(categoryNamesProvider);
 
-    // Tägliche Ausgaben des angezeigten Monats für die Heatmap.
+    // Tägliche Ausgaben des angezeigten Jahres für die Heatmap (Monat + Jahr).
     final pfTxs = ref.watch(personFilteredTransactionsProvider);
     final hmNow = anchor;
-    final dailyExpense = <int, int>{};
+    final dailyByDate = <DateTime, int>{};
     for (final t in pfTxs) {
       if (t.type != TransactionType.expense) continue;
-      if (t.occurredOn.year != hmNow.year ||
-          t.occurredOn.month != hmNow.month) {
-        continue;
-      }
-      dailyExpense.update(t.occurredOn.day, (v) => v + t.amountCents,
+      if (t.occurredOn.year != hmNow.year) continue;
+      final d =
+          DateTime(t.occurredOn.year, t.occurredOn.month, t.occurredOn.day);
+      dailyByDate.update(d, (v) => v + t.amountCents,
           ifAbsent: () => t.amountCents);
     }
     String nameOf(String? id) =>
@@ -180,7 +179,7 @@ class StatisticsScreen extends ConsumerWidget {
           _HeatmapCard(
             year: hmNow.year,
             month: hmNow.month,
-            daily: dailyExpense,
+            dailyByDate: dailyByDate,
           ),
           const SizedBox(height: 12),
           _CategorySection(
@@ -611,42 +610,109 @@ class _SankeyPainter extends CustomPainter {
   bool shouldRepaint(covariant _SankeyPainter old) => true;
 }
 
-/// Heatmap der täglichen Ausgaben im laufenden Monat (Kalenderraster).
-class _HeatmapCard extends StatelessWidget {
+/// Anzeige-Modus der Ausgaben-Heatmap.
+enum _HeatMode { month, year }
+
+/// Heatmap der täglichen Ausgaben – umschaltbar zwischen Monat (Kalenderraster)
+/// und Jahr (GitHub-artiges Wochen-Raster, horizontal scrollbar).
+class _HeatmapCard extends StatefulWidget {
   const _HeatmapCard({
     required this.year,
     required this.month,
-    required this.daily,
+    required this.dailyByDate,
   });
 
   final int year;
   final int month;
-  final Map<int, int> daily;
+  final Map<DateTime, int> dailyByDate;
+
+  @override
+  State<_HeatmapCard> createState() => _HeatmapCardState();
+}
+
+class _HeatmapCardState extends State<_HeatmapCard> {
+  _HeatMode _mode = _HeatMode.month;
+
+  Color _cellColor(int cents, int maxVal) {
+    final base = Theme.of(context).colorScheme.primary;
+    if (cents <= 0) return base.withValues(alpha: 0.05);
+    final intensity = (0.18 + 0.82 * (cents / (maxVal == 0 ? 1 : maxVal)))
+        .clamp(0.0, 1.0);
+    return base.withValues(alpha: intensity);
+  }
+
+  String _fmtDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
 
   @override
   Widget build(BuildContext context) {
-    final base = Theme.of(context).colorScheme.primary;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _mode == _HeatMode.month
+                        ? 'Ausgaben-Heatmap (Monat)'
+                        : 'Ausgaben-Heatmap (Jahr)',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                SegmentedButton<_HeatMode>(
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  segments: const [
+                    ButtonSegment(value: _HeatMode.month, label: Text('Monat')),
+                    ButtonSegment(value: _HeatMode.year, label: Text('Jahr')),
+                  ],
+                  selected: {_mode},
+                  onSelectionChanged: (s) => setState(() => _mode = s.first),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_mode == _HeatMode.month) _buildMonth() else _buildYear(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMonth() {
+    final year = widget.year;
+    final month = widget.month;
     final daysInMonth = DateTime(year, month + 1, 0).day;
     final firstWeekday = DateTime(year, month, 1).weekday; // 1=Mo
-    final maxDay = daily.values.isEmpty
-        ? 1
-        : daily.values.reduce((a, b) => a > b ? a : b);
+    int valOf(int d) => widget.dailyByDate[DateTime(year, month, d)] ?? 0;
+    var maxDay = 1;
+    for (var d = 1; d <= daysInMonth; d++) {
+      final v = valOf(d);
+      if (v > maxDay) maxDay = v;
+    }
 
     final cells = <Widget>[];
     for (var i = 1; i < firstWeekday; i++) {
       cells.add(const SizedBox.shrink());
     }
     for (var d = 1; d <= daysInMonth; d++) {
-      final e = daily[d] ?? 0;
+      final e = valOf(d);
       final intensity = e == 0 ? 0.0 : (0.18 + 0.82 * (e / maxDay));
       cells.add(Tooltip(
         message: e == 0 ? '$d.' : '$d. · ${formatCents(e)}',
         child: Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: e == 0
-                ? base.withValues(alpha: 0.05)
-                : base.withValues(alpha: intensity),
+            color: _cellColor(e, maxDay),
             borderRadius: BorderRadius.circular(4),
           ),
           alignment: Alignment.center,
@@ -659,39 +725,136 @@ class _HeatmapCard extends StatelessWidget {
       ));
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            Text('Ausgaben-Heatmap (Monat)',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                for (final w in const ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'])
-                  Expanded(
-                    child: Center(
-                      child: Text(w,
-                          style: Theme.of(context).textTheme.labelSmall),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            GridView.count(
-              crossAxisCount: 7,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              children: cells,
-            ),
+            for (final w in const ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'])
+              Expanded(
+                child: Center(
+                  child:
+                      Text(w, style: Theme.of(context).textTheme.labelSmall),
+                ),
+              ),
           ],
         ),
-      ),
+        const SizedBox(height: 4),
+        GridView.count(
+          crossAxisCount: 7,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: cells,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildYear() {
+    final year = widget.year;
+    final firstDay = DateTime(year, 1, 1);
+    final lastDay = DateTime(year, 12, 31);
+    final firstMonday = firstDay.subtract(Duration(days: firstDay.weekday - 1));
+    var maxVal = 1;
+    widget.dailyByDate.forEach((_, v) {
+      if (v > maxVal) maxVal = v;
+    });
+
+    // Montage aller Wochen (Spalten).
+    final weeks = <DateTime>[];
+    var w = firstMonday;
+    while (!w.isAfter(lastDay)) {
+      weeks.add(w);
+      w = w.add(const Duration(days: 7));
+    }
+
+    const cell = 13.0;
+    const slot = cell + 3; // Zelle + 2x1.5 Rand
+
+    Widget dayCell(DateTime day) {
+      final inYear = day.year == year;
+      final e = inYear ? (widget.dailyByDate[day] ?? 0) : 0;
+      return Container(
+        width: cell,
+        height: cell,
+        margin: const EdgeInsets.all(1.5),
+        decoration: BoxDecoration(
+          color: inYear ? _cellColor(e, maxVal) : Colors.transparent,
+          borderRadius: BorderRadius.circular(3),
+        ),
+        child: inYear
+            ? Tooltip(
+                message: e == 0 ? _fmtDate(day) : '${_fmtDate(day)} · ${formatCents(e)}',
+                child: const SizedBox.expand(),
+              )
+            : null,
+      );
+    }
+
+    // Monatsbeschriftung über den Spalten (bei Monatswechsel).
+    final monthLabels = <Widget>[];
+    int? lastMonth;
+    for (final wk in weeks) {
+      final rep = wk.isBefore(firstDay) ? firstDay : wk;
+      final show = rep.month != lastMonth;
+      lastMonth = rep.month;
+      monthLabels.add(SizedBox(
+        width: slot,
+        child: show
+            ? Text(_monthAbbr[rep.month - 1],
+                style: Theme.of(context).textTheme.labelSmall)
+            : const SizedBox.shrink(),
+      ));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: monthLabels),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  for (final wk in weeks)
+                    Column(
+                      children: [
+                        for (var i = 0; i < 7; i++)
+                          dayCell(wk.add(Duration(days: i))),
+                      ],
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text('weniger', style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(width: 4),
+            for (final a in const [0.05, 0.3, 0.55, 0.8, 1.0])
+              Container(
+                width: 12,
+                height: 12,
+                margin: const EdgeInsets.symmetric(horizontal: 1),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: a),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            const SizedBox(width: 4),
+            Text('mehr', style: Theme.of(context).textTheme.labelSmall),
+          ],
+        ),
+      ],
     );
   }
 }
