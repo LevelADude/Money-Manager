@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../config/app_config.dart';
 import '../onboarding/connection_editor.dart';
 import 'auth_providers.dart';
 
@@ -191,13 +192,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: _loading ? null : _forgotPassword,
                       child: const Text('Passwort vergessen?'),
                     ),
-                  const SizedBox(height: 8),
-                  TextButton.icon(
-                    onPressed:
-                        _loading ? null : () => showConnectionEditor(context, ref),
-                    icon: const Icon(Icons.dns_outlined, size: 18),
-                    label: const Text('Datenbank-Verbindung ändern'),
-                  ),
+                  // Verbindungs-Knopf nur zeigen, wenn er gebraucht wird:
+                  // wenn ein eigener Override aktiv ist (z. B. falsche URL zum
+                  // Zuruecksetzen) oder gar keine feste Verbindung eingebaut ist
+                  // (Fork). Fuer normale Besucher der Standard-Instanz bleibt er
+                  // verborgen.
+                  Builder(builder: (context) {
+                    final config = ref.watch(appConfigProvider);
+                    if (config.hasBakedDefault && !config.isUsingOverride) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: TextButton.icon(
+                        onPressed: _loading
+                            ? null
+                            : () => showConnectionEditor(context, ref),
+                        icon: const Icon(Icons.dns_outlined, size: 18),
+                        label: const Text('Datenbank-Verbindung ändern'),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
