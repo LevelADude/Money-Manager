@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_config.dart';
 import '../auth/auth_providers.dart';
+import '../onboarding/connection_editor.dart';
 import 'profile_providers.dart';
 
 /// Eigenes Profil ansehen/bearbeiten (Anzeigename) + Abmelden.
@@ -98,7 +99,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               label: const Text('Abmelden'),
             ),
             const Divider(height: 48),
-            _DatabaseConnectionSection(config: ref.read(appConfigProvider)),
+            const _DatabaseConnectionSection(),
           ],
         ),
       ),
@@ -106,59 +107,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
-/// Zeigt die aktuelle Supabase-Verbindung und – wenn sie zur Laufzeit gesetzt
-/// wurde (Onboarding) – einen Knopf zum Zurücksetzen.
-class _DatabaseConnectionSection extends StatelessWidget {
-  const _DatabaseConnectionSection({required this.config});
-
-  final AppConfig config;
-
-  Future<void> _reset(BuildContext context) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Verbindung zurücksetzen?'),
-        content: const Text(
-          'Die gespeicherte Supabase-Verbindung wird gelöscht. Danach musst '
-          'du die App neu starten (oder den Browser-Tab neu laden) und die '
-          'Zugangsdaten erneut eingeben. Deine Daten in Supabase bleiben '
-          'erhalten.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Zurücksetzen'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    await config.clear();
-    if (!context.mounted) return;
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Zurückgesetzt'),
-        content: const Text(
-          'Bitte schließe die App und öffne sie neu (am Handy/Desktop) bzw. '
-          'lade den Browser-Tab neu, um die Einrichtung erneut zu starten.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
+/// Zeigt die aktuelle Supabase-Verbindung und erlaubt, sie zu ändern bzw. auf
+/// die fest eingebaute Standard-Verbindung zurückzusetzen.
+class _DatabaseConnectionSection extends ConsumerWidget {
+  const _DatabaseConnectionSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final config = ref.watch(appConfigProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -171,21 +127,19 @@ class _DatabaseConnectionSection extends StatelessWidget {
           title: const Text('Supabase'),
           subtitle: Text(config.url.isEmpty ? '—' : config.url),
         ),
-        if (config.isLockedByEnv)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
+        if (config.isUsingOverride)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
             child: Text(
-              'Diese Verbindung ist über env.json fest eingestellt und kann '
-              'hier nicht geändert werden.',
-              style: TextStyle(fontStyle: FontStyle.italic),
+              'Eigene (manuell gesetzte) Verbindung aktiv.',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
-          )
-        else
-          OutlinedButton.icon(
-            onPressed: () => _reset(context),
-            icon: const Icon(Icons.link_off),
-            label: const Text('Verbindung zurücksetzen'),
           ),
+        OutlinedButton.icon(
+          onPressed: () => showConnectionEditor(context, ref),
+          icon: const Icon(Icons.dns_outlined),
+          label: const Text('Verbindung ändern'),
+        ),
       ],
     );
   }

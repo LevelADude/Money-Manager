@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../onboarding/connection_editor.dart';
 import 'auth_providers.dart';
 
 /// Login + Registrierung (E-Mail/Passwort) in einem Screen.
@@ -190,6 +191,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: _loading ? null : _forgotPassword,
                       child: const Text('Passwort vergessen?'),
                     ),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed:
+                        _loading ? null : () => showConnectionEditor(context, ref),
+                    icon: const Icon(Icons.dns_outlined, size: 18),
+                    label: const Text('Datenbank-Verbindung ändern'),
+                  ),
                 ],
               ),
             ),
