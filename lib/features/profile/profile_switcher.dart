@@ -1,0 +1,75 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../auth/auth_providers.dart';
+import '../transactions/person_filter.dart';
+import 'profile_providers.dart';
+
+/// Profil-Icon oben in der AppBar zum Wechseln der angezeigten Person.
+///
+/// Standard ist „Ich" (nur eigene Finanzen). Über das Menü kann auf „Alle
+/// Personen" oder eine andere Person umgeschaltet werden. Spätere Phasen
+/// beschränken die wählbaren Personen auf solche, die Zugriff erteilt haben.
+class ProfileSwitcher extends ConsumerWidget {
+  const ProfileSwitcher({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final myId = ref.watch(currentUserIdProvider);
+    final options = ref.watch(ownerOptionsProvider);
+    final names =
+        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+    final selected = ref.watch(personFilterProvider);
+
+    String nameOf(String id) =>
+        names[id]?.isNotEmpty == true ? names[id]! : 'Person';
+    final myName = myId == null
+        ? 'Ich'
+        : (names[myId]?.isNotEmpty == true ? names[myId]! : 'Ich');
+
+    // Avatar-Inhalt: Gruppen-Icon bei „Alle", sonst Initiale der Person.
+    Widget avatar() {
+      if (selected == null) {
+        return const Icon(Icons.groups_outlined, size: 18);
+      }
+      final label = selected == myId ? myName : nameOf(selected);
+      final initial = label.isNotEmpty ? label[0].toUpperCase() : '?';
+      return Text(initial,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold));
+    }
+
+    return PopupMenuButton<String?>(
+      tooltip: 'Person wechseln',
+      offset: const Offset(0, 48),
+      icon: CircleAvatar(
+        radius: 15,
+        backgroundColor: selected == null
+            ? Theme.of(context).colorScheme.surfaceContainerHighest
+            : Theme.of(context).colorScheme.primaryContainer,
+        foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+        child: avatar(),
+      ),
+      onSelected: (v) => ref.read(personFilterProvider.notifier).set(v),
+      itemBuilder: (ctx) => [
+        if (myId != null)
+          CheckedPopupMenuItem<String?>(
+            value: myId,
+            checked: selected == myId,
+            child: Text('$myName (ich)'),
+          ),
+        CheckedPopupMenuItem<String?>(
+          value: null,
+          checked: selected == null,
+          child: const Text('Alle Personen'),
+        ),
+        for (final o in options)
+          if (o.id != myId)
+            CheckedPopupMenuItem<String?>(
+              value: o.id,
+              checked: selected == o.id,
+              child: Text(o.name),
+            ),
+      ],
+    );
+  }
+}

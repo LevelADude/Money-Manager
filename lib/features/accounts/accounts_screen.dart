@@ -8,8 +8,10 @@ import '../../shared/category_icons.dart';
 import '../../shared/money_text.dart';
 import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
+import '../profile/profile_switcher.dart';
 import '../recurring/recurring_providers.dart';
 import '../reminders/reminders_providers.dart';
+import '../transactions/person_filter.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
 
@@ -36,6 +38,7 @@ class AccountsScreen extends ConsumerWidget {
     ref.watch(recurringGenerationProvider);
 
     final accountsAsync = ref.watch(accountsProvider);
+    final personFilter = ref.watch(personFilterProvider);
     final readOnly = ref.watch(isReadOnlyProvider).asData?.value ?? false;
     final convert = ref.watch(converterProvider);
     final txs = ref.watch(allTransactionsProvider).asData?.value ??
@@ -55,6 +58,7 @@ class AccountsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Konten'),
         actions: [
+          const ProfileSwitcher(),
           Builder(builder: (context) {
             final count = ref.watch(remindersProvider).length;
             return IconButton(
@@ -89,7 +93,11 @@ class AccountsScreen extends ConsumerWidget {
       body: accountsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Fehler: $e')),
-        data: (accounts) {
+        data: (allAccounts) {
+          // Nur die Konten der gewählten Person (null = alle Personen).
+          final accounts = personFilter == null
+              ? allAccounts
+              : allAccounts.where((a) => a.ownerId == personFilter).toList();
           if (accounts.isEmpty) {
             return const Center(
               child: Text('Noch keine Konten. Lege unten eines an.'),
@@ -101,15 +109,15 @@ class AccountsScreen extends ConsumerWidget {
           }
 
           final children = <Widget>[
-            _NetWorthCard(totalCents: ref.watch(netWorthProvider(null))),
+            _NetWorthCard(totalCents: ref.watch(netWorthProvider(personFilter))),
           ];
 
-          // Vermögen je Person (nur sinnvoll, wenn mehrere Besitzer existieren).
+          // Vermögen je Person nur in der Gesamtansicht („Alle Personen").
           final owners = <String>{
             for (final a in accounts)
               if (a.ownerId != null) a.ownerId!,
           }.toList();
-          if (owners.length > 1) {
+          if (personFilter == null && owners.length > 1) {
             final entries = [
               for (final o in owners)
                 (

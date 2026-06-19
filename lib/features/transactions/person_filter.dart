@@ -3,13 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../accounts/account_providers.dart';
+import '../auth/auth_providers.dart';
 import '../profile/profile_providers.dart';
 import 'transaction_providers.dart';
 
-/// Aktiver Personen-Filter (owner_id eines Kontos) oder null = alle.
+/// Aktiver Personen-Filter (owner_id eines Kontos) oder null = alle Personen.
+///
+/// Standard: der angemeldete Nutzer selbst – so sieht jede:r zunächst nur die
+/// eigenen Finanzen und wechselt bewusst zu „Alle" oder einer anderen Person.
 class PersonFilterNotifier extends Notifier<String?> {
   @override
-  String? build() => null;
+  String? build() => ref.watch(currentUserIdProvider);
   void set(String? ownerId) => state = ownerId;
 }
 

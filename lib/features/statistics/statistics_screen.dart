@@ -11,8 +11,8 @@ import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
+import '../profile/profile_switcher.dart';
 import '../transactions/person_filter.dart';
-import '../transactions/person_filter_button.dart';
 import 'period_filter.dart';
 import 'statistics_providers.dart';
 
@@ -113,7 +113,7 @@ class StatisticsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Statistik'),
-        actions: const [PersonFilterButton()],
+        actions: const [ProfileSwitcher()],
       ),
       body: ListView(
         padding: const EdgeInsets.all(12),

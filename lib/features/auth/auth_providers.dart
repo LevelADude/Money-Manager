@@ -16,3 +16,10 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final authStateChangesProvider = StreamProvider<AuthState>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
 });
+
+/// User-ID des aktuell angemeldeten Nutzers (oder null). Reagiert auf
+/// Login/Logout, damit die Standard-Ansicht „nur ich" immer stimmt.
+final currentUserIdProvider = Provider<String?>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(supabaseClientProvider).auth.currentUser?.id;
+});

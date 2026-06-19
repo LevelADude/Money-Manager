@@ -12,9 +12,9 @@ import '../categories/category_providers.dart';
 import '../currency/currency_providers.dart';
 import '../export/pdf_export.dart';
 import '../profile/profile_providers.dart';
+import '../profile/profile_switcher.dart';
 import '../settings/settings_providers.dart';
 import 'person_filter.dart';
-import 'person_filter_button.dart';
 import 'transaction_providers.dart';
 
 enum _PeriodView { day, week, month, year }
@@ -208,7 +208,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       appBar: AppBar(
         title: const Text('Buchungen'),
         actions: [
-          const PersonFilterButton(),
+          const ProfileSwitcher(),
           IconButton(
             tooltip: 'Heute',
             icon: const Icon(Icons.today_outlined),
