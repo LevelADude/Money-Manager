@@ -2,26 +2,26 @@
 -- Money-Manager - setup.sql  (Komplett-Einrichtung der Datenbank)
 -- =====================================================================
 -- Einmalig fuer ein FRISCHES Supabase-Projekt: gesamten Inhalt im SQL-Editor einfuegen, Run.
--- Enthaelt die Migrationen 0001 bis 0017.
+-- Enthaelt die Migrationen 0001 bis 0018.
 -- =====================================================================
 
 
 -- ## Migration: 0001_init.sql
 
 -- =====================================================================
--- Money-Manager Â· 0001_init.sql Â· Initiales Schema
+-- Money-Manager · 0001_init.sql · Initiales Schema
 -- =====================================================================
--- Modell: Kleine, vertrauenswÃ¼rdige Nutzergruppe.
---   * Jede Person fÃ¼hrt ihre BÃ¼cher (ledgers) GETRENNT (per owner_id).
---   * ABER: jedes authentifizierte Mitglied darf ALLE BÃ¼cher und Buchungen
+-- Modell: Kleine, vertrauenswürdige Nutzergruppe.
+--   * Jede Person führt ihre Bücher (ledgers) GETRENNT (per owner_id).
+--   * ABER: jedes authentifizierte Mitglied darf ALLE Bücher und Buchungen
 --     LESEN und BEARBEITEN.
 --   * Die "Trennung" ist organisatorisch (pro ledger/owner), keine
---     ZugriffsbeschrÃ¤nkung. Wer was angelegt hat, wird Ã¼ber owner_id /
+--     Zugriffsbeschränkung. Wer was angelegt hat, wird über owner_id /
 --     created_by festgehalten (Attribution).
 --
--- MÃ¶chtest du spÃ¤ter strengere PrivatsphÃ¤re (jede:r sieht nur eigene
--- BÃ¼cher + explizit geteilte), musst du nur die RLS-Policies unten Ã¤ndern
--- â€” die App-Struktur bleibt gleich.
+-- Möchtest du später strengere Privatsphäre (jede:r sieht nur eigene
+-- Bücher + explizit geteilte), musst du nur die RLS-Policies unten ändern
+-- — die App-Struktur bleibt gleich.
 -- =====================================================================
 
 create extension if not exists "pgcrypto";   -- gen_random_uuid()
@@ -67,7 +67,7 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- =====================================================================
--- ledgers  (die getrennten BÃ¼cher je Person)
+-- ledgers  (die getrennten Bücher je Person)
 -- =====================================================================
 create table if not exists public.ledgers (
   id         uuid        primary key default gen_random_uuid(),
@@ -145,12 +145,12 @@ alter table public.categories   enable row level security;
 alter table public.transactions enable row level security;
 
 -- ---- profiles -------------------------------------------------------
--- Alle Mitglieder dÃ¼rfen alle Profile lesen (um Namen anzuzeigen).
+-- Alle Mitglieder dürfen alle Profile lesen (um Namen anzuzeigen).
 drop policy if exists profiles_select on public.profiles;
 create policy profiles_select on public.profiles
   for select to authenticated using (true);
 
--- Jede:r darf nur das EIGENE Profil Ã¤ndern / (nach-)anlegen.
+-- Jede:r darf nur das EIGENE Profil ändern / (nach-)anlegen.
 drop policy if exists profiles_insert_self on public.profiles;
 create policy profiles_insert_self on public.profiles
   for insert to authenticated with check (id = auth.uid());
@@ -174,7 +174,7 @@ create policy transactions_all on public.transactions
   for all to authenticated using (true) with check (true);
 
 -- =====================================================================
--- Realtime: Tabellen fÃ¼r Live-Sync auf allen GerÃ¤ten freigeben
+-- Realtime: Tabellen für Live-Sync auf allen Geräten freigeben
 -- =====================================================================
 do $$
 begin
@@ -190,16 +190,16 @@ end $$;
 -- ## Migration: 0002_security_hardening.sql
 
 -- =====================================================================
--- Money-Manager Â· 0002_security_hardening.sql
+-- Money-Manager · 0002_security_hardening.sql
 -- =====================================================================
 -- Behebt Hinweise des Supabase-Security-Advisors:
 --   1) Trigger-Hilfsfunktion bekommt einen festen (immutable) search_path.
---   2) Trigger-Funktionen sollen NICHT Ã¼ber den Ã¶ffentlichen REST-RPC-
---      Endpunkt aufrufbar sein. (Trigger feuern unabhÃ¤ngig von EXECUTE-Rechten,
---      daher bleibt das Verhalten der App unverÃ¤ndert.)
+--   2) Trigger-Funktionen sollen NICHT über den öffentlichen REST-RPC-
+--      Endpunkt aufrufbar sein. (Trigger feuern unabhängig von EXECUTE-Rechten,
+--      daher bleibt das Verhalten der App unverändert.)
 --
--- Hinweis: Die Policies `*_all` mit `using (true)` sind ABSICHTLICH so â€“ das
--- ist das gewÃ¼nschte Modell "vertrauenswÃ¼rdige Gruppe, alle dÃ¼rfen alles".
+-- Hinweis: Die Policies `*_all` mit `using (true)` sind ABSICHTLICH so – das
+-- ist das gewünschte Modell "vertrauenswürdige Gruppe, alle dürfen alles".
 -- =====================================================================
 
 alter function public.set_updated_at() set search_path = '';
@@ -211,13 +211,13 @@ revoke execute on function public.handle_new_user() from public, anon, authentic
 -- ## Migration: 0003_model_v2.sql
 
 -- =====================================================================
--- Money-Manager Â· 0003_model_v2.sql Â· Datenmodell v2 (Personal-Finance)
+-- Money-Manager · 0003_model_v2.sql · Datenmodell v2 (Personal-Finance)
 -- =====================================================================
--- Wandelt das GrundgerÃ¼st in eine vollwertige Finanz-App:
---   * accounts (Konten mit Typ, Anfangssaldo, VermÃ¶gens-Flag) ersetzt ledgers
---   * transactions mit Typ expense/income/transfer + Cent-BetrÃ¤gen + Titel
+-- Wandelt das Grundgerüst in eine vollwertige Finanz-App:
+--   * accounts (Konten mit Typ, Anfangssaldo, Vermögens-Flag) ersetzt ledgers
+--   * transactions mit Typ expense/income/transfer + Cent-Beträgen + Titel
 --   * categories sind nun GRUPPENWEIT (kein ledger_id) + Preset
---   * deleted_at-Tombstones Ã¼berall -> Local-First-Delta-Sync mÃ¶glich
+--   * deleted_at-Tombstones überall -> Local-First-Delta-Sync möglich
 -- Die DB war leer -> sauberer Neuaufbau. profiles + Hilfsfunktionen bleiben.
 -- =====================================================================
 
@@ -296,7 +296,7 @@ create table public.transactions (
   created_at          timestamptz not null default now(),
   updated_at          timestamptz not null default now(),
   deleted_at          timestamptz,
-  -- Ãœbertrag braucht ein Zielkonto; andere Typen nicht
+  -- Übertrag braucht ein Zielkonto; andere Typen nicht
   constraint transfer_needs_target check (
     (type =  'transfer' and transfer_account_id is not null and transfer_account_id <> account_id)
     or
@@ -311,7 +311,7 @@ create index transactions_transfer_idx on public.transactions(transfer_account_i
 create trigger transactions_set_updated_at before update on public.transactions
   for each row execute function public.set_updated_at();
 
--- 5) View: Kontosaldo (Anfangssaldo + Buchungen, ÃœbertrÃ¤ge berÃ¼cksichtigt)
+-- 5) View: Kontosaldo (Anfangssaldo + Buchungen, Überträge berücksichtigt)
 create view public.account_balances
 with (security_invoker = true) as
 select
@@ -362,13 +362,13 @@ begin
     insert into public.categories (name, kind, is_preset, icon) values
       -- Ausgaben
       ('Lebensmittel','expense',true,'cart'),
-      ('Restaurant & CafÃ©','expense',true,'restaurant'),
+      ('Restaurant & Café','expense',true,'restaurant'),
       ('Haushalt','expense',true,'home_supplies'),
       ('Wohnen & Miete','expense',true,'home'),
       ('Nebenkosten (Strom/Gas/Wasser)','expense',true,'bolt'),
       ('Internet & Telefon','expense',true,'wifi'),
       ('Auto & Tanken','expense',true,'car'),
-      ('Ã–PNV & Transport','expense',true,'bus'),
+      ('ÖPNV & Transport','expense',true,'bus'),
       ('Versicherungen','expense',true,'shield'),
       ('Gesundheit & Apotheke','expense',true,'health'),
       ('Kleidung','expense',true,'shirt'),
@@ -380,13 +380,13 @@ begin
       ('Haustier','expense',true,'pet'),
       ('Kinder','expense',true,'child'),
       ('Spenden','expense',true,'donate'),
-      ('Steuern & GebÃ¼hren','expense',true,'tax'),
+      ('Steuern & Gebühren','expense',true,'tax'),
       ('Sparen & Investieren','expense',true,'savings'),
       ('Sonstiges','expense',true,'more'),
       -- Einnahmen
       ('Gehalt & Lohn','income',true,'salary'),
       ('Bonus','income',true,'star'),
-      ('SelbststÃ¤ndigkeit','income',true,'work'),
+      ('Selbstständigkeit','income',true,'work'),
       ('Zinsen & Dividenden','income',true,'invest'),
       ('Erstattung','income',true,'refund'),
       ('Verkauf','income',true,'sale'),
@@ -400,7 +400,7 @@ end $$;
 -- ## Migration: 0004_budgets.sql
 
 -- =====================================================================
--- Money-Manager Â· 0004_budgets.sql Â· Monatsbudgets je Kategorie
+-- Money-Manager · 0004_budgets.sql · Monatsbudgets je Kategorie
 -- =====================================================================
 -- Ein monatliches Budget je (Ausgabe-)Kategorie, gruppenweit geteilt.
 -- =====================================================================
@@ -438,9 +438,9 @@ end $$;
 -- ## Migration: 0005_recurring.sql
 
 -- =====================================================================
--- Money-Manager Â· 0005_recurring.sql Â· Wiederkehrende Buchungen
+-- Money-Manager · 0005_recurring.sql · Wiederkehrende Buchungen
 -- =====================================================================
--- Regeln fÃ¼r DauerauftrÃ¤ge (Miete, Gehalt, Abos â€¦). Die App erzeugt fÃ¤llige
+-- Regeln für Daueraufträge (Miete, Gehalt, Abos …). Die App erzeugt fällige
 -- Buchungen race-sicher (atomares "Beanspruchen" der Periode vor dem Anlegen).
 -- =====================================================================
 
@@ -492,20 +492,20 @@ end $$;
 -- ## Migration: 0006_receipts.sql
 
 -- =====================================================================
--- Money-Manager Â· 0006_receipts.sql Â· Belege/Fotos je Buchung
+-- Money-Manager · 0006_receipts.sql · Belege/Fotos je Buchung
 -- =====================================================================
 -- Pfad zum Beleg (in Supabase Storage) an der Buchung + privater Bucket
--- "receipts" mit Zugriff fÃ¼r angemeldete Mitglieder.
+-- "receipts" mit Zugriff für angemeldete Mitglieder.
 -- =====================================================================
 
 alter table public.transactions add column if not exists receipt_path text;
 
--- Privater Storage-Bucket fÃ¼r Belege
+-- Privater Storage-Bucket für Belege
 insert into storage.buckets (id, name, public)
 values ('receipts', 'receipts', false)
 on conflict (id) do nothing;
 
--- Zugriff: jedes angemeldete Mitglied darf Belege lesen/hochladen/lÃ¶schen.
+-- Zugriff: jedes angemeldete Mitglied darf Belege lesen/hochladen/löschen.
 drop policy if exists receipts_select on storage.objects;
 create policy receipts_select on storage.objects
   for select to authenticated using (bucket_id = 'receipts');
@@ -526,17 +526,17 @@ create policy receipts_delete on storage.objects
 -- ## Migration: 0007_admin_whitelist.sql
 
 -- =====================================================================
--- Money-Manager Â· 0007_admin_whitelist.sql Â· Admin-Rechte + E-Mail-Whitelist
+-- Money-Manager · 0007_admin_whitelist.sql · Admin-Rechte + E-Mail-Whitelist
 -- =====================================================================
 -- - profiles.is_admin (1. Nutzer wird automatisch Admin)
--- - allowed_emails: nur freigeschaltete E-Mails dÃ¼rfen sich registrieren
+-- - allowed_emails: nur freigeschaltete E-Mails dürfen sich registrieren
 --   (serverseitig per Trigger erzwungen)
 -- - is_admin()-Helfer + Admin-Policies
 -- =====================================================================
 
 alter table public.profiles add column if not exists is_admin boolean not null default false;
 
--- Helfer: Ist der aktuelle Nutzer Admin? (fÃ¼r RLS-Policies)
+-- Helfer: Ist der aktuelle Nutzer Admin? (für RLS-Policies)
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public as $$
   select coalesce((select is_admin from public.profiles where id = auth.uid()), false);
@@ -570,7 +570,7 @@ end;
 $$;
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
 
--- Falls bereits Nutzer existieren, aber noch kein Admin: Ã¤ltesten zum Admin machen.
+-- Falls bereits Nutzer existieren, aber noch kein Admin: ältesten zum Admin machen.
 update public.profiles set is_admin = true
 where id = (select id from public.profiles order by created_at asc limit 1)
   and not exists (select 1 from public.profiles where is_admin = true);
@@ -595,7 +595,7 @@ create trigger on_auth_user_whitelist
   before insert on auth.users
   for each row execute function public.enforce_email_whitelist();
 
--- Admins dÃ¼rfen jedes Profil Ã¤ndern (z. B. is_admin setzen).
+-- Admins dürfen jedes Profil ändern (z. B. is_admin setzen).
 drop policy if exists profiles_admin_update on public.profiles;
 create policy profiles_admin_update on public.profiles
   for update to authenticated using (public.is_admin()) with check (public.is_admin());
@@ -604,16 +604,16 @@ create policy profiles_admin_update on public.profiles
 -- ## Migration: 0008_tags.sql
 
 -- =====================================================================
--- Money-Manager Â· 0008_tags.sql Â· Tags je Buchung
+-- Money-Manager · 0008_tags.sql · Tags je Buchung
 -- =====================================================================
 -- Frei vergebbare Schlagworte je Buchung als Text-Array (einfach, keine
--- Joins, gut filterbar). Beispiel: {'Urlaub','GeschÃ¤ftlich'}.
+-- Joins, gut filterbar). Beispiel: {'Urlaub','Geschäftlich'}.
 -- =====================================================================
 
 alter table public.transactions
   add column if not exists tags text[] not null default '{}';
 
--- GIN-Index fÃ¼r schnelles Filtern nach Tag (tags @> '{...}').
+-- GIN-Index für schnelles Filtern nach Tag (tags @> '{...}').
 create index if not exists transactions_tags_idx
   on public.transactions using gin (tags);
 
@@ -621,10 +621,10 @@ create index if not exists transactions_tags_idx
 -- ## Migration: 0009_splits.sql
 
 -- =====================================================================
--- Money-Manager Â· 0009_splits.sql Â· Split-Buchungen (Aufteilungen)
+-- Money-Manager · 0009_splits.sql · Split-Buchungen (Aufteilungen)
 -- =====================================================================
 -- Eine Buchung kann auf mehrere Kategorien aufgeteilt werden (z. B. ein
--- Einkauf: 30 â‚¬ Lebensmittel + 10 â‚¬ Drogerie). Die Summe der Aufteilungen
+-- Einkauf: 30 € Lebensmittel + 10 € Drogerie). Die Summe der Aufteilungen
 -- entspricht dem Buchungsbetrag. Wird gemeinsam (gruppenweit) geteilt.
 -- =====================================================================
 
@@ -659,7 +659,7 @@ end $$;
 -- ## Migration: 0010_category_order.sql
 
 -- =====================================================================
--- Money-Manager Â· 0010_category_order.sql Â· Sortierreihenfolge je Kategorie
+-- Money-Manager · 0010_category_order.sql · Sortierreihenfolge je Kategorie
 -- =====================================================================
 -- Erlaubt es, die Reihenfolge der Kategorien selbst festzulegen (Drag&Drop
 -- in der Kategorie-Verwaltung). Niedrigere Werte zuerst.
@@ -672,7 +672,7 @@ alter table public.categories
 -- ## Migration: 0011_account_order.sql
 
 -- =====================================================================
--- Money-Manager Â· 0011_account_order.sql Â· Sortierreihenfolge je Konto
+-- Money-Manager · 0011_account_order.sql · Sortierreihenfolge je Konto
 -- =====================================================================
 -- Erlaubt es, die Reihenfolge der Konten selbst festzulegen (Drag&Drop).
 -- Innerhalb der Kontotyp-Gruppen wird danach sortiert.
@@ -685,10 +685,10 @@ alter table public.accounts
 -- ## Migration: 0012_templates.sql
 
 -- =====================================================================
--- Money-Manager Â· 0012_templates.sql Â· Buchungs-Vorlagen (Favoriten)
+-- Money-Manager · 0012_templates.sql · Buchungs-Vorlagen (Favoriten)
 -- =====================================================================
--- Wiederverwendbare Vorlagen fÃ¼r hÃ¤ufige Buchungen (z. B. â€žWocheneinkauf").
--- Gruppenweit geteilt. Keine Auswirkung auf Salden â€“ nur zum VorbefÃ¼llen.
+-- Wiederverwendbare Vorlagen für häufige Buchungen (z. B. „Wocheneinkauf").
+-- Gruppenweit geteilt. Keine Auswirkung auf Salden – nur zum Vorbefüllen.
 -- =====================================================================
 
 create table if not exists public.transaction_templates (
@@ -724,10 +724,10 @@ end $$;
 -- ## Migration: 0013_savings_goals.sql
 
 -- =====================================================================
--- Money-Manager Â· 0013_savings_goals.sql Â· Sparziele
+-- Money-Manager · 0013_savings_goals.sql · Sparziele
 -- =====================================================================
 -- Sparziele mit Zielbetrag, optionalem Zieldatum und bisher gespartem Betrag.
--- Gruppenweit geteilt. BeitrÃ¤ge erhÃ¶hen/verringern saved_cents.
+-- Gruppenweit geteilt. Beiträge erhöhen/verringern saved_cents.
 -- =====================================================================
 
 create table if not exists public.savings_goals (
@@ -759,10 +759,10 @@ end $$;
 -- ## Migration: 0014_audit_log.sql
 
 -- =====================================================================
--- Money-Manager Â· 0014_audit_log.sql Â· Ã„nderungsverlauf (Audit-Log)
+-- Money-Manager · 0014_audit_log.sql · Änderungsverlauf (Audit-Log)
 -- =====================================================================
--- Protokolliert Anlegen/Ã„ndern/LÃ¶schen/Wiederherstellen von Buchungen
--- (wer/wann/was) per Trigger. Speist Buchungs-Verlauf + AktivitÃ¤ts-Feed.
+-- Protokolliert Anlegen/Ändern/Löschen/Wiederherstellen von Buchungen
+-- (wer/wann/was) per Trigger. Speist Buchungs-Verlauf + Aktivitäts-Feed.
 -- =====================================================================
 
 create table if not exists public.audit_log (
@@ -782,7 +782,7 @@ drop policy if exists audit_log_select on public.audit_log;
 create policy audit_log_select on public.audit_log
   for select to authenticated using (true);
 
--- Schreiben nur Ã¼ber den Trigger (SECURITY DEFINER), nicht direkt durch Nutzer.
+-- Schreiben nur über den Trigger (SECURITY DEFINER), nicht direkt durch Nutzer.
 create or replace function public.log_transaction_change()
 returns trigger
 language plpgsql
@@ -833,9 +833,9 @@ end $$;
 -- ## Migration: 0015_comments.sql
 
 -- =====================================================================
--- Money-Manager Â· 0015_comments.sql Â· Kommentare an Buchungen
+-- Money-Manager · 0015_comments.sql · Kommentare an Buchungen
 -- =====================================================================
--- Kommentar-Thread je Buchung (RÃ¼ckfragen klÃ¤ren). Gruppenweit geteilt.
+-- Kommentar-Thread je Buchung (Rückfragen klären). Gruppenweit geteilt.
 -- =====================================================================
 
 create table if not exists public.transaction_comments (
@@ -867,11 +867,11 @@ end $$;
 -- ## Migration: 0016_roles.sql
 
 -- =====================================================================
--- Money-Manager Â· 0016_roles.sql Â· Nur-Lesen-Rolle
+-- Money-Manager · 0016_roles.sql · Nur-Lesen-Rolle
 -- =====================================================================
--- Mitglieder kÃ¶nnen auf "nur lesen" gesetzt werden (read_only). Solche
--- Nutzer dÃ¼rfen weiterhin alles sehen, aber keine Daten mehr schreiben.
--- Durchgesetzt per RESTRICTIVE-Policies (zusÃ¤tzlich zu den bestehenden).
+-- Mitglieder können auf "nur lesen" gesetzt werden (read_only). Solche
+-- Nutzer dürfen weiterhin alles sehen, aber keine Daten mehr schreiben.
+-- Durchgesetzt per RESTRICTIVE-Policies (zusätzlich zu den bestehenden).
 -- =====================================================================
 
 alter table public.profiles
@@ -889,7 +889,7 @@ as $$
     (select read_only from public.profiles where id = auth.uid()), false);
 $$;
 
--- Schreibrechte fÃ¼r read_only-Nutzer auf den Datentabellen sperren.
+-- Schreibrechte für read_only-Nutzer auf den Datentabellen sperren.
 do $$
 declare
   t text;
@@ -913,9 +913,9 @@ end $$;
 -- ## Migration: 0017_category_rules.sql
 
 -- =====================================================================
--- Money-Manager Â· 0017_category_rules.sql Â· Auto-Kategorisierungs-Regeln
+-- Money-Manager · 0017_category_rules.sql · Auto-Kategorisierungs-Regeln
 -- =====================================================================
--- Regeln "Titel enthÃ¤lt <Stichwort> -> Kategorie". Gruppenweit geteilt.
+-- Regeln "Titel enthält <Stichwort> -> Kategorie". Gruppenweit geteilt.
 -- Werden beim Erfassen automatisch angewandt.
 -- =====================================================================
 
@@ -954,4 +954,141 @@ begin
     alter publication supabase_realtime add table public.category_rules;
   exception when duplicate_object then null; end;
 end $$;
+
+
+-- ## Migration: 0018_access_grants.sql
+
+-- 0018: Pro-Person-Zugriff (Freigaben) statt "alle sehen alles".
+-- Konten + Buchungen (inkl. Splits, Kommentare, Daueraufträge, Audit) sind nur
+-- für den Besitzer und Personen mit Freigabe sichtbar/änderbar.
+-- Kategorien, Budgets, Sparziele bleiben vorerst gruppenweit (gemeinsame Planung).
+
+-- 1) Freigaben-Tabelle: owner gibt grantee Zugriff (view = ansehen, manage = verwalten)
+create table if not exists public.access_grants (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  grantee_id uuid not null references auth.users(id) on delete cascade,
+  level text not null default 'view' check (level in ('view', 'manage')),
+  created_at timestamptz not null default now(),
+  unique (owner_id, grantee_id),
+  check (owner_id <> grantee_id)
+);
+alter table public.access_grants enable row level security;
+
+-- 2) Hilfsfunktionen. SECURITY DEFINER -> umgehen RLS (kein Rekursionsproblem),
+--    STABLE -> dürfen in Policies effizient genutzt werden.
+create or replace function public.can_view_owner(owner uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select owner = auth.uid()
+      or exists (select 1 from public.access_grants g
+                 where g.owner_id = owner and g.grantee_id = auth.uid());
+$$;
+
+create or replace function public.can_manage_owner(owner uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select owner = auth.uid()
+      or exists (select 1 from public.access_grants g
+                 where g.owner_id = owner and g.grantee_id = auth.uid()
+                   and g.level = 'manage');
+$$;
+
+create or replace function public.can_view_account(acc uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.accounts a
+                 where a.id = acc and public.can_view_owner(a.owner_id));
+$$;
+
+create or replace function public.can_manage_account(acc uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.accounts a
+                 where a.id = acc and public.can_manage_owner(a.owner_id));
+$$;
+
+create or replace function public.can_view_transaction(tx uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.transactions t
+                 where t.id = tx and public.can_view_account(t.account_id));
+$$;
+
+create or replace function public.can_manage_transaction(tx uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.transactions t
+                 where t.id = tx and public.can_manage_account(t.account_id));
+$$;
+
+-- 3) access_grants policies: jeder sieht Freigaben, an denen er beteiligt ist;
+--    nur der Besitzer legt fest, wer auf SEINE Daten zugreift.
+drop policy if exists ag_select on public.access_grants;
+drop policy if exists ag_modify on public.access_grants;
+create policy ag_select on public.access_grants for select
+  using (owner_id = auth.uid() or grantee_id = auth.uid());
+create policy ag_modify on public.access_grants for all
+  using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
+-- 4) accounts: Sichtbarkeit/Schreibrecht nach Besitz + Freigabe.
+--    (Die bestehenden RESTRICTIVE is_writer()-Policies bleiben und greifen
+--     zusätzlich, damit global "nur lesen"-Nutzer weiterhin nicht schreiben.)
+drop policy if exists accounts_all on public.accounts;
+create policy accounts_select on public.accounts for select
+  using (public.can_view_owner(owner_id));
+create policy accounts_insert on public.accounts for insert
+  with check (owner_id = auth.uid());
+create policy accounts_update on public.accounts for update
+  using (public.can_manage_owner(owner_id))
+  with check (public.can_manage_owner(owner_id));
+create policy accounts_delete on public.accounts for delete
+  using (public.can_manage_owner(owner_id));
+
+-- 5) transactions: nach Konto-Besitzer.
+drop policy if exists transactions_all on public.transactions;
+create policy transactions_select on public.transactions for select
+  using (public.can_view_account(account_id));
+create policy transactions_insert on public.transactions for insert
+  with check (public.can_manage_account(account_id));
+create policy transactions_update on public.transactions for update
+  using (public.can_manage_account(account_id))
+  with check (public.can_manage_account(account_id));
+create policy transactions_delete on public.transactions for delete
+  using (public.can_manage_account(account_id));
+
+-- 6) transaction_splits: nach zugehöriger Buchung.
+drop policy if exists transaction_splits_all on public.transaction_splits;
+create policy transaction_splits_select on public.transaction_splits for select
+  using (public.can_view_transaction(transaction_id));
+create policy transaction_splits_insert on public.transaction_splits for insert
+  with check (public.can_manage_transaction(transaction_id));
+create policy transaction_splits_update on public.transaction_splits for update
+  using (public.can_manage_transaction(transaction_id))
+  with check (public.can_manage_transaction(transaction_id));
+create policy transaction_splits_delete on public.transaction_splits for delete
+  using (public.can_manage_transaction(transaction_id));
+
+-- 7) transaction_comments: nach zugehöriger Buchung.
+drop policy if exists transaction_comments_all on public.transaction_comments;
+create policy transaction_comments_select on public.transaction_comments for select
+  using (public.can_view_transaction(transaction_id));
+create policy transaction_comments_insert on public.transaction_comments for insert
+  with check (public.can_manage_transaction(transaction_id));
+create policy transaction_comments_update on public.transaction_comments for update
+  using (public.can_manage_transaction(transaction_id))
+  with check (public.can_manage_transaction(transaction_id));
+create policy transaction_comments_delete on public.transaction_comments for delete
+  using (public.can_manage_transaction(transaction_id));
+
+-- 8) recurring_rules: nach Konto-Besitzer.
+drop policy if exists recurring_all on public.recurring_rules;
+create policy recurring_select on public.recurring_rules for select
+  using (public.can_view_account(account_id));
+create policy recurring_insert on public.recurring_rules for insert
+  with check (public.can_manage_account(account_id));
+create policy recurring_update on public.recurring_rules for update
+  using (public.can_manage_account(account_id))
+  with check (public.can_manage_account(account_id));
+create policy recurring_delete on public.recurring_rules for delete
+  using (public.can_manage_account(account_id));
+
+-- 9) audit_log: nur Einträge zu sichtbaren Buchungen anzeigen.
+drop policy if exists audit_log_select on public.audit_log;
+create policy audit_log_select on public.audit_log for select
+  using (public.can_view_transaction(row_id));
 

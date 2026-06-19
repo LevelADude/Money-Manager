@@ -6,6 +6,7 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/money_text.dart';
+import '../auth/auth_providers.dart';
 import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
 import '../profile/profile_switcher.dart';
@@ -39,6 +40,9 @@ class AccountsScreen extends ConsumerWidget {
 
     final accountsAsync = ref.watch(accountsProvider);
     final personFilter = ref.watch(personFilterProvider);
+    final myId = ref.watch(currentUserIdProvider);
+    // Eigene Konten kann man nur in der Eigen-/Gesamtansicht anlegen.
+    final canAddAccount = personFilter == null || personFilter == myId;
     final readOnly = ref.watch(isReadOnlyProvider).asData?.value ?? false;
     final convert = ref.watch(converterProvider);
     final txs = ref.watch(allTransactionsProvider).asData?.value ??
@@ -83,7 +87,7 @@ class AccountsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: readOnly
+      floatingActionButton: (readOnly || !canAddAccount)
           ? null
           : FloatingActionButton.extended(
               onPressed: () => context.go('/account/new'),

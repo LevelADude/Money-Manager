@@ -52,6 +52,8 @@ class MoreScreen extends ConsumerWidget {
               '/more/backup'),
           tile(Icons.palette_outlined, 'Einstellungen', '/more/settings'),
           tile(Icons.account_circle_outlined, 'Profil', '/more/profile'),
+          tile(Icons.people_alt_outlined, 'Freigaben (Zugriff teilen)',
+              '/more/sharing'),
           if (isAdmin)
             tile(Icons.admin_panel_settings_outlined, 'Verwaltung (Admin)',
                 '/more/admin'),

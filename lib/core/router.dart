@@ -25,6 +25,7 @@ import '../features/planning/planning_screen.dart';
 import '../features/projects/project_detail_screen.dart';
 import '../features/projects/projects_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/sharing/sharing_screen.dart';
 import '../features/recurring/recurring_form_screen.dart';
 import '../features/recurring/recurring_screen.dart';
 import '../features/recurring/subscriptions_screen.dart';
@@ -257,6 +258,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'profile',
                     builder: (c, s) => const ProfileScreen(),
+                  ),
+                  GoRoute(
+                    path: 'sharing',
+                    builder: (c, s) => const SharingScreen(),
                   ),
                   GoRoute(
                     path: 'admin',
