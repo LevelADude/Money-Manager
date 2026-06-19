@@ -4,6 +4,7 @@ import '../features/accounts/account_providers.dart';
 import '../features/categories/category_providers.dart';
 import '../features/profile/profile_providers.dart';
 import '../features/sharing/access_grant_providers.dart';
+import '../features/sharing/account_member_providers.dart';
 import '../features/transactions/transaction_providers.dart';
 
 /// Lädt alle zentralen Daten neu: Realtime-Streams re-subscriben (frischer
@@ -19,5 +20,6 @@ void refreshAllData(WidgetRef ref) {
   ref.invalidate(categoriesProvider);
   ref.invalidate(categoryRulesProvider);
   ref.invalidate(accessGrantsProvider);
+  ref.invalidate(accountMembersProvider);
   ref.invalidate(profileNamesProvider);
 }

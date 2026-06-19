@@ -53,7 +53,8 @@ class AccountRepository {
     ]);
   }
 
-  Future<void> createAccount({
+  /// Legt ein Konto an und gibt dessen neue ID zurück (für geteilte Konten).
+  Future<String> createAccount({
     required String name,
     required AccountType type,
     String currency = 'EUR',
@@ -62,8 +63,8 @@ class AccountRepository {
     int? color,
     int? creditLimitCents,
     bool includeInNetWorth = true,
-  }) {
-    return _client.from('accounts').insert({
+  }) async {
+    final row = await _client.from('accounts').insert({
       'name': name,
       'type': accountTypeToDb(type),
       'currency': currency,
@@ -72,7 +73,8 @@ class AccountRepository {
       'color': color,
       'credit_limit_cents': creditLimitCents,
       'include_in_net_worth': includeInNetWorth,
-    });
+    }).select('id').single();
+    return row['id'] as String;
   }
 
   Future<void> updateAccount({

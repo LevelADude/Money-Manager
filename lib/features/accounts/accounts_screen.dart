@@ -13,6 +13,7 @@ import '../profile/profile_providers.dart';
 import '../profile/profile_switcher.dart';
 import '../recurring/recurring_providers.dart';
 import '../reminders/reminders_providers.dart';
+import '../sharing/account_member_providers.dart';
 import '../transactions/person_filter.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
@@ -109,10 +110,9 @@ class AccountsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Fehler: $e')),
         data: (allAccounts) {
-          // Nur die Konten der gewählten Person (null = alle Personen).
-          final accounts = personFilter == null
-              ? allAccounts
-              : allAccounts.where((a) => a.ownerId == personFilter).toList();
+          // Konten der gewählten Person inkl. geteilter Konten (null = alle).
+          final accounts = ref.watch(personFilteredAccountsProvider);
+          final membersByAccount = ref.watch(membersByAccountProvider);
           if (accounts.isEmpty) {
             return const Center(
               child: Text('Noch keine Konten. Lege unten eines an.'),
@@ -160,6 +160,7 @@ class AccountsScreen extends ConsumerWidget {
                 balanceCents: balanceOf(a),
                 currency: a.currency,
                 ownerName: memberNames[a.ownerId] ?? '',
+                shared: membersByAccount[a.id]?.isNotEmpty ?? false,
                 onTap: () => context.go('/account/${a.id}'),
                 onEdit: () => context.go('/account/${a.id}/edit'),
                 onArchive: () async {
@@ -329,6 +330,7 @@ class _AccountTile extends StatelessWidget {
     required this.balanceCents,
     required this.currency,
     required this.ownerName,
+    required this.shared,
     required this.onTap,
     required this.onEdit,
     required this.onArchive,
@@ -339,6 +341,7 @@ class _AccountTile extends StatelessWidget {
   final int balanceCents;
   final String currency;
   final String ownerName;
+  final bool shared;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onArchive;
@@ -349,6 +352,7 @@ class _AccountTile extends StatelessWidget {
     final negative = balanceCents < 0;
     final subtitle = [
       if (ownerName.isNotEmpty) ownerName,
+      if (shared) 'geteilt',
       if (account.archived) 'archiviert',
     ].join('  ·  ');
     return ListTile(

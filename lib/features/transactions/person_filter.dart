@@ -5,6 +5,7 @@ import '../../data/models/app_transaction.dart';
 import '../accounts/account_providers.dart';
 import '../auth/auth_providers.dart';
 import '../profile/profile_providers.dart';
+import '../sharing/account_member_providers.dart';
 import 'transaction_providers.dart';
 
 /// Aktiver Personen-Filter (owner_id eines Kontos) oder null = alle Personen.
@@ -37,24 +38,37 @@ final ownerOptionsProvider = Provider<List<({String id, String name})>>((ref) {
   return list;
 });
 
-/// Buchungen, gefiltert auf die gewählte Person (über den Konto-Besitzer).
+/// Konto-IDs, die zur gewählten Person gehören: eigene Konten ODER geteilte
+/// Konten, bei denen die Person Mitglied ist (null = alle).
+final _personAccountIdsProvider = Provider<Set<String>?>((ref) {
+  final person = ref.watch(personFilterProvider);
+  if (person == null) return null;
+  final accounts =
+      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  final membersByAccount = ref.watch(membersByAccountProvider);
+  return {
+    for (final a in accounts)
+      if (a.ownerId == person ||
+          (membersByAccount[a.id]?.contains(person) ?? false))
+        a.id,
+  };
+});
+
+/// Buchungen, gefiltert auf die gewählte Person (eigene + geteilte Konten).
 final personFilteredTransactionsProvider =
     Provider<List<AppTransaction>>((ref) {
   final txs = ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
-  final person = ref.watch(personFilterProvider);
-  if (person == null) return txs;
-  final accounts =
-      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
-  final ownerOf = {for (final a in accounts) a.id: a.ownerId};
-  return txs.where((t) => ownerOf[t.accountId] == person).toList();
+  final ids = ref.watch(_personAccountIdsProvider);
+  if (ids == null) return txs;
+  return txs.where((t) => ids.contains(t.accountId)).toList();
 });
 
-/// Konten, gefiltert auf die gewählte Person.
+/// Konten, gefiltert auf die gewählte Person (eigene + geteilte Konten).
 final personFilteredAccountsProvider = Provider<List<Account>>((ref) {
   final accounts =
       ref.watch(accountsProvider).asData?.value ?? const <Account>[];
-  final person = ref.watch(personFilterProvider);
-  if (person == null) return accounts;
-  return accounts.where((a) => a.ownerId == person).toList();
+  final ids = ref.watch(_personAccountIdsProvider);
+  if (ids == null) return accounts;
+  return accounts.where((a) => ids.contains(a.id)).toList();
 });

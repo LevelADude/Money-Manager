@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/account.dart';
 import '../../shared/money.dart';
+import '../auth/auth_providers.dart';
 import '../currency/add_currency.dart';
 import '../currency/currency_providers.dart';
+import '../profile/profile_providers.dart';
+import '../sharing/account_member_providers.dart';
 import 'account_providers.dart';
 
 /// Konto anlegen oder bearbeiten.
@@ -30,6 +33,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   bool _includeInNetWorth = true;
   bool _saving = false;
   bool _prefilled = false;
+  String? _ownerId; // Besitzer (bei Bearbeitung), für „nur Besitzer teilt"
+  Set<String> _shareWith = {}; // Mitglieder eines geteilten Kontos
+  bool _membersInit = false;
 
   @override
   void dispose() {
@@ -51,6 +57,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         _creditLimit.text =
             a.creditLimitCents == null ? '' : centsToInput(a.creditLimitCents!);
         _includeInNetWorth = a.includeInNetWorth;
+        _ownerId = a.ownerId;
         _prefilled = true;
         break;
       }
@@ -67,7 +74,10 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         _creditLimit.text.trim().isEmpty ? null : parseToCents(_creditLimit.text);
     setState(() => _saving = true);
     final repo = ref.read(accountRepositoryProvider);
+    final myId = ref.read(currentUserIdProvider);
+    final isOwner = !widget.isEditing || _ownerId == myId;
     try {
+      String id;
       if (widget.isEditing) {
         await repo.updateAccount(
           id: widget.accountId!,
@@ -78,8 +88,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           currency: _currency,
           creditLimitCents: creditCents,
         );
+        id = widget.accountId!;
       } else {
-        await repo.createAccount(
+        id = await repo.createAccount(
           name: _name.text.trim(),
           type: _type,
           openingBalanceCents: openingCents,
@@ -88,7 +99,14 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           creditLimitCents: creditCents,
         );
       }
+      // Mitglieder geteilter Konten setzen (nur der Besitzer darf das).
+      if (isOwner) {
+        await ref
+            .read(accountMemberRepositoryProvider)
+            .setMembers(id, _shareWith);
+      }
       ref.invalidate(accountsProvider);
+      ref.invalidate(accountMembersProvider);
       if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {
@@ -103,6 +121,21 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   Widget build(BuildContext context) {
     _prefill();
     final isLiability = _type.isLiability;
+    final myId = ref.watch(currentUserIdProvider);
+    // Nur der Besitzer eines Kontos darf es teilen (neu: ich bin Besitzer).
+    final isOwner = !widget.isEditing || _ownerId == myId;
+    // Vorhandene Mitglieder beim Bearbeiten einmalig vorbelegen.
+    if (widget.isEditing && !_membersInit &&
+        ref.watch(accountMembersProvider).hasValue) {
+      _shareWith = {...?ref.read(membersByAccountProvider)[widget.accountId]};
+      _membersInit = true;
+    }
+    final profileNames =
+        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+    final others = profileNames.keys.where((id) => id != myId).toList()
+      ..sort((a, b) => (profileNames[a] ?? '')
+          .toLowerCase()
+          .compareTo((profileNames[b] ?? '').toLowerCase()));
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEditing ? 'Konto bearbeiten' : 'Neues Konto'),
@@ -207,6 +240,43 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                 title: const Text('Zählt zum Gesamtvermögen'),
                 contentPadding: EdgeInsets.zero,
               ),
+              if (isOwner && others.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Teilen mit (Gemeinschaftskonto)',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ausgewählte Personen sehen dieses Konto und dürfen darauf buchen.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (final id in others)
+                      FilterChip(
+                        label: Text(profileNames[id]!.isNotEmpty
+                            ? profileNames[id]!
+                            : 'Unbekannt'),
+                        selected: _shareWith.contains(id),
+                        onSelected: (sel) => setState(() {
+                          if (sel) {
+                            _shareWith.add(id);
+                          } else {
+                            _shareWith.remove(id);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
