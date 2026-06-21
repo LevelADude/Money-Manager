@@ -20,26 +20,46 @@ import '../transactions/transaction_providers.dart';
 
 enum InsightSeverity { info, positive, warning }
 
+/// Betrachtungszeitraum für die Insights.
+enum InsightScope { month, year }
+
+/// Vom Nutzer gewählter Zeitraum (Monat/Jahr) für den Insights-Bereich.
+class InsightScopeNotifier extends Notifier<InsightScope> {
+  @override
+  InsightScope build() => InsightScope.month;
+
+  void set(InsightScope s) => state = s;
+}
+
+final insightScopeProvider =
+    NotifierProvider<InsightScopeNotifier, InsightScope>(
+        InsightScopeNotifier.new);
+
 /// Eine lokal berechnete Auswertungs-Karte. Enthält KEINE Rohdaten, die das
-/// Gerät verlassen – alles wird aus den bereits geladenen Daten abgeleitet.
+/// Gerät verlassen. [route] (optional) macht die Karte antippbar und führt zur
+/// passenden Ansicht.
 class Insight {
   const Insight({
     required this.icon,
     required this.title,
     required this.detail,
     this.severity = InsightSeverity.info,
+    this.route,
   });
 
   final IconData icon;
   final String title;
   final String detail;
   final InsightSeverity severity;
+  final String? route;
 }
 
 /// Regelbasierte „KI"-Insights – komplett lokal, kostenlos, ohne Netz/LLM.
 final localInsightsProvider = Provider<List<Insight>>((ref) {
+  final scope = ref.watch(insightScopeProvider);
+  final isYear = scope == InsightScope.year;
+
   final txs = ref.watch(personFilteredTransactionsProvider);
-  final months = ref.watch(monthlyTotalsProvider);
   final netWorth = ref.watch(netWorthHistoryProvider);
   final convert = ref.watch(converterProvider);
   final curOf = ref.watch(accountCurrencyProvider);
@@ -61,76 +81,112 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   final now = DateTime.now();
   final monthStart = DateTime(now.year, now.month, 1);
   final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
-  final out = <Insight>[];
 
-  // ===== WARNUNGEN ZUERST ==================================================
+  // Betrachtungsfenster (Anfang bis einschließlich heute).
+  final windowStart = isYear ? DateTime(now.year, 1, 1) : monthStart;
+  final windowEnd =
+      DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+  final scopeWord = isYear ? 'dieses Jahr' : 'diesen Monat';
+  final prevStart = isYear
+      ? DateTime(now.year - 1, 1, 1)
+      : DateTime(now.year, now.month - 1, 1);
+  final prevEnd = windowStart;
 
-  // --- Budget-Status (überschritten / fast ausgeschöpft) -------------------
-  final budgetCards = <({double util, Insight insight})>[];
-  budgets.forEach((catId, b) {
-    if (b.amountCents <= 0) return;
-    final spent = spentByCat[catId] ?? 0;
-    final util = spent / b.amountCents;
-    if (util < 0.9) return;
-    final name = nameOf(catId);
-    budgetCards.add((
-      util: util,
-      insight: Insight(
-        icon: util >= 1.0 ? Icons.error_outline : Icons.warning_amber_outlined,
-        title: util >= 1.0
-            ? 'Budget „$name" überschritten'
-            : 'Budget „$name" fast aufgebraucht',
-        detail: '${formatCents(spent)} von ${formatCents(b.amountCents)} '
-            '(${(util * 100).toStringAsFixed(0)} %) diesen Monat.',
-        severity: InsightSeverity.warning,
-      ),
-    ));
-  });
-  budgetCards.sort((a, b) => b.util.compareTo(a.util));
-  for (final c in budgetCards.take(2)) {
-    out.add(c.insight);
+  ({int income, int expense}) sums(DateTime start, DateTime end) {
+    var inc = 0, exp = 0;
+    for (final t in txs) {
+      final d = t.occurredOn;
+      if (d.isBefore(start) || !d.isBefore(end)) continue;
+      if (t.type == TransactionType.income) {
+        inc += amt(t);
+      } else if (t.type == TransactionType.expense) {
+        exp += amt(t);
+      }
+    }
+    return (income: inc, expense: exp);
   }
 
-  // --- Kategorie deutlich über dem 3-Monats-Schnitt ------------------------
+  final w = sums(windowStart, windowEnd);
+  final pv = sums(prevStart, prevEnd);
+
+  // Ausgaben je Kategorie im Fenster + 3-Monats-Vorlauf (für Monatsvergleich).
+  final winByCat = <String?, int>{};
+  final prev3ByCat = <String?, int>{};
   final prev3Start = DateTime(now.year, now.month - 3, 1);
-  final curByCat = <String?, int>{};
-  final prevByCat = <String?, int>{};
-  var monthExpense = 0;
   for (final t in txs) {
     if (t.type != TransactionType.expense) continue;
     final d = t.occurredOn;
-    if (!d.isBefore(monthStart)) {
-      curByCat.update(t.categoryId, (v) => v + amt(t), ifAbsent: () => amt(t));
-      monthExpense += amt(t);
-    } else if (!d.isBefore(prev3Start)) {
-      prevByCat.update(t.categoryId, (v) => v + amt(t), ifAbsent: () => amt(t));
+    if (!d.isBefore(windowStart) && d.isBefore(windowEnd)) {
+      winByCat.update(t.categoryId, (v) => v + amt(t), ifAbsent: () => amt(t));
+    }
+    if (!d.isBefore(prev3Start) && d.isBefore(monthStart)) {
+      prev3ByCat.update(t.categoryId, (v) => v + amt(t), ifAbsent: () => amt(t));
     }
   }
-  String? topCat;
-  double topPct = 0;
-  int topCur = 0, topAvg = 0;
-  curByCat.forEach((cat, cur) {
-    final avg = (prevByCat[cat] ?? 0) / 3;
-    if (avg < 1000) return;
-    final pct = (cur - avg) / avg * 100;
-    if (pct >= 20 && pct > topPct) {
-      topPct = pct;
-      topCat = cat;
-      topCur = cur;
-      topAvg = avg.round();
+  final winExpense = w.expense;
+
+  final out = <Insight>[];
+
+  // ===== WARNUNGEN =========================================================
+
+  // Budget-Status (nur im Monatszeitraum sinnvoll – Budgets sind monatlich).
+  if (!isYear) {
+    final budgetCards = <({double util, Insight insight})>[];
+    budgets.forEach((catId, b) {
+      if (b.amountCents <= 0) return;
+      final spent = spentByCat[catId] ?? 0;
+      final util = spent / b.amountCents;
+      if (util < 0.9) return;
+      final name = nameOf(catId);
+      budgetCards.add((
+        util: util,
+        insight: Insight(
+          icon: util >= 1.0 ? Icons.error_outline : Icons.warning_amber_outlined,
+          title: util >= 1.0
+              ? 'Budget „$name" überschritten'
+              : 'Budget „$name" fast aufgebraucht',
+          detail: '${formatCents(spent)} von ${formatCents(b.amountCents)} '
+              '(${(util * 100).toStringAsFixed(0)} %) diesen Monat.',
+          severity: InsightSeverity.warning,
+          route: '/more/budgets',
+        ),
+      ));
+    });
+    budgetCards.sort((a, b) => b.util.compareTo(a.util));
+    for (final c in budgetCards.take(2)) {
+      out.add(c.insight);
     }
-  });
-  if (topPct >= 20) {
-    out.add(Insight(
-      icon: Icons.show_chart,
-      title: '${nameOf(topCat)} höher als sonst',
-      detail: '${formatCents(topCur)} diesen Monat – +${topPct.toStringAsFixed(0)} % '
-          'ggü. Ø der letzten 3 Monate (${formatCents(topAvg)}).',
-      severity: InsightSeverity.warning,
-    ));
   }
 
-  // --- Ausreißer (Buchung > Mittel + 2·Std-Abw. der Kategorie) -------------
+  // Kategorie deutlich über dem 3-Monats-Schnitt (Monatszeitraum).
+  if (!isYear) {
+    String? topCat;
+    double topPct = 0;
+    int topCur = 0, topAvg = 0;
+    winByCat.forEach((cat, cur) {
+      final avg = (prev3ByCat[cat] ?? 0) / 3;
+      if (avg < 1000) return;
+      final pct = (cur - avg) / avg * 100;
+      if (pct >= 20 && pct > topPct) {
+        topPct = pct;
+        topCat = cat;
+        topCur = cur;
+        topAvg = avg.round();
+      }
+    });
+    if (topPct >= 20) {
+      out.add(Insight(
+        icon: Icons.show_chart,
+        title: '${nameOf(topCat)} höher als sonst',
+        detail: '${formatCents(topCur)} diesen Monat – +${topPct.toStringAsFixed(0)} % '
+            'ggü. Ø der letzten 3 Monate (${formatCents(topAvg)}).',
+        severity: InsightSeverity.warning,
+        route: '/statistics',
+      ));
+    }
+  }
+
+  // Ausreißer: Buchung im Fenster > Mittel + 2·Std-Abw. ihrer Kategorie.
   final byCat = <String?, List<int>>{};
   for (final t in txs) {
     if (t.type != TransactionType.expense) continue;
@@ -148,7 +204,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   final outliers = <AppTransaction>[];
   for (final t in txs) {
     if (t.type != TransactionType.expense) continue;
-    if (t.occurredOn.isBefore(monthStart)) continue;
+    if (t.occurredOn.isBefore(windowStart)) continue;
     final s = stats[t.categoryId];
     if (s == null) continue;
     if (amt(t) > s.mean + 2 * s.sd && amt(t) >= 2000) outliers.add(t);
@@ -162,48 +218,45 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       detail: '${t.title.isEmpty ? cat : t.title}: ${formatCents(amt(t))} – '
           'deutlich über dem Schnitt der Kategorie „$cat".',
       severity: InsightSeverity.warning,
+      route: '/transactions/${t.id}',
     ));
   }
 
   // ===== STATUS / ÜBERSICHT ================================================
 
-  // --- Monatssaldo (Plus/Minus) --------------------------------------------
-  if (months.isNotEmpty) {
-    final cur = months.last;
-    final net = cur.incomeCents - cur.expenseCents;
-    out.add(Insight(
-      icon: net >= 0 ? Icons.trending_up : Icons.trending_down,
-      title: net >= 0 ? 'Diesen Monat im Plus' : 'Diesen Monat im Minus',
-      detail: net >= 0
-          ? 'Einnahmen liegen ${formatCents(net)} über den Ausgaben.'
-          : 'Ausgaben liegen ${formatCents(-net)} über den Einnahmen.',
-      severity: net >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
-    ));
-  }
+  // Saldo des Zeitraums (Plus/Minus).
+  final net = w.income - w.expense;
+  out.add(Insight(
+    icon: net >= 0 ? Icons.trending_up : Icons.trending_down,
+    title: net >= 0 ? 'Im Plus ($scopeWord)' : 'Im Minus ($scopeWord)',
+    detail: net >= 0
+        ? 'Einnahmen liegen ${formatCents(net)} über den Ausgaben.'
+        : 'Ausgaben liegen ${formatCents(-net)} über den Einnahmen.',
+    severity: net >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
+    route: '/statistics',
+  ));
 
-  // --- Sparquote (mit Trend) -----------------------------------------------
-  if (months.isNotEmpty && months.last.incomeCents > 0) {
-    final cur = months.last;
-    final rate = (cur.incomeCents - cur.expenseCents) / cur.incomeCents * 100;
-    var detail = 'Diesen Monat bleiben ${rate.toStringAsFixed(0)} % deiner '
+  // Sparquote (mit Trend ggü. Vorzeitraum).
+  if (w.income > 0) {
+    final rate = (w.income - w.expense) / w.income * 100;
+    var detail = '$scopeWord bleiben ${rate.toStringAsFixed(0)} % deiner '
         'Einnahmen übrig.';
-    if (months.length >= 2 && months[months.length - 2].incomeCents > 0) {
-      final prev = months[months.length - 2];
-      final prevRate =
-          (prev.incomeCents - prev.expenseCents) / prev.incomeCents * 100;
+    if (pv.income > 0) {
+      final prevRate = (pv.income - pv.expense) / pv.income * 100;
       final d = rate - prevRate;
       detail += ' (${d >= 0 ? '+' : ''}${d.toStringAsFixed(0)} %-Punkte ggü. '
-          'Vormonat)';
+          '${isYear ? 'Vorjahr' : 'Vormonat'})';
     }
     out.add(Insight(
       icon: Icons.savings_outlined,
       title: 'Sparquote',
       detail: detail,
       severity: rate >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
+      route: '/statistics',
     ));
   }
 
-  // --- Vermögenstrend (letzte 3 Monate) ------------------------------------
+  // Vermögenstrend (letzte 3 Monate – zeitraumunabhängig).
   if (netWorth.length >= 4) {
     final nowNw = netWorth.last.cents;
     final agoNw = netWorth[netWorth.length - 4].cents;
@@ -219,11 +272,12 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
                 '(jetzt ${formatCents(nowNw)}).',
         severity:
             delta >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
+        route: '/statistics',
       ));
     }
   }
 
-  // --- Sparziel-Fortschritt (am weitesten fortgeschrittenes, offenes Ziel) -
+  // Sparziel-Fortschritt (zeitraumunabhängig).
   final open = goals.where((g) => g.targetCents > 0 && !g.reached).toList()
     ..sort((a, b) => b.fraction.compareTo(a.fraction));
   final reached = goals.where((g) => g.reached).toList();
@@ -234,7 +288,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       title: 'Sparziel „${g.name}"',
       detail: '${(g.fraction * 100).toStringAsFixed(0)} % erreicht – noch '
           '${formatCents(g.remainingCents)} bis ${formatCents(g.targetCents)}.',
-      severity: InsightSeverity.info,
+      route: '/more/goals',
     ));
   } else if (reached.isNotEmpty) {
     out.add(Insight(
@@ -242,18 +296,18 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       title: 'Sparziel erreicht 🎉',
       detail: '„${reached.first.name}" ist vollständig angespart.',
       severity: InsightSeverity.positive,
+      route: '/more/goals',
     ));
   }
 
   // ===== HINWEISE / INFOS ==================================================
 
-  // --- Anstehende Daueraufträge (nächste 7 Tage) ---------------------------
+  // Anstehende Daueraufträge (nächste 7 Tage – zeitraumunabhängig).
   final soon = now.add(const Duration(days: 7));
   var dueCount = 0;
   var dueExpense = 0;
   for (final r in rules) {
     if (!r.active) continue;
-    // Zählt fällige (auch überfällige) Daueraufträge bis in 7 Tagen.
     if (!r.nextDue.isAfter(soon)) {
       dueCount++;
       if (r.type == TransactionType.expense) {
@@ -268,24 +322,24 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       detail: dueExpense > 0
           ? 'Davon ${formatCents(dueExpense)} Ausgaben. Sorge für Deckung.'
           : 'Demnächst fällig – im Blick behalten.',
-      severity: InsightSeverity.info,
+      route: '/more/recurring',
     ));
   }
 
-  // --- Hochrechnung Ausgaben bis Monatsende --------------------------------
-  if (monthExpense > 0 && now.day >= 3 && now.day < daysInMonth) {
-    final projected = (monthExpense / now.day * daysInMonth).round();
+  // Hochrechnung (nur Monat).
+  if (!isYear && winExpense > 0 && now.day >= 3 && now.day < daysInMonth) {
+    final projected = (winExpense / now.day * daysInMonth).round();
     out.add(Insight(
       icon: Icons.query_stats,
       title: 'Hochrechnung',
       detail: 'Bei aktuellem Tempo ~${formatCents(projected)} Ausgaben bis '
-          'Monatsende (bisher ${formatCents(monthExpense)}).',
+          'Monatsende (bisher ${formatCents(winExpense)}).',
     ));
   }
 
-  // --- Tagesdurchschnitt (Burn-Rate) ---------------------------------------
-  if (monthExpense > 0 && now.day >= 2) {
-    final perDay = (monthExpense / now.day).round();
+  // Tagesdurchschnitt / Burn-Rate (nur Monat).
+  if (!isYear && winExpense > 0 && now.day >= 2) {
+    final perDay = (winExpense / now.day).round();
     out.add(Insight(
       icon: Icons.local_fire_department_outlined,
       title: 'Tagesdurchschnitt',
@@ -293,47 +347,52 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     ));
   }
 
-  // --- Größte Kategorie diesen Monat (+ Anteil) ----------------------------
-  if (monthExpense > 0 && curByCat.isNotEmpty) {
+  // Größter Posten im Zeitraum (+ Anteil).
+  if (winExpense > 0 && winByCat.isNotEmpty) {
     String? big;
     var bigV = -1;
-    curByCat.forEach((cat, v) {
+    winByCat.forEach((cat, v) {
       if (v > bigV) {
         bigV = v;
         big = cat;
       }
     });
-    final share = (bigV / monthExpense * 100).round();
+    final share = (bigV / winExpense * 100).round();
     out.add(Insight(
       icon: Icons.pie_chart_outline,
       title: 'Größter Posten: ${nameOf(big)}',
-      detail: '${formatCents(bigV)} diesen Monat – $share % deiner Ausgaben.',
+      detail: '${formatCents(bigV)} $scopeWord – $share % deiner Ausgaben.',
+      route: '/statistics',
     ));
   }
 
-  // --- Größte Einzel-Ausgabe diesen Monat ----------------------------------
+  // Größte Einzel-Ausgabe im Zeitraum.
   AppTransaction? maxTx;
   for (final t in txs) {
     if (t.type != TransactionType.expense) continue;
-    if (t.occurredOn.isBefore(monthStart)) continue;
+    if (t.occurredOn.isBefore(windowStart) || !t.occurredOn.isBefore(windowEnd)) {
+      continue;
+    }
     if (maxTx == null || amt(t) > amt(maxTx)) maxTx = t;
   }
   if (maxTx != null) {
     final label = maxTx.title.isNotEmpty ? maxTx.title : nameOf(maxTx.categoryId);
     out.add(Insight(
       icon: Icons.payments_outlined,
-      title: 'Größte Ausgabe diesen Monat',
+      title: 'Größte Ausgabe ($scopeWord)',
       detail: '$label: ${formatCents(amt(maxTx))}.',
+      route: '/transactions/${maxTx.id}',
     ));
   }
 
-  // --- Ausgabenfreie Tage --------------------------------------------------
-  if (now.day >= 5) {
+  // Ausgabenfreie Tage (nur Monat).
+  if (!isYear && now.day >= 5) {
     final spendDays = <int>{};
     for (final t in txs) {
       if (t.type != TransactionType.expense) continue;
-      if (t.occurredOn.isBefore(monthStart)) continue;
-      if (t.occurredOn.isAfter(now)) continue;
+      if (t.occurredOn.isBefore(monthStart) || t.occurredOn.isAfter(now)) {
+        continue;
+      }
       spendDays.add(t.occurredOn.day);
     }
     final noSpend = now.day - spendDays.length;
@@ -348,7 +407,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     }
   }
 
-  // --- Mögliche Abos (gleicher Titel + Betrag, mehrere Monate) -------------
+  // Mögliche Abos (zeitraumunabhängig).
   final groups = <String, List<AppTransaction>>{};
   for (final t in txs) {
     if (t.type != TransactionType.expense) continue;
@@ -369,18 +428,21 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       title: 'Mögliches Abo',
       detail: '„${t0.title}" ${formatCents(t0.amountCents)} – ${list.length}× '
           'erkannt, wirkt regelmäßig.',
+      route: '/more/subscriptions',
     ));
     subsShown++;
   }
 
-  // --- Unkategorisierte Ausgaben (Nudge) -----------------------------------
+  // Unkategorisierte Ausgaben im Zeitraum (Nudge).
   var uncategorized = 0;
   for (final t in txs) {
     if (t.type != TransactionType.expense) continue;
-    if (t.occurredOn.isBefore(monthStart)) continue;
+    if (t.occurredOn.isBefore(windowStart) || !t.occurredOn.isBefore(windowEnd)) {
+      continue;
+    }
     if (t.categoryId != null) continue;
     final splits = splitsByTx[t.id];
-    if (splits != null && splits.isNotEmpty) continue; // via Splits kategorisiert
+    if (splits != null && splits.isNotEmpty) continue;
     uncategorized++;
   }
   if (uncategorized >= 3) {
@@ -388,6 +450,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       icon: Icons.label_off_outlined,
       title: '$uncategorized Buchungen ohne Kategorie',
       detail: 'Kategorisieren verbessert die Auswertungen und Budgets.',
+      route: '/transactions',
     ));
   }
 
