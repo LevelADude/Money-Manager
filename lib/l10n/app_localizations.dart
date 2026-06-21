@@ -376,6 +376,32 @@ class AppLocalizations {
         'purge' => _t('Endgültig gelöscht', 'Purged'),
         _ => _t('Geändert', 'Edited'),
       };
+
+  // ---- Konto-Formular / -Detail ----
+  String get newAccount => _t('Neues Konto', 'New account');
+  String get editAccount => _t('Konto bearbeiten', 'Edit account');
+  String get name => _t('Name', 'Name');
+  String get enterName => _t('Name eingeben', 'Enter a name');
+  String get accountTypeLabel => _t('Kontotyp', 'Account type');
+  String get openingBalance => _t('Anfangssaldo', 'Opening balance');
+  String get openingBalanceHelp => _t(
+      'Aktueller Stand des Kontos beim Anlegen',
+      'Current balance of the account when created');
+  String get openingBalanceLiabilityHelp => _t(
+      'Bestehende Schuld als negativen Wert eingeben, z. B. -500',
+      'Enter an existing debt as a negative value, e.g. -500');
+  String get creditLimitOptional =>
+      _t('Kreditrahmen (optional)', 'Credit limit (optional)');
+  String get countsToNetWorth =>
+      _t('Zählt zum Gesamtvermögen', 'Counts toward net worth');
+  String get shareWithTitle =>
+      _t('Teilen mit (Gemeinschaftskonto)', 'Share with (joint account)');
+  String get shareWithHelp => _t(
+      'Ausgewählte Personen sehen dieses Konto und dürfen darauf buchen.',
+      'Selected people can see this account and post transactions to it.');
+  String get noTransactions =>
+      _t('Noch keine Buchungen.', 'No transactions yet.');
+  String byAuthor(String name) => _t('von $name', 'by $name');
 }
 
 class _AppLocalizationsDelegate

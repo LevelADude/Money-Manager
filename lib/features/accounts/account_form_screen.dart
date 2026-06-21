@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models/account.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../auth/auth_providers.dart';
 import '../currency/add_currency.dart';
@@ -110,8 +111,8 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).errorWith(e))));
         setState(() => _saving = false);
       }
     }
@@ -136,9 +137,10 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       ..sort((a, b) => (profileNames[a] ?? '')
           .toLowerCase()
           .compareTo((profileNames[b] ?? '').toLowerCase()));
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Konto bearbeiten' : 'Neues Konto'),
+        title: Text(widget.isEditing ? l.editAccount : l.newAccount),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -150,23 +152,23 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
               TextFormField(
                 controller: _name,
                 autofocus: !widget.isEditing,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  prefixIcon: Icon(Icons.badge_outlined),
+                decoration: InputDecoration(
+                  labelText: l.name,
+                  prefixIcon: const Icon(Icons.badge_outlined),
                 ),
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Name eingeben' : null,
+                    (v == null || v.trim().isEmpty) ? l.enterName : null,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<AccountType>(
                 initialValue: _type,
-                decoration: const InputDecoration(
-                  labelText: 'Kontotyp',
-                  prefixIcon: Icon(Icons.category_outlined),
+                decoration: InputDecoration(
+                  labelText: l.accountTypeLabel,
+                  prefixIcon: const Icon(Icons.category_outlined),
                 ),
                 items: [
                   for (final t in AccountType.values)
-                    DropdownMenuItem(value: t, child: Text(t.label)),
+                    DropdownMenuItem(value: t, child: Text(l.accountType(t))),
                 ],
                 onChanged: (v) => setState(() => _type = v ?? AccountType.bank),
               ),
@@ -179,9 +181,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: value,
-                        decoration: const InputDecoration(
-                          labelText: 'Währung',
-                          prefixIcon: Icon(Icons.currency_exchange),
+                        decoration: InputDecoration(
+                          labelText: l.currency,
+                          prefixIcon: const Icon(Icons.currency_exchange),
                         ),
                         items: [
                           for (final c in all)
@@ -193,7 +195,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Eigene Währung hinzufügen',
+                      tooltip: l.addCurrency,
                       icon: const Icon(Icons.add),
                       onPressed: () async {
                         final code = await showAddCurrencyDialog(context);
@@ -214,10 +216,10 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                 keyboardType: const TextInputType.numberWithOptions(
                     decimal: true, signed: true),
                 decoration: InputDecoration(
-                  labelText: 'Anfangssaldo',
+                  labelText: l.openingBalance,
                   helperText: isLiability
-                      ? 'Bestehende Schuld als negativen Wert eingeben, z. B. -500'
-                      : 'Aktueller Stand des Kontos beim Anlegen',
+                      ? l.openingBalanceLiabilityHelp
+                      : l.openingBalanceHelp,
                   prefixIcon: const Icon(Icons.euro),
                 ),
               ),
@@ -227,9 +229,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                   controller: _creditLimit,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Kreditrahmen (optional)',
-                    prefixIcon: Icon(Icons.speed_outlined),
+                  decoration: InputDecoration(
+                    labelText: l.creditLimitOptional,
+                    prefixIcon: const Icon(Icons.speed_outlined),
                   ),
                 ),
               ],
@@ -237,14 +239,14 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
               SwitchListTile(
                 value: _includeInNetWorth,
                 onChanged: (v) => setState(() => _includeInNetWorth = v),
-                title: const Text('Zählt zum Gesamtvermögen'),
+                title: Text(l.countsToNetWorth),
                 contentPadding: EdgeInsets.zero,
               ),
               if (isOwner && others.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Teilen mit (Gemeinschaftskonto)',
+                  child: Text(l.shareWithTitle,
                       style: Theme.of(context)
                           .textTheme
                           .titleSmall
@@ -252,7 +254,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Ausgewählte Personen sehen dieses Konto und dürfen darauf buchen.',
+                  l.shareWithHelp,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 8),
@@ -264,7 +266,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                       FilterChip(
                         label: Text(profileNames[id]!.isNotEmpty
                             ? profileNames[id]!
-                            : 'Unbekannt'),
+                            : l.unknownPerson),
                         selected: _shareWith.contains(id),
                         onSelected: (sel) => setState(() {
                           if (sel) {
@@ -287,7 +289,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.check),
-                label: const Text('Speichern'),
+                label: Text(l.save),
               ),
             ],
           ),

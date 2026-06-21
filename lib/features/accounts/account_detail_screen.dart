@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../categories/category_providers.dart';
 import '../profile/profile_providers.dart';
@@ -19,10 +20,11 @@ class AccountDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final accounts =
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
-    String accountName = 'Konto';
+    String accountName = l.accountLabel;
     for (final a in accounts) {
       if (a.id == accountId) {
         accountName = a.name;
@@ -40,7 +42,7 @@ class AccountDetailScreen extends ConsumerWidget {
         title: Text(accountName),
         actions: [
           IconButton(
-            tooltip: 'Konto bearbeiten',
+            tooltip: l.editAccount,
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => context.go('/account/$accountId/edit'),
           ),
@@ -49,7 +51,7 @@ class AccountDetailScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/account/$accountId/tx/new'),
         icon: const Icon(Icons.add),
-        label: const Text('Buchung'),
+        label: Text(l.transactionFab),
       ),
       body: Column(
         children: [
@@ -57,7 +59,7 @@ class AccountDetailScreen extends ConsumerWidget {
           const Divider(height: 1),
           Expanded(
             child: txs.isEmpty
-                ? const Center(child: Text('Noch keine Buchungen.'))
+                ? Center(child: Text(l.noTransactions))
                 : ListView.separated(
                     itemCount: txs.length,
                     separatorBuilder: (_, _) => const Divider(height: 1),
@@ -95,7 +97,8 @@ class _BalanceHeader extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Text('Saldo', style: Theme.of(context).textTheme.labelLarge),
+          Text(AppLocalizations.of(context).balance,
+              style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 4),
           Text(
             formatCents(balanceCents),
@@ -129,6 +132,7 @@ class _TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
     final signed = tx.signedCentsFor(viewAccountId);
     final positive = signed >= 0;
@@ -151,9 +155,9 @@ class _TransactionTile extends StatelessWidget {
     if (tx.title.isNotEmpty) {
       titleText = tx.title;
     } else if (tx.type == TransactionType.transfer) {
-      titleText = 'Übertrag';
+      titleText = l.transactionType(TransactionType.transfer);
     } else {
-      titleText = categoryName ?? tx.type.label;
+      titleText = categoryName ?? l.transactionType(tx.type);
     }
 
     final parts = <String>[df.format(tx.occurredOn)];
@@ -167,7 +171,9 @@ class _TransactionTile extends StatelessWidget {
     } else if (categoryName != null) {
       parts.add(categoryName!);
     }
-    if (authorName != null && authorName!.isNotEmpty) parts.add('von $authorName');
+    if (authorName != null && authorName!.isNotEmpty) {
+      parts.add(l.byAuthor(authorName!));
+    }
 
     return ListTile(
       onTap: onTap,
