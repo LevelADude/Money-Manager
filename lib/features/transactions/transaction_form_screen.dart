@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -16,6 +18,7 @@ import '../../shared/calculator_sheet.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/image_compress.dart';
 import 'comments_section.dart';
+import 'ocr/receipt_ocr.dart';
 import '../../shared/money.dart';
 import '../../shared/tag_editor.dart';
 import '../accounts/account_providers.dart';
@@ -565,12 +568,45 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _receiptUrlFuture = ref.read(receiptStorageProvider).signedUrl(path);
         _receiptBusy = false;
       });
+      // Beleg-Text erkennen (nur Android) und leere Felder vorbefüllen.
+      await _tryOcrPrefill(compressed.bytes, compressed.extension);
     } catch (e) {
       if (mounted) {
         setState(() => _receiptBusy = false);
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Beleg-Fehler: $e')));
       }
+    }
+  }
+
+  /// Liest den Beleg per On-Device-OCR (nur Android) und füllt NUR leere Felder
+  /// vor (Betrag/Titel; Datum nur bei neuer Buchung). Fehler werden still
+  /// verschluckt – der Beleg bleibt in jedem Fall angehängt.
+  Future<void> _tryOcrPrefill(Uint8List bytes, String ext) async {
+    if (!ocrSupported) return;
+    final scan = await scanReceipt(bytes, ext);
+    if (scan == null || !mounted) return;
+    final filled = <String>[];
+    setState(() {
+      if (scan.amountCents != null && (parseToCents(_amount.text) ?? 0) <= 0) {
+        _amount.text = centsToInput(scan.amountCents!);
+        filled.add('Betrag');
+      }
+      if (scan.merchant != null && _titleText.isEmpty) {
+        _titleInitial = scan.merchant!;
+        _titleCtrl?.text = scan.merchant!;
+        filled.add('Titel');
+      }
+      if (scan.date != null && !widget.isEditing) {
+        _date = scan.date!;
+        filled.add('Datum');
+      }
+    });
+    if (scan.merchant != null) _applyAutoCategory(scan.merchant!);
+    if (filled.isNotEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Beleg erkannt – ${filled.join(', ')} übernommen.'),
+      ));
     }
   }
 

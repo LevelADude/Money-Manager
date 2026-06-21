@@ -60,9 +60,9 @@ Builds + Web werden am Ende jeder Phase (oder gesammelt) neu gebaut.
 - V1 CSV-Import (Mapping-Assistent, Gegenstück zum Export)
 - V2 Regeln / Auto-Kategorisierung (Titel/Händler → Kategorie, lernend)
 - V3 Wiederkehrende Erkennung (Abos automatisch erkennen)
-- V4 Beleg-Scan mit OCR (Betrag/Datum/Händler vorausfüllen)
+- V4 Beleg-Scan mit OCR (Betrag/Datum/Händler vorausfüllen) — ✅ Android (on-device, ML Kit); Windows/Web: manuelle Eingabe
 - V5 Was-wäre-wenn-Simulator (Sparrate ändern → Jahresauswirkung)
-- V6 KI-Insights (siehe unten)
+- V6 KI-Insights (siehe unten) — ✅ Stufe 1 (lokal, regelbasiert); Stufe 2 (LLM) bewusst nicht umgesetzt (Kosten/Datenschutz)
 
 ## Phase W — Internationalisierung, Mehrwährung & Komfort 🔴
 - W1 Mehrsprachigkeit DE/EN (Flutter-Localization)

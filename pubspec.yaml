@@ -42,6 +42,9 @@ dependencies:
   share_plus: ^13.1.0
   image: ^4.3.0
   image_picker: ^1.2.2
+  # On-Device-Texterkennung (nur Android genutzt; via conditional import vom
+  # Web-Build ferngehalten, da das Plugin dart:io verwendet).
+  google_mlkit_text_recognition: ^0.15.0
   pdf: ^3.11.1
   printing: ^5.13.4
   crypto: ^3.0.6

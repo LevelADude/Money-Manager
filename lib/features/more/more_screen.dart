@@ -27,6 +27,7 @@ class MoreScreen extends ConsumerWidget {
       body: ListView(
         children: [
           tile(Icons.search, 'Suche', '/more/search'),
+          tile(Icons.insights_outlined, 'Insights (Analyse)', '/more/insights'),
           tile(Icons.notifications_outlined, 'Erinnerungen', '/more/reminders'),
           tile(Icons.history, 'Aktivität', '/more/activity'),
           tile(Icons.savings_outlined, 'Budgets', '/more/budgets'),
