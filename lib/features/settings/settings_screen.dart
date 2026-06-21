@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../shared/money.dart';
 import '../currency/add_currency.dart';
 import '../currency/currency_providers.dart';
+import '../onboarding/connection_editor.dart';
 import 'settings_providers.dart';
 
 /// Einstellungen: Erscheinungsbild (Theme-Modus + Akzentfarbe).
@@ -159,6 +160,22 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
+          const Divider(height: 40),
+          Text('Datenbank',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.bold)),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.dns_outlined),
+            title: const Text('Datenbank-Verbindung'),
+            subtitle: const Text(
+                'Andere Supabase-Datenbank verbinden oder Verbindung trennen '
+                '(nur dieses Gerät, Daten bleiben erhalten)'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showConnectionEditor(context, ref),
+          ),
         ],
       ),
     );

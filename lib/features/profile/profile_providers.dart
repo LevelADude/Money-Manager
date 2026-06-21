@@ -28,3 +28,8 @@ final isAdminProvider = FutureProvider<bool>((ref) async {
 final isReadOnlyProvider = FutureProvider<bool>((ref) async {
   return ref.watch(profileRepositoryProvider).fetchIsReadOnly();
 });
+
+/// Ist der aktuelle Nutzer der (geschützte) Besitzer?
+final isOwnerProvider = FutureProvider<bool>((ref) async {
+  return ref.watch(profileRepositoryProvider).fetchIsOwner();
+});

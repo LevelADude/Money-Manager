@@ -1,8 +1,12 @@
 name: Deploy Web (GitHub Pages)
 
 # Baut die Web-App und veröffentlicht sie auf GitHub Pages.
-# Es werden KEINE Secrets benötigt – die Supabase-Zugangsdaten werden erst
-# beim ersten Start in der App selbst eingegeben (Onboarding).
+#
+# Optional: Setzt du in deinem Repo die Secrets SUPABASE_URL + SUPABASE_ANON_KEY
+# (Settings → Secrets and variables → Actions), werden sie beim Build fest
+# eingebacken → deine Seite verbindet sich automatisch mit deiner Datenbank.
+# Ohne diese Secrets (z. B. ein fremder Fork) startet die Seite LEER und fragt
+# beim ersten Start im Onboarding nach URL + Schlüssel.
 
 on:
   push:
@@ -39,7 +43,14 @@ jobs:
       # gstatic.com laden. Sonst bleibt die Seite weiss, wenn gstatic langsam
       # oder gesperrt ist (haengt beim Engine-Start). Funktioniert so auch offline.
       - name: Build web
-        run: flutter build web --release --no-web-resources-cdn --base-href "/${{ github.event.repository.name }}/"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          flutter build web --release --no-web-resources-cdn \
+            --base-href "/${{ github.event.repository.name }}/" \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
       - uses: actions/upload-pages-artifact@v3
         with:

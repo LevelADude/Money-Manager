@@ -49,10 +49,14 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
         ),
       ),
       actions: [
-        if (config.hasBakedDefault && config.isUsingOverride)
+        // Override aktiv -> auf Standard zurücksetzen. Keine feste Verbindung
+        // eingebaut (Fork) -> Verbindung trennen und zurück zur Einrichtung.
+        if (config.isUsingOverride || !config.hasBakedDefault)
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'reset'),
-            child: const Text('Auf Standard zurücksetzen'),
+            child: Text(config.hasBakedDefault
+                ? 'Auf Standard zurücksetzen'
+                : 'Verbindung trennen'),
           ),
         TextButton(
           onPressed: () => Navigator.pop(ctx),

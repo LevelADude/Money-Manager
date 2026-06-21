@@ -40,6 +40,17 @@ class ProfileRepository {
     return (row?['read_only'] as bool?) ?? false;
   }
 
+  Future<bool> fetchIsOwner() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return false;
+    final row = await _client
+        .from('profiles')
+        .select('is_owner')
+        .eq('id', uid)
+        .maybeSingle();
+    return (row?['is_owner'] as bool?) ?? false;
+  }
+
   Future<String> fetchMyDisplayName() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return '';

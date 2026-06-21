@@ -1,29 +1,32 @@
-/// Supabase-Zugangsdaten (fest pro Repo eingebaut).
+/// Supabase-Zugangsdaten (zur BUILD-Zeit eingebacken, NICHT im Quellcode).
 ///
-/// Diese Werte sind die feste Standard-Verbindung dieser Instanz. URL und
-/// "publishable/anon key" sind absichtlich öffentliche Client-Werte (sie
-/// stecken ohnehin in jedem ausgelieferten Web-Build); geschützt wird der
-/// Zugriff durch RLS + die E-Mail-Whitelist beim Registrieren. Dadurch braucht
-/// KEIN Gerät beim ersten Start nach der URL gefragt zu werden.
+/// Bewusst leer als eingecheckter Standard: So startet ein frischer Klon/Fork
+/// LEER und zeigt das Onboarding, statt sich still mit einer fremden Datenbank
+/// zu verbinden. Jede Instanz bindet ihre eigene Datenbank an.
 ///
-/// Überschreibbar:
-///   * pro Build via `--dart-define=SUPABASE_URL=… --dart-define=SUPABASE_ANON_KEY=…`
-///     (z. B. für einen Fork mit eigener Datenbank), und
-///   * pro Gerät zur Laufzeit über „Datenbank-Verbindung ändern" (gespeichert
-///     in den lokalen Einstellungen, siehe [AppConfig]).
+/// Eine konkrete Instanz (auch die des Besitzers) gibt ihre Werte per
+/// `--dart-define` an — NICHT durch Eintragen hier:
+///   * lokal (Windows/Android): über `env.json` via
+///     `--dart-define-from-file=env.json` (siehe `tool/run-windows.ps1`;
+///     `env.json` ist in `.gitignore` und wird nicht committet), und
+///   * Web (GitHub Pages): über die Repo-Secrets `SUPABASE_URL` +
+///     `SUPABASE_ANON_KEY`, die der Deploy-Workflow als dart-define übergibt.
 ///
-/// Ein Fork mit eigener Datenbank ersetzt einfach die beiden Default-Werte
-/// unten (oder gibt sie per dart-define an).
+/// Zusätzlich kann pro Gerät zur Laufzeit über „Datenbank-Verbindung ändern"
+/// ein Override gesetzt werden (siehe [AppConfig]).
+///
+/// URL und „publishable/anon key" sind ohnehin öffentliche Client-Werte;
+/// geschützt wird der Zugriff durch RLS + die E-Mail-Whitelist.
 class SupabaseConfig {
   const SupabaseConfig._();
 
   static const String url = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://uaaqehspnlncjzrajfue.supabase.co',
+    defaultValue: '',
   );
   static const String anonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'sb_publishable_jLK-YtaH2uZAWLDYQJyoDw_0oVLODO2',
+    defaultValue: '',
   );
 
   static bool get isConfigured => url.isNotEmpty && anonKey.isNotEmpty;

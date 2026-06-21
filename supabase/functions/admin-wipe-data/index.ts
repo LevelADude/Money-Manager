@@ -1,5 +1,7 @@
-// Edge Function: admin-delete-user
-// Löscht ein Auth-Konto. Nur für Admins (prüft profiles.is_admin des Aufrufers).
+// Edge Function: admin-wipe-data
+// Leert ALLE Finanzdaten (Buchungen, Konten, Kategorien, Budgets, Belege …).
+// Nutzer, Rollen und die E-Mail-Whitelist bleiben erhalten.
+// Nur für Admins (prüft profiles.is_admin des Aufrufers).
 // Der service_role-Key bleibt serverseitig (nie in der App).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -35,24 +37,12 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (!prof?.is_admin) return json({ error: 'Keine Admin-Rechte' }, 403);
 
-    const { userId } = await req.json();
-    if (!userId) return json({ error: 'userId fehlt' }, 400);
-    if (userId === caller.user.id) {
-      return json({ error: 'Eigenes Konto kann hier nicht gelöscht werden' }, 400);
-    }
+    // Belege im Storage entfernen (gibt den Speicher tatsächlich frei).
+    await admin.storage.emptyBucket('receipts');
 
-    // Der Besitzer ist geschützt und kann nicht gelöscht werden.
-    const { data: target } = await admin
-      .from('profiles')
-      .select('is_owner')
-      .eq('id', userId)
-      .maybeSingle();
-    if (target?.is_owner) {
-      return json({ error: 'Der Besitzer kann nicht gelöscht werden' }, 400);
-    }
-
-    const { error: delErr } = await admin.auth.admin.deleteUser(userId);
-    if (delErr) return json({ error: delErr.message }, 400);
+    // Datentabellen leeren (Nutzer/Whitelist bleiben).
+    const { error: rpcErr } = await admin.rpc('admin_wipe_data');
+    if (rpcErr) return json({ error: rpcErr.message }, 400);
 
     return json({ ok: true }, 200);
   } catch (e) {

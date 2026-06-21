@@ -53,11 +53,20 @@ So geht's in wenigen Minuten:
    Workflow **„Deploy Web (GitHub Pages)"** einmal starten (oder einen kleinen
    Commit machen). Nach ~2 Minuten ist die Seite unter
    `https://<dein-name>.github.io/<repo-name>/` erreichbar.
-5. **App öffnen & verbinden.** Beim ersten Start fragt die App nach
-   **Supabase-URL** und **anon/publishable Key** (beide findest du im
-   Supabase-Dashboard unter *Project Settings → Data API* bzw. *API Keys*).
-   Eingeben → **„Verbinden & starten"**. Fertig.
-   - **Die erste Person, die sich registriert, wird automatisch Administrator.**
+   - **Optional (Auto-Verbindung deiner Seite):** Hinterlege in **Settings →
+     Secrets and variables → Actions** die zwei Secrets `SUPABASE_URL` und
+     `SUPABASE_ANON_KEY`. Dann verbindet sich *deine* veröffentlichte Seite
+     automatisch mit deiner Datenbank. Ohne Secrets startet die Seite leer und
+     fragt im Onboarding nach den Zugangsdaten (siehe Schritt 5).
+5. **App öffnen & verbinden.** Ein frischer Fork startet **leer** und zeigt das
+   Onboarding mit zwei Wegen: **„Neue Installation"** (eigene, leere DB) oder
+   **„Mit bestehender DB verbinden"**. Trage **Supabase-URL** und
+   **anon/publishable Key** ein (beide im Supabase-Dashboard unter
+   *Project Settings → Data API* bzw. *API Keys*) → **„Verbinden & starten"**.
+   - **Die erste Person, die sich registriert, wird automatisch Besitzer**
+     (Administrator mit allen Rechten – geschützt, nicht entziehbar).
+   - Verbindung später ändern/trennen: **Mehr → Einstellungen →
+     Datenbank-Verbindung** (gilt nur für dieses Gerät, Daten bleiben erhalten).
 
 > **Auf dem iPhone:** Seite in **Safari** öffnen → **Teilen** → **„Zum
 > Home-Bildschirm"**. Dann startet Money Manager wie eine echte App (PWA).
@@ -76,8 +85,8 @@ Datenbank**.
 
 ## Voraussetzungen (einmalig einrichten)
 
-1. **Flutter SDK** – in diesem Projekt bereits nach `F:\flutter` installiert.
-   Damit `flutter` überall funktioniert, `F:\flutter\bin` zur **PATH**-Umgebungs­variable
+1. **Flutter SDK** – in diesem Projekt nach `C:\dev\flutter` installiert.
+   Damit `flutter` überall funktioniert, `C:\dev\flutter\bin` zur **PATH**-Umgebungs­variable
    hinzufügen (Windows-Suche → „Umgebungsvariablen bearbeiten").
 2. **Für Android-Builds:** Android Studio (bringt Android SDK + Emulator mit).
    Danach einmalig `flutter doctor --android-licenses` ausführen.

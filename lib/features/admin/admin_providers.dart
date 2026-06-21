@@ -16,3 +16,9 @@ final allowedEmailsProvider = FutureProvider<List<String>>((ref) {
 final allProfilesProvider = FutureProvider<List<Profile>>((ref) {
   return ref.watch(profileRepositoryProvider).fetchProfiles();
 });
+
+/// Aktuelle Speichernutzung (DB + Datei-Speicher) in Bytes.
+final storageStatsProvider =
+    FutureProvider<({int dbBytes, int storageBytes})>((ref) {
+  return ref.watch(adminRepositoryProvider).fetchStorageStats();
+});

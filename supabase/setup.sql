@@ -2,7 +2,7 @@
 -- Money-Manager - setup.sql  (Komplett-Einrichtung der Datenbank)
 -- =====================================================================
 -- Einmalig fuer ein FRISCHES Supabase-Projekt: gesamten Inhalt im SQL-Editor einfuegen, Run.
--- Enthaelt die Migrationen 0001 bis 0021.
+-- Enthaelt die Migrationen 0001 bis 0023.
 -- =====================================================================
 
 
@@ -1234,4 +1234,114 @@ begin
     );
   end if;
 end $$;
+
+
+-- ## Migration: 0022_owner_role.sql
+
+-- 0022: Geschützte Besitzer-Rolle. Die ERSTE registrierte Person ist Besitzer
+-- (is_owner): immer Admin, nicht degradierbar/sperrbar/löschbar. Genau einer.
+
+alter table public.profiles
+  add column if not exists is_owner boolean not null default false;
+
+create or replace function public.is_owner()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select is_owner from public.profiles where id = auth.uid()), false);
+$$;
+grant execute on function public.is_owner() to authenticated;
+
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_first boolean := not exists (select 1 from public.profiles);
+begin
+  insert into public.profiles (id, display_name, is_admin, is_owner)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)),
+    v_first or not exists (select 1 from public.profiles where is_admin = true),
+    v_first
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
+-- Backfill (vor dem Schutz-Trigger): ältestes Profil zum Besitzer machen.
+update public.profiles set is_owner = true
+where id = (select id from public.profiles order by created_at asc limit 1)
+  and not exists (select 1 from public.profiles where is_owner = true);
+
+create or replace function public.protect_owner()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if (tg_op = 'DELETE') then
+    if old.is_owner then
+      raise exception 'Der Besitzer kann nicht gelöscht werden.';
+    end if;
+    return old;
+  end if;
+  if old.is_owner and (not new.is_owner or not new.is_admin or new.read_only) then
+    raise exception 'Der Besitzer kann nicht degradiert oder gesperrt werden.';
+  end if;
+  if new.is_owner and not old.is_owner then
+    raise exception 'Der Besitzer-Status kann nicht übertragen werden.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists trg_protect_owner on public.profiles;
+create trigger trg_protect_owner
+  before update or delete on public.profiles
+  for each row execute function public.protect_owner();
+
+
+-- ## Migration: 0023_admin_maintenance.sql
+
+-- 0023: Speicher-Statistik (Fortschrittsbalken) + Wartungsfunktionen.
+-- get_storage_stats() für alle Angemeldeten lesbar. admin_wipe_data() /
+-- admin_factory_reset() nur via service_role (Edge Functions prüfen die Rolle).
+
+create or replace function public.get_storage_stats()
+returns table (db_bytes bigint, storage_bytes bigint)
+language sql stable security definer set search_path = public as $$
+  select
+    pg_database_size(current_database())::bigint as db_bytes,
+    coalesce(
+      (select sum((metadata->>'size')::bigint) from storage.objects), 0
+    )::bigint as storage_bytes;
+$$;
+revoke all on function public.get_storage_stats() from public;
+grant execute on function public.get_storage_stats() to authenticated;
+
+create or replace function public.admin_wipe_data()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  truncate table
+    public.transaction_comments, public.transaction_splits, public.transactions,
+    public.account_members, public.access_grants, public.accounts,
+    public.category_rules, public.categories, public.budgets,
+    public.recurring_rules, public.savings_goals, public.transaction_templates,
+    public.audit_log
+  cascade;
+end;
+$$;
+revoke all on function public.admin_wipe_data() from public;
+grant execute on function public.admin_wipe_data() to service_role;
+
+create or replace function public.admin_factory_reset()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  truncate table
+    public.transaction_comments, public.transaction_splits, public.transactions,
+    public.account_members, public.access_grants, public.accounts,
+    public.category_rules, public.categories, public.budgets,
+    public.recurring_rules, public.savings_goals, public.transaction_templates,
+    public.audit_log, public.allowed_emails, public.profiles
+  cascade;
+end;
+$$;
+revoke all on function public.admin_factory_reset() from public;
+grant execute on function public.admin_factory_reset() to service_role;
 

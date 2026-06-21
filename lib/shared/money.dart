@@ -28,6 +28,21 @@ String formatCents(int cents) => formatMoney(cents, gBaseCurrency);
 String centsToInput(int cents) =>
     (cents / 100).toStringAsFixed(2).replaceAll('.', ',');
 
+/// Formatiert eine Byte-Größe menschenlesbar ("12 MB", "1,5 GB").
+/// Basis 1024; bis MB ohne, ab MB mit einer Nachkommastelle.
+String formatBytes(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  var value = bytes / 1024;
+  var unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  final digits = unit == 0 ? 0 : 1; // KB ganzzahlig, ab MB eine Nachkommastelle
+  return '${value.toStringAsFixed(digits).replaceAll('.', ',')} ${units[unit]}';
+}
+
 /// Parst eine Nutzereingabe ODER einen Rechenausdruck ("12,50 + 3 + 7,99")
 /// nach Cent. Gibt null zurück, wenn nichts Sinnvolles erkannt wird.
 int? parseToCents(String input) {
