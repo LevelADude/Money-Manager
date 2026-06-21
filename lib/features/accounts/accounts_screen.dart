@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/data_refresh.dart';
 import '../../shared/money_text.dart';
@@ -51,6 +52,7 @@ class AccountsScreen extends ConsumerWidget {
         const <AppTransaction>[];
     final memberNames =
         ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+    final l = AppLocalizations.of(context);
 
     int balanceOf(Account a) {
       var s = a.openingBalanceCents;
@@ -62,23 +64,23 @@ class AccountsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Konten'),
+        title: Text(l.navAccounts),
         actions: [
           const ProfileSwitcher(),
           IconButton(
-            tooltip: 'Aktualisieren',
+            tooltip: l.refresh,
             icon: const Icon(Icons.refresh),
             onPressed: () {
               refreshAllData(ref);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Aktualisiert')),
+                SnackBar(content: Text(l.refreshed)),
               );
             },
           ),
           Builder(builder: (context) {
             final count = ref.watch(remindersProvider).length;
             return IconButton(
-              tooltip: 'Erinnerungen',
+              tooltip: l.moreReminders,
               icon: Badge(
                 isLabelVisible: count > 0,
                 label: Text('$count'),
@@ -88,12 +90,12 @@ class AccountsScreen extends ConsumerWidget {
             );
           }),
           IconButton(
-            tooltip: 'Suche',
+            tooltip: l.moreSearch,
             icon: const Icon(Icons.search),
             onPressed: () => context.go('/more/search'),
           ),
           IconButton(
-            tooltip: 'Konten sortieren',
+            tooltip: l.sortAccounts,
             icon: const Icon(Icons.swap_vert),
             onPressed: () => context.go('/account/reorder'),
           ),
@@ -104,19 +106,17 @@ class AccountsScreen extends ConsumerWidget {
           : FloatingActionButton.extended(
               onPressed: () => context.go('/account/new'),
               icon: const Icon(Icons.add),
-              label: const Text('Konto'),
+              label: Text(l.accountFab),
             ),
       body: accountsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Fehler: $e')),
+        error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (allAccounts) {
           // Konten der gewählten Person inkl. geteilter Konten (null = alle).
           final accounts = ref.watch(personFilteredAccountsProvider);
           final membersByAccount = ref.watch(membersByAccountProvider);
           if (accounts.isEmpty) {
-            return const Center(
-              child: Text('Noch keine Konten. Lege unten eines an.'),
-            );
+            return Center(child: Text(l.noAccounts));
           }
           final byType = <AccountType, List<Account>>{};
           for (final a in accounts) {
@@ -138,7 +138,7 @@ class AccountsScreen extends ConsumerWidget {
                 (
                   name: memberNames[o]?.isNotEmpty == true
                       ? memberNames[o]!
-                      : 'Unbekannt',
+                      : l.unknownPerson,
                   cents: ref.watch(netWorthProvider(o)),
                 ),
             ]..sort((a, b) => b.cents.compareTo(a.cents));
@@ -150,7 +150,7 @@ class AccountsScreen extends ConsumerWidget {
             final subtotal = group.fold<int>(
                 0, (s, a) => s + convert(balanceOf(a), a.currency));
             children.add(_CategoryHeader(
-              label: type.label,
+              label: l.accountType(type),
               cents: subtotal,
               isLiability: type.isLiability,
             ));
@@ -181,22 +181,20 @@ class AccountsScreen extends ConsumerWidget {
 
   Future<void> _confirmDelete(
       BuildContext context, WidgetRef ref, Account a) async {
+    final l = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('„${a.name}" löschen?'),
-        content: const Text(
-          'Alle Buchungen dieses Kontos werden ebenfalls entfernt. '
-          'Das kann nicht rückgängig gemacht werden.',
-        ),
+        title: Text(l.deleteAccountTitle(a.name)),
+        content: Text(l.deleteAccountBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen'),
+            child: Text(l.delete),
           ),
         ],
       ),
@@ -223,7 +221,7 @@ class _NetWorthCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Text('Gesamtvermögen',
+            Text(AppLocalizations.of(context).netWorth,
                 style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 6),
             MoneyText(
@@ -255,7 +253,7 @@ class _PerPersonCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Vermögen je Person',
+            Text(AppLocalizations.of(context).wealthPerPerson,
                 style: Theme.of(context)
                     .textTheme
                     .labelLarge
@@ -349,11 +347,12 @@ class _AccountTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final negative = balanceCents < 0;
     final subtitle = [
       if (ownerName.isNotEmpty) ownerName,
-      if (shared) 'geteilt',
-      if (account.archived) 'archiviert',
+      if (shared) l.sharedLabel,
+      if (account.archived) l.archivedLabel,
     ].join('  ·  ');
     return ListTile(
       onTap: onTap,
@@ -385,11 +384,11 @@ class _AccountTile extends StatelessWidget {
               }
             },
             itemBuilder: (ctx) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'edit',
                 child: ListTile(
-                  leading: Icon(Icons.edit_outlined),
-                  title: Text('Bearbeiten'),
+                  leading: const Icon(Icons.edit_outlined),
+                  title: Text(l.edit),
                 ),
               ),
               PopupMenuItem(
@@ -398,14 +397,14 @@ class _AccountTile extends StatelessWidget {
                   leading: Icon(account.archived
                       ? Icons.unarchive_outlined
                       : Icons.archive_outlined),
-                  title: Text(account.archived ? 'Aktivieren' : 'Archivieren'),
+                  title: Text(account.archived ? l.activate : l.archive),
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(Icons.delete_outline),
-                  title: Text('Löschen'),
+                  leading: const Icon(Icons.delete_outline),
+                  title: Text(l.delete),
                 ),
               ),
             ],

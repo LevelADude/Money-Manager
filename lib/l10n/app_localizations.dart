@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../data/models/account.dart';
+import '../data/models/app_transaction.dart';
+
 /// Leichtgewichtige, hand-gepflegte Lokalisierung (DE/EN).
 ///
 /// Bewusst ohne Codegen/ARB: neue Texte = ein Getter mit `_t('Deutsch',
@@ -148,6 +151,98 @@ class AppLocalizations {
   String get insightsLocalNote => _t(
       'Alles wird lokal auf diesem Gerät berechnet – es werden keine Daten an Dritte gesendet.',
       'Everything is computed locally on this device – no data is sent to third parties.');
+
+  // ---- Allgemeine Aktionen ----
+  String get refresh => _t('Aktualisieren', 'Refresh');
+  String get refreshed => _t('Aktualisiert', 'Refreshed');
+  String get edit => _t('Bearbeiten', 'Edit');
+  String get delete => _t('Löschen', 'Delete');
+  String errorWith(Object e) => _t('Fehler: $e', 'Error: $e');
+
+  // ---- Konten ----
+  String get accountFab => _t('Konto', 'Account');
+  String get sortAccounts => _t('Konten sortieren', 'Sort accounts');
+  String get noAccounts => _t(
+      'Noch keine Konten. Lege unten eines an.', 'No accounts yet. Add one below.');
+  String get netWorth => _t('Gesamtvermögen', 'Net worth');
+  String get wealthPerPerson => _t('Vermögen je Person', 'Wealth per person');
+  String get unknownPerson => _t('Unbekannt', 'Unknown');
+  String get sharedLabel => _t('geteilt', 'shared');
+  String get archivedLabel => _t('archiviert', 'archived');
+  String get activate => _t('Aktivieren', 'Activate');
+  String get archive => _t('Archivieren', 'Archive');
+  String deleteAccountTitle(String name) =>
+      _t('„$name" löschen?', 'Delete "$name"?');
+  String get deleteAccountBody => _t(
+      'Alle Buchungen dieses Kontos werden ebenfalls entfernt. Das kann nicht rückgängig gemacht werden.',
+      'All transactions of this account will be removed too. This cannot be undone.');
+
+  String accountType(AccountType t) => switch (t) {
+        AccountType.bank => _t('Bankkonto', 'Bank account'),
+        AccountType.cash => _t('Bargeld', 'Cash'),
+        AccountType.creditCard => _t('Kreditkarte', 'Credit card'),
+        AccountType.savings => _t('Sparkonto', 'Savings account'),
+        AccountType.loan => _t('Kredit / Darlehen', 'Loan'),
+        AccountType.investment => _t('Depot / Investment', 'Investment'),
+        AccountType.wallet => _t('E-Wallet', 'E-wallet'),
+        AccountType.other => _t('Sonstiges', 'Other'),
+      };
+
+  // ---- Buchungen (Liste) ----
+  String get transactionFab => _t('Buchung', 'Transaction');
+  String get today => _t('Heute', 'Today');
+  String get periodAsPdf => _t('Zeitraum als PDF', 'Period as PDF');
+  String pdfError(Object e) => _t('PDF-Fehler: $e', 'PDF error: $e');
+  String get periodDay => _t('Tag', 'Day');
+  String get periodWeek => _t('Woche', 'Week');
+  String get periodMonth => _t('Monat', 'Month');
+  String get periodYear => _t('Jahr', 'Year');
+  String get income => _t('Einnahmen', 'Income');
+  String get expenses => _t('Ausgaben', 'Expenses');
+  String get balance => _t('Saldo', 'Balance');
+  String get searchHint => _t('Suchen …', 'Search …');
+  String get splitLabel => _t('Aufgeteilt', 'Split');
+  String get noTransactionsPeriod => _t(
+      'Keine Buchungen in diesem Zeitraum.', 'No transactions in this period.');
+  String get pdfHeading =>
+      _t('Money Manager – Buchungen', 'Money Manager – Transactions');
+  String txCount(int n) => _t('$n Buchungen', '$n transactions');
+
+  String transactionType(TransactionType t) => switch (t) {
+        TransactionType.income => _t('Einnahme', 'Income'),
+        TransactionType.expense => _t('Ausgabe', 'Expense'),
+        TransactionType.transfer => _t('Übertrag', 'Transfer'),
+      };
+
+  List<String> get _monthNames => _en
+      ? const [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December',
+        ]
+      : const [
+          'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+          'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+        ];
+
+  List<String> get _weekdayNames => _en
+      ? const [
+          'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
+          'Saturday', 'Sunday',
+        ]
+      : const [
+          'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag',
+          'Samstag', 'Sonntag',
+        ];
+
+  String monthName(int month) => _monthNames[month - 1];
+
+  /// Wochentag + Datum, z. B. „Montag, 18.06.2026" / „Monday, 18.06.2026".
+  String dayHeader(DateTime d) {
+    final wd = _weekdayNames[d.weekday - 1];
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    return '$wd, $dd.$mm.${d.year}';
+  }
 }
 
 class _AppLocalizationsDelegate

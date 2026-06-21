@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/data_refresh.dart';
 import '../../shared/money.dart';
 import '../../shared/money_text.dart';
@@ -20,25 +21,6 @@ import 'person_filter.dart';
 import 'transaction_providers.dart';
 
 enum _PeriodView { day, week, month, year }
-
-const _monthNames = [
-  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
-];
-
-const _weekdayNames = [
-  'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag',
-  'Freitag', 'Samstag', 'Sonntag',
-];
-
-/// Deutscher Datums-Header ohne intl-Locale-Daten (die nicht initialisiert
-/// sind) – z. B. "Montag, 18.06.2026".
-String _germanDate(DateTime d) {
-  final wd = _weekdayNames[d.weekday - 1]; // weekday: 1=Mo … 7=So
-  final dd = d.day.toString().padLeft(2, '0');
-  final mm = d.month.toString().padLeft(2, '0');
-  return '$wd, $dd.$mm.${d.year}';
-}
 
 /// "Buchungen"-Tab: nach Zeitraum (Tag/Woche/Monat/Jahr) mit ◀▶, Summen und
 /// nach Datum gruppierter Liste. Plus Suche + globaler "+".
@@ -99,6 +81,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     required int income,
     required int expense,
   }) async {
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
     final sorted = [...items]
       ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
@@ -106,7 +89,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       for (final t in sorted)
         [
           df.format(t.occurredOn),
-          t.type.label,
+          l.transactionType(t.type),
           accountNames[t.accountId] ?? '',
           t.categoryId == null ? '' : (catNames[t.categoryId] ?? ''),
           t.title,
@@ -119,8 +102,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     ];
     try {
       await shareTransactionsPdf(
-        heading: 'Money Manager – Buchungen',
-        periodLabel: '${_label()} · ${items.length} Buchungen',
+        heading: l.pdfHeading,
+        periodLabel: '${_label()} · ${l.txCount(items.length)}',
         rows: rows,
         incomeText: formatCents(income),
         expenseText: formatCents(expense),
@@ -130,12 +113,13 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('PDF-Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.pdfError(e))));
       }
     }
   }
 
   String _label() {
+    final l = AppLocalizations.of(context);
     final (s, e) = _range();
     final df = DateFormat('dd.MM.yyyy');
     switch (_view) {
@@ -145,7 +129,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         final endIncl = e.subtract(const Duration(days: 1));
         return '${DateFormat('dd.MM.').format(s)} – ${df.format(endIncl)}';
       case _PeriodView.month:
-        return '${_monthNames[s.month - 1]} ${s.year}';
+        return '${l.monthName(s.month)} ${s.year}';
       case _PeriodView.year:
         return '${s.year}';
     }
@@ -174,6 +158,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       _tagFilter = null;
     }
 
+    final l = AppLocalizations.of(context);
     final (start, end) = _range();
     final q = _query.text.trim().toLowerCase();
 
@@ -213,21 +198,21 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buchungen'),
+        title: Text(l.navTransactions),
         actions: [
           const ProfileSwitcher(),
           IconButton(
-            tooltip: 'Aktualisieren',
+            tooltip: l.refresh,
             icon: const Icon(Icons.refresh),
             onPressed: () => refreshAllData(ref),
           ),
           IconButton(
-            tooltip: 'Heute',
+            tooltip: l.today,
             icon: const Icon(Icons.today_outlined),
             onPressed: () => setState(() => _anchor = DateTime.now()),
           ),
           IconButton(
-            tooltip: 'Zeitraum als PDF',
+            tooltip: l.periodAsPdf,
             icon: const Icon(Icons.picture_as_pdf_outlined),
             onPressed: filtered.isEmpty
                 ? null
@@ -246,18 +231,18 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           : FloatingActionButton.extended(
               onPressed: () => context.go('/transactions/new'),
               icon: const Icon(Icons.add),
-              label: const Text('Buchung'),
+              label: Text(l.transactionFab),
             ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: SegmentedButton<_PeriodView>(
-              segments: const [
-                ButtonSegment(value: _PeriodView.day, label: Text('Tag')),
-                ButtonSegment(value: _PeriodView.week, label: Text('Woche')),
-                ButtonSegment(value: _PeriodView.month, label: Text('Monat')),
-                ButtonSegment(value: _PeriodView.year, label: Text('Jahr')),
+              segments: [
+                ButtonSegment(value: _PeriodView.day, label: Text(l.periodDay)),
+                ButtonSegment(value: _PeriodView.week, label: Text(l.periodWeek)),
+                ButtonSegment(value: _PeriodView.month, label: Text(l.periodMonth)),
+                ButtonSegment(value: _PeriodView.year, label: Text(l.periodYear)),
               ],
               selected: {_view},
               onSelectionChanged: (s) => setState(() => _view = s.first),
@@ -285,12 +270,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                _SumBox(label: 'Einnahmen', cents: income, color: Colors.green.shade700),
+                _SumBox(label: l.income, cents: income, color: Colors.green.shade700),
                 const SizedBox(width: 8),
-                _SumBox(label: 'Ausgaben', cents: expense, color: Colors.red.shade700),
+                _SumBox(label: l.expenses, cents: expense, color: Colors.red.shade700),
                 const SizedBox(width: 8),
                 _SumBox(
-                  label: 'Saldo',
+                  label: l.balance,
                   cents: income - expense,
                   color: (income - expense) >= 0
                       ? Colors.green.shade700
@@ -306,7 +291,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Suchen …',
+                hintText: l.searchHint,
                 prefixIcon: const Icon(Icons.search),
                 border: const OutlineInputBorder(),
                 suffixIcon: _query.text.isEmpty
@@ -347,9 +332,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               },
               child: filtered.isEmpty
                   ? ListView(
-                      children: const [
-                        SizedBox(height: 80),
-                        Center(child: Text('Keine Buchungen in diesem Zeitraum.')),
+                      children: [
+                        const SizedBox(height: 80),
+                        Center(child: Text(l.noTransactionsPeriod)),
                       ],
                     )
                   : ListView.builder(
@@ -364,7 +349,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                               padding:
                                   const EdgeInsets.fromLTRB(16, 12, 16, 4),
                               child: Text(
-                                _germanDate(day),
+                                l.dayHeader(day),
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelLarge
@@ -447,6 +432,7 @@ class _TxTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final income = tx.type == TransactionType.income;
     final transfer = tx.type == TransactionType.transfer;
     final color = transfer
@@ -455,7 +441,7 @@ class _TxTile extends StatelessWidget {
     final sub = [
       if (accountName.isNotEmpty) accountName,
       ?categoryName,
-      if (hasSplit) 'Aufgeteilt',
+      if (hasSplit) l.splitLabel,
       for (final t in tx.tags) '#$t',
     ].join('  ·  ');
     final prefix = switch (tx.type) {
@@ -473,7 +459,7 @@ class _TxTile extends StatelessWidget {
         color: color,
       ),
       title: Text(tx.title.isEmpty
-          ? (categoryName ?? tx.type.label)
+          ? (categoryName ?? l.transactionType(tx.type))
           : tx.title),
       subtitle: sub.isEmpty ? null : Text(sub),
       trailing: Row(
