@@ -5,17 +5,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
+import '../../data/models/recurring_rule.dart';
+import '../../data/models/savings_goal.dart';
 import '../../shared/money.dart';
+import '../budgets/budget_providers.dart';
 import '../categories/category_providers.dart';
 import '../currency/currency_providers.dart';
+import '../recurring/recurring_providers.dart';
+import '../savings/savings_providers.dart';
 import '../settings/settings_providers.dart';
 import '../statistics/statistics_providers.dart';
 import '../transactions/person_filter.dart';
+import '../transactions/transaction_providers.dart';
 
 enum InsightSeverity { info, positive, warning }
 
 /// Eine lokal berechnete Auswertungs-Karte. Enthält KEINE Rohdaten, die das
-/// Gerät verlassen – alles wird aus den bereits geladenen Buchungen abgeleitet.
+/// Gerät verlassen – alles wird aus den bereits geladenen Daten abgeleitet.
 class Insight {
   const Insight({
     required this.icon,
@@ -34,11 +40,19 @@ class Insight {
 final localInsightsProvider = Provider<List<Insight>>((ref) {
   final txs = ref.watch(personFilteredTransactionsProvider);
   final months = ref.watch(monthlyTotalsProvider);
+  final netWorth = ref.watch(netWorthHistoryProvider);
   final convert = ref.watch(converterProvider);
   final curOf = ref.watch(accountCurrencyProvider);
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
   final cats = ref.watch(categoriesProvider).asData?.value ?? const <Category>[];
   final catName = {for (final c in cats) c.id: c.name};
+  final budgets = ref.watch(budgetsByCategoryProvider);
+  final spentByCat = ref.watch(monthlySpentByCategoryProvider);
+  final rules = ref.watch(recurringRulesProvider).asData?.value ??
+      const <RecurringRule>[];
+  final goals =
+      ref.watch(savingsGoalsProvider).asData?.value ?? const <SavingsGoal>[];
+  final splitsByTx = ref.watch(splitsByTransactionProvider);
 
   int amt(AppTransaction t) => convert(t.amountCents, curOf[t.accountId] ?? base);
   String nameOf(String? id) =>
@@ -46,9 +60,128 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
 
   final now = DateTime.now();
   final monthStart = DateTime(now.year, now.month, 1);
+  final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
   final out = <Insight>[];
 
-  // --- 1) Sparquote (aktueller Monat, mit Trend) ---------------------------
+  // ===== WARNUNGEN ZUERST ==================================================
+
+  // --- Budget-Status (überschritten / fast ausgeschöpft) -------------------
+  final budgetCards = <({double util, Insight insight})>[];
+  budgets.forEach((catId, b) {
+    if (b.amountCents <= 0) return;
+    final spent = spentByCat[catId] ?? 0;
+    final util = spent / b.amountCents;
+    if (util < 0.9) return;
+    final name = nameOf(catId);
+    budgetCards.add((
+      util: util,
+      insight: Insight(
+        icon: util >= 1.0 ? Icons.error_outline : Icons.warning_amber_outlined,
+        title: util >= 1.0
+            ? 'Budget „$name" überschritten'
+            : 'Budget „$name" fast aufgebraucht',
+        detail: '${formatCents(spent)} von ${formatCents(b.amountCents)} '
+            '(${(util * 100).toStringAsFixed(0)} %) diesen Monat.',
+        severity: InsightSeverity.warning,
+      ),
+    ));
+  });
+  budgetCards.sort((a, b) => b.util.compareTo(a.util));
+  for (final c in budgetCards.take(2)) {
+    out.add(c.insight);
+  }
+
+  // --- Kategorie deutlich über dem 3-Monats-Schnitt ------------------------
+  final prev3Start = DateTime(now.year, now.month - 3, 1);
+  final curByCat = <String?, int>{};
+  final prevByCat = <String?, int>{};
+  var monthExpense = 0;
+  for (final t in txs) {
+    if (t.type != TransactionType.expense) continue;
+    final d = t.occurredOn;
+    if (!d.isBefore(monthStart)) {
+      curByCat.update(t.categoryId, (v) => v + amt(t), ifAbsent: () => amt(t));
+      monthExpense += amt(t);
+    } else if (!d.isBefore(prev3Start)) {
+      prevByCat.update(t.categoryId, (v) => v + amt(t), ifAbsent: () => amt(t));
+    }
+  }
+  String? topCat;
+  double topPct = 0;
+  int topCur = 0, topAvg = 0;
+  curByCat.forEach((cat, cur) {
+    final avg = (prevByCat[cat] ?? 0) / 3;
+    if (avg < 1000) return;
+    final pct = (cur - avg) / avg * 100;
+    if (pct >= 20 && pct > topPct) {
+      topPct = pct;
+      topCat = cat;
+      topCur = cur;
+      topAvg = avg.round();
+    }
+  });
+  if (topPct >= 20) {
+    out.add(Insight(
+      icon: Icons.show_chart,
+      title: '${nameOf(topCat)} höher als sonst',
+      detail: '${formatCents(topCur)} diesen Monat – +${topPct.toStringAsFixed(0)} % '
+          'ggü. Ø der letzten 3 Monate (${formatCents(topAvg)}).',
+      severity: InsightSeverity.warning,
+    ));
+  }
+
+  // --- Ausreißer (Buchung > Mittel + 2·Std-Abw. der Kategorie) -------------
+  final byCat = <String?, List<int>>{};
+  for (final t in txs) {
+    if (t.type != TransactionType.expense) continue;
+    byCat.putIfAbsent(t.categoryId, () => []).add(amt(t));
+  }
+  final stats = <String?, ({double mean, double sd})>{};
+  byCat.forEach((cat, list) {
+    if (list.length < 5) return;
+    final mean = list.reduce((a, b) => a + b) / list.length;
+    final variance =
+        list.map((v) => math.pow(v - mean, 2).toDouble()).reduce((a, b) => a + b) /
+            list.length;
+    stats[cat] = (mean: mean, sd: math.sqrt(variance));
+  });
+  final outliers = <AppTransaction>[];
+  for (final t in txs) {
+    if (t.type != TransactionType.expense) continue;
+    if (t.occurredOn.isBefore(monthStart)) continue;
+    final s = stats[t.categoryId];
+    if (s == null) continue;
+    if (amt(t) > s.mean + 2 * s.sd && amt(t) >= 2000) outliers.add(t);
+  }
+  outliers.sort((a, b) => amt(b).compareTo(amt(a)));
+  for (final t in outliers.take(2)) {
+    final cat = nameOf(t.categoryId);
+    out.add(Insight(
+      icon: Icons.warning_amber_outlined,
+      title: 'Ungewöhnlich hoch',
+      detail: '${t.title.isEmpty ? cat : t.title}: ${formatCents(amt(t))} – '
+          'deutlich über dem Schnitt der Kategorie „$cat".',
+      severity: InsightSeverity.warning,
+    ));
+  }
+
+  // ===== STATUS / ÜBERSICHT ================================================
+
+  // --- Monatssaldo (Plus/Minus) --------------------------------------------
+  if (months.isNotEmpty) {
+    final cur = months.last;
+    final net = cur.incomeCents - cur.expenseCents;
+    out.add(Insight(
+      icon: net >= 0 ? Icons.trending_up : Icons.trending_down,
+      title: net >= 0 ? 'Diesen Monat im Plus' : 'Diesen Monat im Minus',
+      detail: net >= 0
+          ? 'Einnahmen liegen ${formatCents(net)} über den Ausgaben.'
+          : 'Ausgaben liegen ${formatCents(-net)} über den Einnahmen.',
+      severity: net >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
+    ));
+  }
+
+  // --- Sparquote (mit Trend) -----------------------------------------------
   if (months.isNotEmpty && months.last.incomeCents > 0) {
     final cur = months.last;
     final rate = (cur.incomeCents - cur.expenseCents) / cur.incomeCents * 100;
@@ -70,95 +203,152 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     ));
   }
 
-  // --- 2) Hochrechnung Ausgaben bis Monatsende -----------------------------
-  final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
-  if (months.isNotEmpty && now.day >= 3 && now.day < daysInMonth) {
-    final spent = months.last.expenseCents;
-    if (spent > 0) {
-      final projected = (spent / now.day * daysInMonth).round();
+  // --- Vermögenstrend (letzte 3 Monate) ------------------------------------
+  if (netWorth.length >= 4) {
+    final nowNw = netWorth.last.cents;
+    final agoNw = netWorth[netWorth.length - 4].cents;
+    final delta = nowNw - agoNw;
+    if (delta.abs() >= 100) {
       out.add(Insight(
-        icon: Icons.trending_up,
-        title: 'Hochrechnung',
-        detail: 'Bei aktuellem Tempo ~${formatCents(projected)} Ausgaben bis '
-            'Monatsende (bisher ${formatCents(spent)}).',
+        icon: delta >= 0 ? Icons.trending_up : Icons.trending_down,
+        title: 'Vermögenstrend (3 Monate)',
+        detail: delta >= 0
+            ? 'Dein Vermögen ist um ${formatCents(delta)} gewachsen '
+                '(jetzt ${formatCents(nowNw)}).'
+            : 'Dein Vermögen ist um ${formatCents(-delta)} gesunken '
+                '(jetzt ${formatCents(nowNw)}).',
+        severity:
+            delta >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
       ));
     }
   }
 
-  // --- 3) Kategorie deutlich über dem 3-Monats-Schnitt ---------------------
-  final prev3Start = DateTime(now.year, now.month - 3, 1);
-  final curByCat = <String?, int>{};
-  final prevByCat = <String?, int>{};
-  for (final t in txs) {
-    if (t.type != TransactionType.expense) continue;
-    final d = t.occurredOn;
-    if (!d.isBefore(monthStart)) {
-      curByCat.update(t.categoryId, (v) => v + amt(t), ifAbsent: () => amt(t));
-    } else if (!d.isBefore(prev3Start)) {
-      prevByCat.update(t.categoryId, (v) => v + amt(t), ifAbsent: () => amt(t));
-    }
-  }
-  String? topCat;
-  double topPct = 0;
-  int topCur = 0, topAvg = 0;
-  curByCat.forEach((cat, cur) {
-    final avg = (prevByCat[cat] ?? 0) / 3;
-    if (avg < 1000) return; // Mini-Kategorien (<10 €/Monat) ignorieren
-    final pct = (cur - avg) / avg * 100;
-    if (pct >= 20 && pct > topPct) {
-      topPct = pct;
-      topCat = cat;
-      topCur = cur;
-      topAvg = avg.round();
-    }
-  });
-  if (topPct >= 20) {
+  // --- Sparziel-Fortschritt (am weitesten fortgeschrittenes, offenes Ziel) -
+  final open = goals.where((g) => g.targetCents > 0 && !g.reached).toList()
+    ..sort((a, b) => b.fraction.compareTo(a.fraction));
+  final reached = goals.where((g) => g.reached).toList();
+  if (open.isNotEmpty) {
+    final g = open.first;
     out.add(Insight(
-      icon: Icons.show_chart,
-      title: '${nameOf(topCat)} höher als sonst',
-      detail: '${formatCents(topCur)} diesen Monat – +${topPct.toStringAsFixed(0)} % '
-          'ggü. Ø der letzten 3 Monate (${formatCents(topAvg)}).',
-      severity: InsightSeverity.warning,
+      icon: Icons.flag_outlined,
+      title: 'Sparziel „${g.name}"',
+      detail: '${(g.fraction * 100).toStringAsFixed(0)} % erreicht – noch '
+          '${formatCents(g.remainingCents)} bis ${formatCents(g.targetCents)}.',
+      severity: InsightSeverity.info,
+    ));
+  } else if (reached.isNotEmpty) {
+    out.add(Insight(
+      icon: Icons.emoji_events_outlined,
+      title: 'Sparziel erreicht 🎉',
+      detail: '„${reached.first.name}" ist vollständig angespart.',
+      severity: InsightSeverity.positive,
     ));
   }
 
-  // --- 4) Ausreißer (Buchung > Mittel + 2·Std-Abw. der Kategorie) ----------
-  final byCat = <String?, List<int>>{};
-  for (final t in txs) {
-    if (t.type != TransactionType.expense) continue;
-    byCat.putIfAbsent(t.categoryId, () => []).add(amt(t));
+  // ===== HINWEISE / INFOS ==================================================
+
+  // --- Anstehende Daueraufträge (nächste 7 Tage) ---------------------------
+  final soon = now.add(const Duration(days: 7));
+  var dueCount = 0;
+  var dueExpense = 0;
+  for (final r in rules) {
+    if (!r.active) continue;
+    // Zählt fällige (auch überfällige) Daueraufträge bis in 7 Tagen.
+    if (!r.nextDue.isAfter(soon)) {
+      dueCount++;
+      if (r.type == TransactionType.expense) {
+        dueExpense += convert(r.amountCents, curOf[r.accountId] ?? base);
+      }
+    }
   }
-  final stats = <String?, ({double mean, double sd})>{};
-  byCat.forEach((cat, list) {
-    if (list.length < 5) return;
-    final mean = list.reduce((a, b) => a + b) / list.length;
-    final variance =
-        list.map((v) => math.pow(v - mean, 2).toDouble()).reduce((a, b) => a + b) /
-            list.length;
-    stats[cat] = (mean: mean, sd: math.sqrt(variance));
-  });
-  final outliers = <AppTransaction>[];
+  if (dueCount > 0) {
+    out.add(Insight(
+      icon: Icons.event_repeat_outlined,
+      title: '$dueCount Dauerauftrag${dueCount == 1 ? '' : 'e'} fällig (≤ 7 Tage)',
+      detail: dueExpense > 0
+          ? 'Davon ${formatCents(dueExpense)} Ausgaben. Sorge für Deckung.'
+          : 'Demnächst fällig – im Blick behalten.',
+      severity: InsightSeverity.info,
+    ));
+  }
+
+  // --- Hochrechnung Ausgaben bis Monatsende --------------------------------
+  if (monthExpense > 0 && now.day >= 3 && now.day < daysInMonth) {
+    final projected = (monthExpense / now.day * daysInMonth).round();
+    out.add(Insight(
+      icon: Icons.query_stats,
+      title: 'Hochrechnung',
+      detail: 'Bei aktuellem Tempo ~${formatCents(projected)} Ausgaben bis '
+          'Monatsende (bisher ${formatCents(monthExpense)}).',
+    ));
+  }
+
+  // --- Tagesdurchschnitt (Burn-Rate) ---------------------------------------
+  if (monthExpense > 0 && now.day >= 2) {
+    final perDay = (monthExpense / now.day).round();
+    out.add(Insight(
+      icon: Icons.local_fire_department_outlined,
+      title: 'Tagesdurchschnitt',
+      detail: 'Du gibst diesen Monat im Schnitt ${formatCents(perDay)} pro Tag aus.',
+    ));
+  }
+
+  // --- Größte Kategorie diesen Monat (+ Anteil) ----------------------------
+  if (monthExpense > 0 && curByCat.isNotEmpty) {
+    String? big;
+    var bigV = -1;
+    curByCat.forEach((cat, v) {
+      if (v > bigV) {
+        bigV = v;
+        big = cat;
+      }
+    });
+    final share = (bigV / monthExpense * 100).round();
+    out.add(Insight(
+      icon: Icons.pie_chart_outline,
+      title: 'Größter Posten: ${nameOf(big)}',
+      detail: '${formatCents(bigV)} diesen Monat – $share % deiner Ausgaben.',
+    ));
+  }
+
+  // --- Größte Einzel-Ausgabe diesen Monat ----------------------------------
+  AppTransaction? maxTx;
   for (final t in txs) {
     if (t.type != TransactionType.expense) continue;
     if (t.occurredOn.isBefore(monthStart)) continue;
-    final s = stats[t.categoryId];
-    if (s == null) continue;
-    final v = amt(t);
-    if (v > s.mean + 2 * s.sd && v >= 2000) outliers.add(t);
+    if (maxTx == null || amt(t) > amt(maxTx)) maxTx = t;
   }
-  outliers.sort((a, b) => amt(b).compareTo(amt(a)));
-  for (final t in outliers.take(2)) {
-    final cat = nameOf(t.categoryId);
+  if (maxTx != null) {
+    final label = maxTx.title.isNotEmpty ? maxTx.title : nameOf(maxTx.categoryId);
     out.add(Insight(
-      icon: Icons.warning_amber_outlined,
-      title: 'Ungewöhnlich hoch',
-      detail: '${t.title.isEmpty ? cat : t.title}: ${formatCents(amt(t))} – '
-          'deutlich über dem Schnitt der Kategorie „$cat".',
-      severity: InsightSeverity.warning,
+      icon: Icons.payments_outlined,
+      title: 'Größte Ausgabe diesen Monat',
+      detail: '$label: ${formatCents(amt(maxTx))}.',
     ));
   }
 
-  // --- 5) Mögliche Abos (gleicher Titel + Betrag, mehrere Monate) ----------
+  // --- Ausgabenfreie Tage --------------------------------------------------
+  if (now.day >= 5) {
+    final spendDays = <int>{};
+    for (final t in txs) {
+      if (t.type != TransactionType.expense) continue;
+      if (t.occurredOn.isBefore(monthStart)) continue;
+      if (t.occurredOn.isAfter(now)) continue;
+      spendDays.add(t.occurredOn.day);
+    }
+    final noSpend = now.day - spendDays.length;
+    if (noSpend > 0) {
+      out.add(Insight(
+        icon: Icons.spa_outlined,
+        title: '$noSpend ausgabenfreie Tage',
+        detail: 'An $noSpend von ${now.day} Tagen diesen Monat hast du nichts '
+            'ausgegeben.',
+        severity: InsightSeverity.positive,
+      ));
+    }
+  }
+
+  // --- Mögliche Abos (gleicher Titel + Betrag, mehrere Monate) -------------
   final groups = <String, List<AppTransaction>>{};
   for (final t in txs) {
     if (t.type != TransactionType.expense) continue;
@@ -168,7 +358,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   }
   var subsShown = 0;
   for (final list in groups.values) {
-    if (subsShown >= 3) break;
+    if (subsShown >= 2) break;
     if (list.length < 3) continue;
     final monthsSeen =
         list.map((t) => '${t.occurredOn.year}-${t.occurredOn.month}').toSet();
@@ -183,19 +373,21 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     subsShown++;
   }
 
-  // --- 6) Größte Einzel-Ausgabe diesen Monat -------------------------------
-  AppTransaction? maxTx;
+  // --- Unkategorisierte Ausgaben (Nudge) -----------------------------------
+  var uncategorized = 0;
   for (final t in txs) {
     if (t.type != TransactionType.expense) continue;
     if (t.occurredOn.isBefore(monthStart)) continue;
-    if (maxTx == null || amt(t) > amt(maxTx)) maxTx = t;
+    if (t.categoryId != null) continue;
+    final splits = splitsByTx[t.id];
+    if (splits != null && splits.isNotEmpty) continue; // via Splits kategorisiert
+    uncategorized++;
   }
-  if (maxTx != null) {
-    final label = maxTx.title.isNotEmpty ? maxTx.title : nameOf(maxTx.categoryId);
+  if (uncategorized >= 3) {
     out.add(Insight(
-      icon: Icons.payments_outlined,
-      title: 'Größte Ausgabe diesen Monat',
-      detail: '$label: ${formatCents(amt(maxTx))}.',
+      icon: Icons.label_off_outlined,
+      title: '$uncategorized Buchungen ohne Kategorie',
+      detail: 'Kategorisieren verbessert die Auswertungen und Budgets.',
     ));
   }
 
