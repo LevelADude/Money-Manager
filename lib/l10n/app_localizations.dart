@@ -297,6 +297,85 @@ class AppLocalizations {
   String get prevWeek => _t('Vorwoche', 'previous week');
   String get prevMonth => _t('Vormonat', 'previous month');
   String get prevYear => _t('Vorjahr', 'previous year');
+
+  // ---- Buchungsformular ----
+  String get newTransaction => _t('Neue Buchung', 'New transaction');
+  String get editTransaction => _t('Buchung bearbeiten', 'Edit transaction');
+  String get saveAsTemplate => _t('Als Vorlage speichern', 'Save as template');
+  String get history => _t('Verlauf', 'History');
+  String get duplicate => _t('Duplizieren', 'Duplicate');
+  String get createAccountFirst =>
+      _t('Bitte zuerst ein Konto anlegen.', 'Please create an account first.');
+  String get fromTemplate => _t('Aus Vorlage', 'From template');
+  String get accountLabel => _t('Konto', 'Account');
+  String get amountHintLabel =>
+      _t('Betrag (auch Rechnung, z. B. 12,50+3)', 'Amount (math ok, e.g. 12.50+3)');
+  String get calculator => _t('Taschenrechner', 'Calculator');
+  String get enterValidAmount =>
+      _t('Gültigen Betrag eingeben', 'Enter a valid amount');
+  String get targetAccount => _t('Zielkonto', 'Target account');
+  String get chooseDash => _t('— wählen —', '— choose —');
+  String get splitMultiple =>
+      _t('Auf mehrere Kategorien aufteilen', 'Split across multiple categories');
+  String get category => _t('Kategorie', 'Category');
+  String get noCategoryOption => _t('Keine Kategorie', 'No category');
+  String get titleHintLabel =>
+      _t('Titel (z. B. Aldi, Rewe, Aral)', 'Title (e.g. Aldi, Rewe, Aral)');
+  String get note => _t('Notiz', 'Note');
+  String get dateLabel => _t('Datum', 'Date');
+  String get chooseAccount => _t('Bitte ein Konto wählen.', 'Please choose an account.');
+  String get chooseTargetAccount =>
+      _t('Bitte ein Zielkonto wählen.', 'Please choose a target account.');
+  String splitSumMismatch(String sum, String amount) => _t(
+      'Summe der Aufteilungen ($sum) muss dem Betrag ($amount) entsprechen.',
+      'Split total ($sum) must equal the amount ($amount).');
+  String get deleteTransactionTitle =>
+      _t('Buchung löschen?', 'Delete transaction?');
+  String get cannotUndo =>
+      _t('Das kann nicht rückgängig gemacht werden.', 'This cannot be undone.');
+  String get noHistory => _t('Kein Verlauf vorhanden.', 'No history available.');
+  String get templateNameLabel => _t('Name der Vorlage', 'Template name');
+  String get templateSaved => _t('Vorlage gespeichert', 'Template saved');
+  String get chooseTemplate => _t('Vorlage wählen', 'Choose template');
+  String get noTemplates => _t(
+      'Noch keine Vorlagen. Speichere eine über das Lesezeichen-Symbol oben.',
+      'No templates yet. Save one via the bookmark icon at the top.');
+  String get enterValidValuesFirst => _t(
+      'Bitte zuerst gültige Werte eingeben.', 'Please enter valid values first.');
+  String get transactionDuplicated =>
+      _t('Buchung dupliziert', 'Transaction duplicated');
+  String get cameraTakePhoto =>
+      _t('Kamera (Foto aufnehmen)', 'Camera (take photo)');
+  String get galleryFile => _t('Galerie / Datei', 'Gallery / file');
+  String receiptError(Object e) => _t('Beleg-Fehler: $e', 'Receipt error: $e');
+  String receiptRecognized(String fields) => _t(
+      'Beleg erkannt – $fields übernommen.', 'Receipt scanned – $fields filled in.');
+  String get fieldAmount => _t('Betrag', 'Amount');
+  String get fieldTitle => _t('Titel', 'Title');
+  String get fieldDate => _t('Datum', 'Date');
+  String get receipt => _t('Beleg', 'Receipt');
+  String get receiptLoadFailed =>
+      _t('Beleg konnte nicht geladen werden', 'Receipt could not be loaded');
+  String get replace => _t('Ersetzen', 'Replace');
+  String get remove => _t('Entfernen', 'Remove');
+  String get addReceipt => _t('Beleg / Foto hinzufügen', 'Add receipt / photo');
+  String get none => _t('Keine', 'None');
+  String get amount => _t('Betrag', 'Amount');
+  String get removeRow => _t('Zeile entfernen', 'Remove row');
+  String get rowLabel => _t('Zeile', 'Row');
+  String rest(String x) => _t('Rest $x', 'Remainder $x');
+  String distributedBalanced(String x) =>
+      _t('Verteilt: $x ✓', 'Allocated: $x ✓');
+  String distributedOf(String x, String y, String z) => _t(
+      'Verteilt: $x von $y · Rest $z', 'Allocated: $x of $y · remainder $z');
+
+  String auditAction(String action) => switch (action) {
+        'insert' => _t('Angelegt', 'Created'),
+        'delete' => _t('Gelöscht', 'Deleted'),
+        'restore' => _t('Wiederhergestellt', 'Restored'),
+        'purge' => _t('Endgültig gelöscht', 'Purged'),
+        _ => _t('Geändert', 'Edited'),
+      };
 }
 
 class _AppLocalizationsDelegate

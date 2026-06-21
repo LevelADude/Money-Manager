@@ -13,6 +13,7 @@ import '../../data/models/app_transaction.dart';
 import '../../data/models/audit_entry.dart';
 import '../../data/models/category.dart';
 import '../../data/models/transaction_template.dart';
+import '../../l10n/app_localizations.dart';
 import '../profile/profile_providers.dart';
 import '../../shared/calculator_sheet.dart';
 import '../../shared/category_icons.dart';
@@ -188,15 +189,16 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     final cents = parseToCents(_amount.text);
     if (cents == null || cents <= 0) return;
+    final l = AppLocalizations.of(context);
     if (_accountId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte ein Konto wählen.')),
+        SnackBar(content: Text(l.chooseAccount)),
       );
       return;
     }
     if (_type == TransactionType.transfer && _transferTargetId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte ein Zielkonto wählen.')),
+        SnackBar(content: Text(l.chooseTargetAccount)),
       );
       return;
     }
@@ -220,8 +222,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         if (sum != cents) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(
-                'Summe der Aufteilungen (${formatCents(sum)}) muss dem Betrag '
-                '(${formatCents(cents)}) entsprechen.'),
+                l.splitSumMismatch(formatCents(sum), formatCents(cents))),
           ));
           return;
         }
@@ -274,26 +275,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
         setState(() => _saving = false);
       }
     }
   }
 
   Future<void> _delete() async {
+    final l = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Buchung löschen?'),
-        content: const Text('Das kann nicht rückgängig gemacht werden.'),
+        title: Text(l.deleteTransactionTitle),
+        content: Text(l.cannotUndo),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen'),
+            child: Text(l.delete),
           ),
         ],
       ),
@@ -311,6 +313,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Future<void> _showHistory() async {
+    final l = AppLocalizations.of(context);
     final repo = ref.read(transactionRepositoryProvider);
     final names =
         ref.read(profileNamesProvider).asData?.value ?? const <String, String>{};
@@ -330,14 +333,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             child: ListView(
               shrinkWrap: true,
               children: [
-                const ListTile(
-                  title: Text('Verlauf',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ListTile(
+                  title: Text(l.history,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
                 if (items.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Kein Verlauf vorhanden.'),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(l.noHistory),
                   ),
                 for (final e in items)
                   ListTile(
@@ -349,9 +352,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       'purge' => Icons.delete_forever,
                       _ => Icons.edit_outlined,
                     }),
-                    title: Text(e.actionLabel),
+                    title: Text(l.auditAction(e.action)),
                     subtitle: Text(
-                        '${names[e.actor] ?? 'Unbekannt'} · ${df.format(e.at.toLocal())}'),
+                        '${names[e.actor] ?? l.unknownPerson} · ${df.format(e.at.toLocal())}'),
                   ),
               ],
             ),
@@ -362,24 +365,25 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Future<void> _saveAsTemplate() async {
+    final l = AppLocalizations.of(context);
     final nameCtrl = TextEditingController(text: _titleText);
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Als Vorlage speichern'),
+        title: Text(l.saveAsTemplate),
         content: TextField(
           controller: nameCtrl,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Name der Vorlage'),
+          decoration: InputDecoration(labelText: l.templateNameLabel),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()),
-            child: const Text('Speichern'),
+            child: Text(l.save),
           ),
         ],
       ),
@@ -397,12 +401,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vorlage gespeichert')),
+        SnackBar(content: Text(l.templateSaved)),
       );
     }
   }
 
   Future<void> _pickTemplate() async {
+    final l = AppLocalizations.of(context);
     final chosen = await showModalBottomSheet<TransactionTemplate>(
       context: context,
       builder: (ctx) => Consumer(
@@ -413,16 +418,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             child: ListView(
               shrinkWrap: true,
               children: [
-                const ListTile(
-                  title: Text('Vorlage wählen'),
+                ListTile(
+                  title: Text(l.chooseTemplate),
                   dense: true,
                 ),
                 if (templates.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                        'Noch keine Vorlagen. Speichere eine über das '
-                        'Lesezeichen-Symbol oben.'),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(l.noTemplates),
                   ),
                 for (final t in templates)
                   ListTile(
@@ -462,10 +465,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   /// Legt eine Kopie der aktuellen Buchung an und öffnet sie zum Bearbeiten.
   Future<void> _duplicate() async {
     if (_saving) return; // Re-Entry-Schutz gegen Doppel-Anlage
+    final l = AppLocalizations.of(context);
     final cents = parseToCents(_amount.text);
     if (cents == null || cents <= 0 || _accountId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte zuerst gültige Werte eingeben.')),
+        SnackBar(content: Text(l.enterValidValuesFirst)),
       );
       return;
     }
@@ -502,7 +506,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       ref.invalidate(allSplitsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Buchung dupliziert')),
+          SnackBar(content: Text(l.transactionDuplicated)),
         );
         context.go('/transactions/$newId');
       }
@@ -510,12 +514,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
 
   Future<ImageSource?> _chooseSource() {
+    final l = AppLocalizations.of(context);
     // Kamera auf Handy UND im Web/PWA (Browser-Kamera). Nur Desktop kann nicht.
     final canCamera = kIsWeb ||
         defaultTargetPlatform == TargetPlatform.android ||
@@ -529,12 +534,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             if (canCamera)
               ListTile(
                 leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('Kamera (Foto aufnehmen)'),
+                title: Text(l.cameraTakePhoto),
                 onTap: () => Navigator.pop(ctx, ImageSource.camera),
               ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Galerie / Datei'),
+              title: Text(l.galleryFile),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
@@ -573,8 +578,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _receiptBusy = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Beleg-Fehler: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).receiptError(e))));
       }
     }
   }
@@ -586,26 +591,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (!ocrSupported) return;
     final scan = await scanReceipt(bytes, ext);
     if (scan == null || !mounted) return;
+    final l = AppLocalizations.of(context);
     final filled = <String>[];
     setState(() {
       if (scan.amountCents != null && (parseToCents(_amount.text) ?? 0) <= 0) {
         _amount.text = centsToInput(scan.amountCents!);
-        filled.add('Betrag');
+        filled.add(l.fieldAmount);
       }
       if (scan.merchant != null && _titleText.isEmpty) {
         _titleInitial = scan.merchant!;
         _titleCtrl?.text = scan.merchant!;
-        filled.add('Titel');
+        filled.add(l.fieldTitle);
       }
       if (scan.date != null && !widget.isEditing) {
         _date = scan.date!;
-        filled.add('Datum');
+        filled.add(l.fieldDate);
       }
     });
     if (scan.merchant != null) _applyAutoCategory(scan.merchant!);
     if (filled.isNotEmpty && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Beleg erkannt – ${filled.join(', ')} übernommen.'),
+        content: Text(l.receiptRecognized(filled.join(', '))),
       ));
     }
   }
@@ -625,6 +631,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Widget _buildReceiptSection(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (_receiptBusy) {
       return const Padding(
         padding: EdgeInsets.all(8),
@@ -637,7 +644,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: Text('Beleg', style: Theme.of(context).textTheme.labelLarge),
+            child:
+                Text(l.receipt, style: Theme.of(context).textTheme.labelLarge),
           ),
           const SizedBox(height: 6),
           ClipRRect(
@@ -660,7 +668,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   errorBuilder: (_, _, _) => Container(
                     height: 160,
                     alignment: Alignment.center,
-                    child: const Text('Beleg konnte nicht geladen werden'),
+                    child: Text(l.receiptLoadFailed),
                   ),
                 );
               },
@@ -672,12 +680,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               TextButton.icon(
                 onPressed: _pickReceipt,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Ersetzen'),
+                label: Text(l.replace),
               ),
               TextButton.icon(
                 onPressed: _removeReceipt,
                 icon: const Icon(Icons.delete_outline),
-                label: const Text('Entfernen'),
+                label: Text(l.remove),
               ),
             ],
           ),
@@ -687,7 +695,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     return OutlinedButton.icon(
       onPressed: _pickReceipt,
       icon: const Icon(Icons.attach_file),
-      label: const Text('Beleg / Foto hinzufügen'),
+      label: Text(l.addReceipt),
     );
   }
 
@@ -703,6 +711,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Widget _buildSplitEditor(BuildContext context, List<Category> categories) {
+    final l = AppLocalizations.of(context);
     final total = parseToCents(_amount.text) ?? 0;
     final sum = _splitSumCents;
     final rest = total - sum;
@@ -723,11 +732,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         ? _splitRows[i].categoryId
                         : null,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                        labelText: 'Kategorie', isDense: true),
+                    decoration: InputDecoration(
+                        labelText: l.category, isDense: true),
                     items: [
-                      const DropdownMenuItem<String?>(
-                          value: null, child: Text('Keine')),
+                      DropdownMenuItem<String?>(
+                          value: null, child: Text(l.none)),
                       for (final c in categories)
                         DropdownMenuItem<String?>(
                           value: c.id,
@@ -755,13 +764,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     keyboardType: const TextInputType.numberWithOptions(
                         decimal: true),
                     textAlign: TextAlign.right,
-                    decoration: const InputDecoration(
-                        labelText: 'Betrag', isDense: true, prefixText: '€ '),
+                    decoration: InputDecoration(
+                        labelText: l.amount, isDense: true, prefixText: '€ '),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Zeile entfernen',
+                  tooltip: l.removeRow,
                   icon: const Icon(Icons.remove_circle_outline),
                   onPressed: _splitRows.length <= 1
                       ? null
@@ -776,21 +785,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             TextButton.icon(
               onPressed: () => _addSplitRow(),
               icon: const Icon(Icons.add),
-              label: const Text('Zeile'),
+              label: Text(l.rowLabel),
             ),
             if (rest != 0 && total > 0)
               TextButton.icon(
                 onPressed: () => _fillRestIntoLastRow(rest),
                 icon: const Icon(Icons.bolt),
-                label: Text('Rest ${formatCents(rest)}'),
+                label: Text(l.rest(formatCents(rest))),
               ),
           ],
         ),
         Text(
           balanced
-              ? 'Verteilt: ${formatCents(sum)} ✓'
-              : 'Verteilt: ${formatCents(sum)} von ${formatCents(total)}'
-                  ' · Rest ${formatCents(rest)}',
+              ? l.distributedBalanced(formatCents(sum))
+              : l.distributedOf(formatCents(sum), formatCents(total),
+                  formatCents(rest)),
           style: TextStyle(
             color: balanced
                 ? Colors.green.shade700
@@ -808,6 +817,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     // Lädt beim Bearbeiten vorhandene Aufteilungen, sobald der Stream da ist.
     ref.watch(allSplitsProvider);
     _prefillSplits();
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
     final isTransfer = _type == TransactionType.transfer;
 
@@ -836,38 +846,38 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Buchung bearbeiten' : 'Neue Buchung'),
+        title: Text(widget.isEditing ? l.editTransaction : l.newTransaction),
         actions: [
           IconButton(
-            tooltip: 'Als Vorlage speichern',
+            tooltip: l.saveAsTemplate,
             icon: const Icon(Icons.bookmark_add_outlined),
             onPressed: _saving ? null : _saveAsTemplate,
           ),
           if (widget.isEditing)
             IconButton(
-              tooltip: 'Verlauf',
+              tooltip: l.history,
               icon: const Icon(Icons.history),
               onPressed: _showHistory,
             ),
           if (widget.isEditing)
             IconButton(
-              tooltip: 'Duplizieren',
+              tooltip: l.duplicate,
               icon: const Icon(Icons.copy_all_outlined),
               onPressed: _saving ? null : _duplicate,
             ),
           if (widget.isEditing)
             IconButton(
-              tooltip: 'Löschen',
+              tooltip: l.delete,
               icon: const Icon(Icons.delete_outline),
               onPressed: _delete,
             ),
         ],
       ),
       body: accounts.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Bitte zuerst ein Konto anlegen.'),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.createAccountFirst),
               ),
             )
           : SingleChildScrollView(
@@ -881,26 +891,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       OutlinedButton.icon(
                         onPressed: _pickTemplate,
                         icon: const Icon(Icons.bookmarks_outlined),
-                        label: const Text('Aus Vorlage'),
+                        label: Text(l.fromTemplate),
                       ),
                       const SizedBox(height: 12),
                     ],
                     SegmentedButton<TransactionType>(
-                      segments: const [
+                      segments: [
                         ButtonSegment(
                           value: TransactionType.expense,
-                          label: Text('Ausgabe'),
-                          icon: Icon(Icons.north_east),
+                          label: Text(l.transactionType(TransactionType.expense)),
+                          icon: const Icon(Icons.north_east),
                         ),
                         ButtonSegment(
                           value: TransactionType.income,
-                          label: Text('Einnahme'),
-                          icon: Icon(Icons.south_west),
+                          label: Text(l.transactionType(TransactionType.income)),
+                          icon: const Icon(Icons.south_west),
                         ),
                         ButtonSegment(
                           value: TransactionType.transfer,
-                          label: Text('Übertrag'),
-                          icon: Icon(Icons.swap_horiz),
+                          label:
+                              Text(l.transactionType(TransactionType.transfer)),
+                          icon: const Icon(Icons.swap_horiz),
                         ),
                       ],
                       selected: {_type},
@@ -909,10 +920,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       initialValue: _accountId,
-                      decoration: const InputDecoration(
-                        labelText: 'Konto',
-                        prefixIcon:
-                            Icon(Icons.account_balance_wallet_outlined),
+                      decoration: InputDecoration(
+                        labelText: l.accountLabel,
+                        prefixIcon: const Icon(
+                            Icons.account_balance_wallet_outlined),
                       ),
                       items: [
                         for (final a in accounts)
@@ -928,10 +939,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           decimal: true),
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
-                        labelText: 'Betrag (auch Rechnung, z. B. 12,50+3)',
+                        labelText: l.amountHintLabel,
                         prefixIcon: const Icon(Icons.euro),
                         suffixIcon: IconButton(
-                          tooltip: 'Taschenrechner',
+                          tooltip: l.calculator,
                           icon: const Icon(Icons.calculate_outlined),
                           onPressed: () async {
                             final r = await showCalculatorSheet(context,
@@ -943,7 +954,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       validator: (v) {
                         final c = parseToCents(v ?? '');
                         if (c == null || c <= 0) {
-                          return 'Gültigen Betrag eingeben';
+                          return l.enterValidAmount;
                         }
                         return null;
                       },
@@ -974,14 +985,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     if (isTransfer)
                       DropdownButtonFormField<String?>(
                         initialValue: _transferTargetId,
-                        decoration: const InputDecoration(
-                          labelText: 'Zielkonto',
-                          prefixIcon: Icon(Icons.swap_horiz),
+                        decoration: InputDecoration(
+                          labelText: l.targetAccount,
+                          prefixIcon: const Icon(Icons.swap_horiz),
                         ),
                         items: [
-                          const DropdownMenuItem<String?>(
+                          DropdownMenuItem<String?>(
                             value: null,
-                            child: Text('— wählen —'),
+                            child: Text(l.chooseDash),
                           ),
                           for (final a in targets)
                             DropdownMenuItem<String?>(
@@ -1004,7 +1015,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             ));
                           }
                         }),
-                        title: const Text('Auf mehrere Kategorien aufteilen'),
+                        title: Text(l.splitMultiple),
                         secondary: const Icon(Icons.call_split),
                       ),
                       if (_splitMode)
@@ -1012,14 +1023,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       else
                         DropdownButtonFormField<String?>(
                           initialValue: _categoryId,
-                          decoration: const InputDecoration(
-                            labelText: 'Kategorie',
-                            prefixIcon: Icon(Icons.label_outline),
+                          decoration: InputDecoration(
+                            labelText: l.category,
+                            prefixIcon: const Icon(Icons.label_outline),
                           ),
                           items: [
-                            const DropdownMenuItem<String?>(
+                            DropdownMenuItem<String?>(
                               value: null,
-                              child: Text('Keine Kategorie'),
+                              child: Text(l.noCategoryOption),
                             ),
                             for (final c in categories)
                               DropdownMenuItem<String?>(
@@ -1059,9 +1070,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           focusNode: focusNode,
                           textCapitalization: TextCapitalization.sentences,
                           onChanged: _applyAutoCategory,
-                          decoration: const InputDecoration(
-                            labelText: 'Titel (z. B. Aldi, Rewe, Aral)',
-                            prefixIcon: Icon(Icons.storefront_outlined),
+                          decoration: InputDecoration(
+                            labelText: l.titleHintLabel,
+                            prefixIcon: const Icon(Icons.storefront_outlined),
                           ),
                         );
                       },
@@ -1071,10 +1082,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       controller: _note,
                       minLines: 3,
                       maxLines: 6,
-                      decoration: const InputDecoration(
-                        labelText: 'Notiz',
+                      decoration: InputDecoration(
+                        labelText: l.note,
                         alignLabelWithHint: true,
-                        prefixIcon: Icon(Icons.notes),
+                        prefixIcon: const Icon(Icons.notes),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1092,7 +1103,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         side: BorderSide(color: Theme.of(context).dividerColor),
                       ),
                       leading: const Icon(Icons.calendar_today),
-                      title: const Text('Datum'),
+                      title: Text(l.dateLabel),
                       subtitle: Text(df.format(_date)),
                       trailing: const Icon(Icons.edit_calendar),
                       onTap: _pickDate,
@@ -1108,7 +1119,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                   CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.check),
-                      label: const Text('Speichern'),
+                      label: Text(l.save),
                     ),
                     if (widget.isEditing) ...[
                       const SizedBox(height: 24),
