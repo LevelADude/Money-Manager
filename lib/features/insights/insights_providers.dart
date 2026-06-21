@@ -20,6 +20,9 @@ import '../transactions/transaction_providers.dart';
 
 enum InsightSeverity { info, positive, warning }
 
+/// Gruppierung der Karten im Insights-Bereich.
+enum InsightSection { warning, overview, hint }
+
 /// Betrachtungszeitraum für die Insights.
 enum InsightScope { month, year }
 
@@ -45,6 +48,9 @@ class Insight {
     required this.detail,
     this.severity = InsightSeverity.info,
     this.route,
+    this.section,
+    this.sparkline,
+    this.sparkLabels,
   });
 
   final IconData icon;
@@ -52,6 +58,21 @@ class Insight {
   final String detail;
   final InsightSeverity severity;
   final String? route;
+
+  /// Abschnitt der Karte. Wenn null, wird er aus [severity] abgeleitet.
+  final InsightSection? section;
+
+  /// Optionale Mini-Verlaufslinie unter der Karte (z. B. Monatsverlauf).
+  final List<int>? sparkline;
+  final List<String>? sparkLabels;
+
+  InsightSection get effectiveSection =>
+      section ??
+      switch (severity) {
+        InsightSeverity.warning => InsightSection.warning,
+        InsightSeverity.positive => InsightSection.overview,
+        InsightSeverity.info => InsightSection.hint,
+      };
 }
 
 /// Regelbasierte „KI"-Insights – komplett lokal, kostenlos, ohne Netz/LLM.
@@ -60,6 +81,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   final isYear = scope == InsightScope.year;
 
   final txs = ref.watch(personFilteredTransactionsProvider);
+  final months = ref.watch(monthlyTotalsProvider);
   final netWorth = ref.watch(netWorthHistoryProvider);
   final convert = ref.watch(converterProvider);
   final curOf = ref.watch(accountCurrencyProvider);
@@ -224,6 +246,19 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
 
   // ===== STATUS / ÜBERSICHT ================================================
 
+  // Monatsverlauf (Netto) als Mini-Sparkline.
+  if (months.length >= 3) {
+    out.add(Insight(
+      icon: Icons.ssid_chart,
+      title: 'Monatsverlauf (Netto)',
+      detail: 'Einnahmen minus Ausgaben der letzten ${months.length} Monate.',
+      section: InsightSection.overview,
+      route: '/statistics',
+      sparkline: [for (final m in months) m.netCents],
+      sparkLabels: [for (final m in months) _monthAbbr[m.month.month - 1]],
+    ));
+  }
+
   // Saldo des Zeitraums (Plus/Minus).
   final net = w.income - w.expense;
   out.add(Insight(
@@ -233,6 +268,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
         ? 'Einnahmen liegen ${formatCents(net)} über den Ausgaben.'
         : 'Ausgaben liegen ${formatCents(-net)} über den Einnahmen.',
     severity: net >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
+    section: InsightSection.overview,
     route: '/statistics',
   ));
 
@@ -252,6 +288,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       title: 'Sparquote',
       detail: detail,
       severity: rate >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
+      section: InsightSection.overview,
       route: '/statistics',
     ));
   }
@@ -272,6 +309,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
                 '(jetzt ${formatCents(nowNw)}).',
         severity:
             delta >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
+        section: InsightSection.overview,
         route: '/statistics',
       ));
     }
@@ -288,6 +326,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       title: 'Sparziel „${g.name}"',
       detail: '${(g.fraction * 100).toStringAsFixed(0)} % erreicht – noch '
           '${formatCents(g.remainingCents)} bis ${formatCents(g.targetCents)}.',
+      section: InsightSection.overview,
       route: '/more/goals',
     ));
   } else if (reached.isNotEmpty) {
@@ -296,6 +335,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       title: 'Sparziel erreicht 🎉',
       detail: '„${reached.first.name}" ist vollständig angespart.',
       severity: InsightSeverity.positive,
+      section: InsightSection.overview,
       route: '/more/goals',
     ));
   }
@@ -456,3 +496,8 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
 
   return out;
 });
+
+const _monthAbbr = [
+  'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez',
+];

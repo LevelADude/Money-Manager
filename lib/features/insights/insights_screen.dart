@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shared/mini_line_chart.dart';
 import 'insights_providers.dart';
 
-/// „Insights" – lokal berechnete Auswertungen (Monatsvergleich, Ausreißer,
-/// Sparquote, Budgets, Sparziele, Abo-Erkennung …). Komplett offline, ohne LLM.
+/// „Insights" – lokal berechnete Auswertungen, gruppiert in Achtung / Überblick
+/// / Hinweise. Komplett offline, ohne LLM.
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
+
+  static const _sections = [
+    (InsightSection.warning, 'Achtung'),
+    (InsightSection.overview, 'Überblick'),
+    (InsightSection.hint, 'Hinweise'),
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -54,7 +61,17 @@ class InsightsScreen extends ConsumerWidget {
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
                     children: [
-                      for (final i in insights) _InsightCard(insight: i),
+                      for (final (section, label) in _sections)
+                        ...() {
+                          final cards = insights
+                              .where((i) => i.effectiveSection == section)
+                              .toList();
+                          if (cards.isEmpty) return const <Widget>[];
+                          return [
+                            _SectionHeader(label: label),
+                            for (final i in cards) _InsightCard(insight: i),
+                          ];
+                        }(),
                       const SizedBox(height: 8),
                       Padding(
                         padding:
@@ -84,6 +101,27 @@ class InsightsScreen extends ConsumerWidget {
   }
 }
 
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
+      child: Text(
+        label.toUpperCase(),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: Theme.of(context).hintColor,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+      ),
+    );
+  }
+}
+
 class _InsightCard extends StatelessWidget {
   const _InsightCard({required this.insight});
 
@@ -98,19 +136,35 @@ class _InsightCard extends StatelessWidget {
       InsightSeverity.info => scheme.primary,
     };
     final route = insight.route;
+    final spark = insight.sparkline;
     return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.15),
-          child: Icon(insight.icon, color: color),
-        ),
-        title: Text(insight.title,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(insight.detail),
-        isThreeLine: insight.detail.length > 60,
-        trailing:
-            route == null ? null : const Icon(Icons.chevron_right, size: 20),
-        onTap: route == null ? null : () => context.go(route),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: color.withValues(alpha: 0.15),
+              child: Icon(insight.icon, color: color),
+            ),
+            title: Text(insight.title,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(insight.detail),
+            isThreeLine: insight.detail.length > 60,
+            trailing:
+                route == null ? null : const Icon(Icons.chevron_right, size: 20),
+            onTap: route == null ? null : () => context.go(route),
+          ),
+          if (spark != null && spark.length >= 2)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: MiniLineChart(
+                values: spark,
+                color: color,
+                height: 90,
+                labels: insight.sparkLabels ?? const [],
+              ),
+            ),
+        ],
       ),
     );
   }
