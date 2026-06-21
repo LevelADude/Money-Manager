@@ -14,6 +14,7 @@ import '../../data/models/transaction_template.dart';
 import '../profile/profile_providers.dart';
 import '../../shared/calculator_sheet.dart';
 import '../../shared/category_icons.dart';
+import '../../shared/image_compress.dart';
 import 'comments_section.dart';
 import '../../shared/money.dart';
 import '../../shared/tag_editor.dart';
@@ -553,7 +554,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       setState(() => _receiptBusy = true);
       final bytes = await x.readAsBytes();
       final ext = x.name.contains('.') ? x.name.split('.').last : 'jpg';
-      final path = await ref.read(receiptStorageProvider).upload(bytes, ext);
+      // Vor dem Upload verkleinern (spart Storage; siehe image_compress.dart).
+      final compressed = await compressReceipt(bytes, ext);
+      final path = await ref
+          .read(receiptStorageProvider)
+          .upload(compressed.bytes, compressed.extension);
       if (!mounted) return;
       setState(() {
         _receiptPath = path;
