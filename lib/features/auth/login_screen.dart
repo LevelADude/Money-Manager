@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../config/app_config.dart';
+import '../../l10n/app_localizations.dart';
 import '../onboarding/connection_editor.dart';
 import 'auth_providers.dart';
 
@@ -44,9 +45,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Wenn E-Mail-Bestätigung aktiv ist, gibt es noch keine Session.
         if (res.session == null && mounted) {
           setState(() => _isSignUp = false);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text(
-                'Fast geschafft! Bitte bestätige deine E-Mail, dann anmelden.'),
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context).almostDone),
           ));
         }
       } else {
@@ -69,27 +69,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _forgotPassword() async {
+    final l = AppLocalizations.of(context);
     final emailCtrl = TextEditingController(text: _email.text.trim());
     final email = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Passwort zurücksetzen'),
+        title: Text(l.resetPasswordTitle),
         content: TextField(
           controller: emailCtrl,
           keyboardType: TextInputType.emailAddress,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'E-Mail',
-            prefixIcon: Icon(Icons.email_outlined),
+          decoration: InputDecoration(
+            labelText: l.email,
+            prefixIcon: const Icon(Icons.email_outlined),
           ),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen')),
+              onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, emailCtrl.text.trim()),
-              child: const Text('Link senden')),
+              child: Text(l.sendLink)),
         ],
       ),
     );
@@ -97,8 +97,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(authRepositoryProvider).resetPassword(email);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('E-Mail zum Zurücksetzen gesendet (falls registriert).')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l.resetSent)));
       }
     } catch (e) {
       _showError('Fehler: $e');
@@ -107,6 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
@@ -135,9 +136,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: _name,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Anzeigename (optional)',
-                        prefixIcon: Icon(Icons.person_outline),
+                      decoration: InputDecoration(
+                        labelText: l.displayNameOptional,
+                        prefixIcon: const Icon(Icons.person_outline),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -146,25 +147,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'E-Mail',
-                      prefixIcon: Icon(Icons.email_outlined),
+                    decoration: InputDecoration(
+                      labelText: l.email,
+                      prefixIcon: const Icon(Icons.email_outlined),
                     ),
-                    validator: (v) => (v == null || !v.contains('@'))
-                        ? 'Gültige E-Mail eingeben'
-                        : null,
+                    validator: (v) =>
+                        (v == null || !v.contains('@')) ? l.invalidEmail : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _password,
                     obscureText: true,
                     onFieldSubmitted: (_) => _submit(),
-                    decoration: const InputDecoration(
-                      labelText: 'Passwort',
-                      prefixIcon: Icon(Icons.lock_outline),
+                    decoration: InputDecoration(
+                      labelText: l.password,
+                      prefixIcon: const Icon(Icons.lock_outline),
                     ),
                     validator: (v) =>
-                        (v == null || v.length < 6) ? 'Mind. 6 Zeichen' : null,
+                        (v == null || v.length < 6) ? l.passwordMin : null,
                   ),
                   const SizedBox(height: 24),
                   FilledButton(
@@ -175,22 +175,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(_isSignUp ? 'Registrieren' : 'Anmelden'),
+                        : Text(_isSignUp ? l.register : l.signIn),
                   ),
                   TextButton(
                     onPressed: _loading
                         ? null
                         : () => setState(() => _isSignUp = !_isSignUp),
-                    child: Text(
-                      _isSignUp
-                          ? 'Schon ein Konto? Anmelden'
-                          : 'Neu hier? Konto erstellen',
-                    ),
+                    child: Text(_isSignUp ? l.haveAccount : l.newHere),
                   ),
                   if (!_isSignUp)
                     TextButton(
                       onPressed: _loading ? null : _forgotPassword,
-                      child: const Text('Passwort vergessen?'),
+                      child: Text(l.forgotPassword),
                     ),
                   // Verbindungs-Knopf nur zeigen, wenn er gebraucht wird:
                   // wenn ein eigener Override aktiv ist (z. B. falsche URL zum
@@ -209,7 +205,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ? null
                             : () => showConnectionEditor(context, ref),
                         icon: const Icon(Icons.dns_outlined, size: 18),
-                        label: const Text('Datenbank-Verbindung ändern'),
+                        label: Text(l.changeDbConnection),
                       ),
                     );
                   }),

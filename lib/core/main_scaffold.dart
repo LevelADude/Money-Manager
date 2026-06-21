@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../l10n/app_localizations.dart';
 import '../shared/data_refresh.dart';
 import '../shared/responsive.dart';
 
@@ -49,19 +50,24 @@ class _MainScaffoldState extends ConsumerState<MainScaffold>
   @override
   Widget build(BuildContext context) {
     final shell = widget.shell;
+    final l = AppLocalizations.of(context);
     final items = <({IconData icon, IconData active, String label})>[
       (
         icon: Icons.account_balance_wallet_outlined,
         active: Icons.account_balance_wallet,
-        label: 'Konten'
+        label: l.navAccounts
       ),
       (
         icon: Icons.receipt_long_outlined,
         active: Icons.receipt_long,
-        label: 'Buchungen'
+        label: l.navTransactions
       ),
-      (icon: Icons.bar_chart_outlined, active: Icons.bar_chart, label: 'Statistik'),
-      (icon: Icons.menu, active: Icons.menu, label: 'Mehr'),
+      (
+        icon: Icons.bar_chart_outlined,
+        active: Icons.bar_chart,
+        label: l.navStatistics
+      ),
+      (icon: Icons.menu, active: Icons.menu, label: l.navMore),
     ];
 
     // Auf breiten Screens den Inhalt zentriert + begrenzt darstellen.

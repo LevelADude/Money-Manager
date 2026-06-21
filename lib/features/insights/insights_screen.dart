@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../shared/mini_line_chart.dart';
 import 'insights_providers.dart';
 
@@ -10,35 +11,35 @@ import 'insights_providers.dart';
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
 
-  static const _sections = [
-    (InsightSection.warning, 'Achtung'),
-    (InsightSection.overview, 'Überblick'),
-    (InsightSection.hint, 'Hinweise'),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scope = ref.watch(insightScopeProvider);
     final insights = ref.watch(localInsightsProvider);
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    final sections = [
+      (InsightSection.warning, l.secWarning),
+      (InsightSection.overview, l.secOverview),
+      (InsightSection.hint, l.secHint),
+    ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Insights')),
+      appBar: AppBar(title: Text(l.insightsTitle)),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
             child: SegmentedButton<InsightScope>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: InsightScope.month,
-                  label: Text('Dieser Monat'),
-                  icon: Icon(Icons.calendar_view_month),
+                  label: Text(l.thisMonth),
+                  icon: const Icon(Icons.calendar_view_month),
                 ),
                 ButtonSegment(
                   value: InsightScope.year,
-                  label: Text('Dieses Jahr'),
-                  icon: Icon(Icons.calendar_today),
+                  label: Text(l.thisYear),
+                  icon: const Icon(Icons.calendar_today),
                 ),
               ],
               selected: {scope},
@@ -48,12 +49,11 @@ class InsightsScreen extends ConsumerWidget {
           ),
           Expanded(
             child: insights.isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(24),
                       child: Text(
-                        'Noch zu wenig Daten für Auswertungen. Erfasse ein paar '
-                        'Buchungen – dann erscheinen hier automatisch Hinweise.',
+                        l.insightsEmpty,
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -61,7 +61,7 @@ class InsightsScreen extends ConsumerWidget {
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
                     children: [
-                      for (final (section, label) in _sections)
+                      for (final (section, label) in sections)
                         ...() {
                           final cards = insights
                               .where((i) => i.effectiveSection == section)
@@ -83,8 +83,7 @@ class InsightsScreen extends ConsumerWidget {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                'Alles wird lokal auf diesem Gerät berechnet – es '
-                                'werden keine Daten an Dritte gesendet.',
+                                l.insightsLocalNote,
                                 style: theme.textTheme.bodySmall
                                     ?.copyWith(color: theme.hintColor),
                               ),

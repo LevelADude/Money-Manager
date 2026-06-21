@@ -16,6 +16,7 @@ class AppSettings {
     this.hideAmounts = false,
     this.lockEnabled = false,
     this.baseCurrency = 'EUR',
+    this.localeCode = 'de',
   });
 
   final ThemeMode themeMode;
@@ -30,12 +31,16 @@ class AppSettings {
   /// Hauptwährung für Summen/Umrechnung.
   final String baseCurrency;
 
+  /// Sprachcode der Oberfläche ('de' oder 'en').
+  final String localeCode;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     int? seedColor,
     bool? hideAmounts,
     bool? lockEnabled,
     String? baseCurrency,
+    String? localeCode,
   }) =>
       AppSettings(
         themeMode: themeMode ?? this.themeMode,
@@ -43,6 +48,7 @@ class AppSettings {
         hideAmounts: hideAmounts ?? this.hideAmounts,
         lockEnabled: lockEnabled ?? this.lockEnabled,
         baseCurrency: baseCurrency ?? this.baseCurrency,
+        localeCode: localeCode ?? this.localeCode,
       );
 }
 
@@ -65,6 +71,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kPinHash = 'settings_pin_hash';
   static const _kPinSalt = 'settings_pin_salt';
   static const _kBaseCur = 'settings_base_currency';
+  static const _kLocale = 'settings_locale';
 
   @override
   AppSettings build() {
@@ -73,13 +80,21 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final seed = prefs.getInt(_kSeed) ?? 0xFF2E7D32;
     final base = prefs.getString(_kBaseCur) ?? 'EUR';
     gBaseCurrency = base; // globalen Formatter aktualisieren
+    final loc = prefs.getString(_kLocale) ?? 'de';
     return AppSettings(
       themeMode: ThemeMode.values[modeIdx.clamp(0, ThemeMode.values.length - 1)],
       seedColor: seed,
       hideAmounts: prefs.getBool(_kHide) ?? false,
       lockEnabled: prefs.getString(_kPinHash) != null,
       baseCurrency: base,
+      localeCode: loc == 'en' ? 'en' : 'de',
     );
+  }
+
+  Future<void> setLocale(String code) async {
+    final c = code == 'en' ? 'en' : 'de';
+    await ref.read(sharedPrefsProvider).setString(_kLocale, c);
+    state = state.copyWith(localeCode: c);
   }
 
   Future<void> setBaseCurrency(String code) async {

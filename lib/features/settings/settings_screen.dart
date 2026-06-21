@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../currency/add_currency.dart';
 import '../currency/currency_providers.dart';
@@ -16,42 +17,58 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
+    final l = AppLocalizations.of(context);
+
+    Widget header(String text) => Text(
+          text,
+          style: Theme.of(context)
+              .textTheme
+              .titleSmall
+              ?.copyWith(fontWeight: FontWeight.bold),
+        );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Einstellungen')),
+      appBar: AppBar(title: Text(l.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Erscheinungsbild',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          header(l.language),
+          const SizedBox(height: 8),
+          SegmentedButton<String>(
+            segments: [
+              ButtonSegment(
+                  value: 'de',
+                  label: Text(l.languageGerman),
+                  icon: const Icon(Icons.translate)),
+              ButtonSegment(
+                  value: 'en', label: Text(l.languageEnglish)),
+            ],
+            selected: {settings.localeCode},
+            onSelectionChanged: (s) => notifier.setLocale(s.first),
+          ),
+          const Divider(height: 40),
+          header(l.appearance),
           const SizedBox(height: 8),
           SegmentedButton<ThemeMode>(
-            segments: const [
+            segments: [
               ButtonSegment(
                   value: ThemeMode.system,
-                  label: Text('System'),
-                  icon: Icon(Icons.brightness_auto)),
+                  label: Text(l.themeSystem),
+                  icon: const Icon(Icons.brightness_auto)),
               ButtonSegment(
                   value: ThemeMode.light,
-                  label: Text('Hell'),
-                  icon: Icon(Icons.light_mode)),
+                  label: Text(l.themeLight),
+                  icon: const Icon(Icons.light_mode)),
               ButtonSegment(
                   value: ThemeMode.dark,
-                  label: Text('Dunkel'),
-                  icon: Icon(Icons.dark_mode)),
+                  label: Text(l.themeDark),
+                  icon: const Icon(Icons.dark_mode)),
             ],
             selected: {settings.themeMode},
             onSelectionChanged: (s) => notifier.setThemeMode(s.first),
           ),
           const SizedBox(height: 24),
-          Text('Akzentfarbe',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          header(l.accentColor),
           const SizedBox(height: 12),
           Wrap(
             spacing: 12,
@@ -66,25 +83,17 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
           const Divider(height: 40),
-          Text('Privatsphäre',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          header(l.privacy),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             value: settings.hideAmounts,
             onChanged: notifier.setHideAmounts,
             secondary: const Icon(Icons.visibility_off_outlined),
-            title: const Text('Beträge verbergen'),
-            subtitle: const Text('Zeigt „••••" statt Geldbeträgen'),
+            title: Text(l.hideAmounts),
+            subtitle: Text(l.hideAmountsSub),
           ),
           const Divider(height: 40),
-          Text('Währung',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          header(l.currency),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -94,10 +103,10 @@ class SettingsScreen extends ConsumerWidget {
                       ref.watch(allCurrenciesProvider).contains(settings.baseCurrency)
                           ? settings.baseCurrency
                           : 'EUR',
-                  decoration: const InputDecoration(
-                    labelText: 'Hauptwährung',
-                    prefixIcon: Icon(Icons.payments_outlined),
-                    helperText: 'Summen werden in diese Währung umgerechnet.',
+                  decoration: InputDecoration(
+                    labelText: l.mainCurrency,
+                    prefixIcon: const Icon(Icons.payments_outlined),
+                    helperText: l.mainCurrencyHelp,
                   ),
                   items: [
                     for (final c in ref.watch(allCurrenciesProvider))
@@ -110,7 +119,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Eigene Währung hinzufügen',
+                tooltip: l.addCurrency,
                 icon: const Icon(Icons.add),
                 onPressed: () async {
                   final code = await showAddCurrencyDialog(context);
@@ -127,7 +136,7 @@ class SettingsScreen extends ConsumerWidget {
             child: TextButton.icon(
               onPressed: () => context.go('/more/exchange-rates'),
               icon: const Icon(Icons.currency_exchange),
-              label: const Text('Wechselkurse verwalten'),
+              label: Text(l.manageRates),
             ),
           ),
           SwitchListTile(
@@ -142,8 +151,8 @@ class SettingsScreen extends ConsumerWidget {
               }
             },
             secondary: const Icon(Icons.lock_outline),
-            title: const Text('App-Sperre (PIN)'),
-            subtitle: const Text('PIN-Abfrage beim Start und nach Pause'),
+            title: Text(l.appLock),
+            subtitle: Text(l.appLockSub),
           ),
           if (settings.lockEnabled)
             Padding(
@@ -156,23 +165,17 @@ class SettingsScreen extends ConsumerWidget {
                     if (pin != null) await notifier.setPin(pin);
                   },
                   icon: const Icon(Icons.password),
-                  label: const Text('PIN ändern'),
+                  label: Text(l.changePin),
                 ),
               ),
             ),
           const Divider(height: 40),
-          Text('Datenbank',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          header(l.database),
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.dns_outlined),
-            title: const Text('Datenbank-Verbindung'),
-            subtitle: const Text(
-                'Andere Supabase-Datenbank verbinden oder Verbindung trennen '
-                '(nur dieses Gerät, Daten bleiben erhalten)'),
+            title: Text(l.dbConnection),
+            subtitle: Text(l.dbConnectionSub),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => showConnectionEditor(context, ref),
           ),
@@ -183,13 +186,14 @@ class SettingsScreen extends ConsumerWidget {
 
   /// Dialog zum Festlegen einer neuen PIN (4–6 Ziffern, zweimal eingeben).
   Future<String?> _askNewPin(BuildContext context) async {
+    final l = AppLocalizations.of(context);
     final pin1 = TextEditingController();
     final pin2 = TextEditingController();
     final formKey = GlobalKey<FormState>();
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('PIN festlegen'),
+        title: Text(l.setPinTitle),
         content: Form(
           key: formKey,
           child: Column(
@@ -200,11 +204,11 @@ class SettingsScreen extends ConsumerWidget {
                 keyboardType: TextInputType.number,
                 obscureText: true,
                 maxLength: 6,
-                decoration: const InputDecoration(labelText: 'PIN (4–6 Ziffern)'),
+                decoration: InputDecoration(labelText: l.pinLabel),
                 validator: (v) {
                   final t = (v ?? '').trim();
-                  if (t.length < 4) return 'Mindestens 4 Ziffern';
-                  if (int.tryParse(t) == null) return 'Nur Ziffern';
+                  if (t.length < 4) return l.pinMin;
+                  if (int.tryParse(t) == null) return l.pinDigitsOnly;
                   return null;
                 },
               ),
@@ -213,9 +217,9 @@ class SettingsScreen extends ConsumerWidget {
                 keyboardType: TextInputType.number,
                 obscureText: true,
                 maxLength: 6,
-                decoration: const InputDecoration(labelText: 'PIN wiederholen'),
+                decoration: InputDecoration(labelText: l.pinRepeat),
                 validator: (v) =>
-                    (v ?? '').trim() != pin1.text.trim() ? 'Stimmt nicht überein' : null,
+                    (v ?? '').trim() != pin1.text.trim() ? l.pinMismatch : null,
               ),
             ],
           ),
@@ -223,7 +227,7 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -231,7 +235,7 @@ class SettingsScreen extends ConsumerWidget {
                 Navigator.pop(ctx, pin1.text.trim());
               }
             },
-            child: const Text('Speichern'),
+            child: Text(l.save),
           ),
         ],
       ),
