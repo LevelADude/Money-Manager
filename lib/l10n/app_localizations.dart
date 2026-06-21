@@ -236,6 +236,20 @@ class AppLocalizations {
 
   String monthName(int month) => _monthNames[month - 1];
 
+  List<String> get monthAbbr => _en
+      ? const [
+          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+        ]
+      : const [
+          'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez',
+        ];
+
+  List<String> get weekdayAbbr => _en
+      ? const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      : const ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
   /// Wochentag + Datum, z. B. „Montag, 18.06.2026" / „Monday, 18.06.2026".
   String dayHeader(DateTime d) {
     final wd = _weekdayNames[d.weekday - 1];
@@ -243,6 +257,46 @@ class AppLocalizations {
     final mm = d.month.toString().padLeft(2, '0');
     return '$wd, $dd.$mm.${d.year}';
   }
+
+  // ---- Statistik ----
+  String get allTime => _t('Gesamt', 'All');
+  String get back => _t('Zurück', 'Back');
+  String get forward => _t('Vor', 'Next');
+  String get balanceInPeriod => _t('Saldo im Zeitraum', 'Balance in period');
+  String get noCategory => _t('Ohne Kategorie', 'Uncategorized');
+  String get netWorthTrend12 =>
+      _t('Vermögensverlauf (12 Monate)', 'Net worth trend (12 months)');
+  String get tooFewData => _t('Noch zu wenige Daten.', 'Not enough data yet.');
+  String get moneyFlow =>
+      _t('Geldfluss (Einnahmen → Ausgaben)', 'Money flow (income → expenses)');
+  String get other => _t('Sonstige', 'Other');
+  String get heatmapMonth =>
+      _t('Ausgaben-Heatmap (Monat)', 'Spending heatmap (month)');
+  String get heatmapYear =>
+      _t('Ausgaben-Heatmap (Jahr)', 'Spending heatmap (year)');
+  String get less => _t('weniger', 'less');
+  String get more => _t('mehr', 'more');
+  String get monthlyTrend12 =>
+      _t('Monatstrend (letzte 12 Monate)', 'Monthly trend (last 12 months)');
+  String get noDataYet => _t('Noch keine Daten.', 'No data yet.');
+  String get expensesByCategory =>
+      _t('Ausgaben nach Kategorie', 'Expenses by category');
+  String get incomeByCategory =>
+      _t('Einnahmen nach Kategorie', 'Income by category');
+  String get noData => _t('Keine Daten.', 'No data.');
+  String get total => _t('Gesamt', 'Total');
+  String get chartDonut => _t('Donut', 'Donut');
+  String get chartPie => _t('Kreis', 'Pie');
+  String get chartBars => _t('Balken', 'Bars');
+  String get totalDebt => _t('Schulden gesamt', 'Total debt');
+  String get topExpenses => _t('Größte Ausgaben', 'Top expenses');
+  String get noPrevValue => _t('kein Vorwert', 'no previous value');
+  String comparisonTo(String prev) =>
+      _t('Vergleich zum $prev', 'Compared to $prev');
+  String get prevDay => _t('Vortag', 'previous day');
+  String get prevWeek => _t('Vorwoche', 'previous week');
+  String get prevMonth => _t('Vormonat', 'previous month');
+  String get prevYear => _t('Vorjahr', 'previous year');
 }
 
 class _AppLocalizationsDelegate

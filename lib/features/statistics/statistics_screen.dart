@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/data_refresh.dart';
 import '../../shared/mini_line_chart.dart';
 import '../../shared/money.dart';
@@ -25,13 +26,44 @@ const _palette = <Color>[
   Color(0xFF607D8B), Color(0xFFCDDC39), Color(0xFFFF5722), Color(0xFF673AB7),
 ];
 
-const _monthAbbr = [
-  'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez',
-];
-
 /// Diagramm-Form für die Kategorie-Aufschlüsselung.
 enum _ChartStyle { donut, pie, bars }
+
+String _statsPeriodLabel(AppLocalizations l, StatsPeriod p) => switch (p) {
+      StatsPeriod.thisDay => l.periodDay,
+      StatsPeriod.thisWeek => l.periodWeek,
+      StatsPeriod.thisMonth => l.periodMonth,
+      StatsPeriod.thisYear => l.periodYear,
+      StatsPeriod.all => l.allTime,
+    };
+
+String _prevPeriodLabel(AppLocalizations l, StatsPeriod p) => switch (p) {
+      StatsPeriod.thisDay => l.prevDay,
+      StatsPeriod.thisWeek => l.prevWeek,
+      StatsPeriod.thisMonth => l.prevMonth,
+      StatsPeriod.thisYear => l.prevYear,
+      StatsPeriod.all => '',
+    };
+
+/// Lokalisierte Bezeichnung des Zeitfensters (Ersatz für labelFor).
+String _statsRangeLabel(AppLocalizations l, StatsPeriod p, DateTime a) {
+  String d2(int n) => n.toString().padLeft(2, '0');
+  switch (p) {
+    case StatsPeriod.thisDay:
+      return '${d2(a.day)}.${d2(a.month)}.${a.year}';
+    case StatsPeriod.thisWeek:
+      final start = a.subtract(Duration(days: a.weekday - 1));
+      final end = start.add(const Duration(days: 6));
+      return '${d2(start.day)}.${d2(start.month)}. – '
+          '${d2(end.day)}.${d2(end.month)}.${end.year}';
+    case StatsPeriod.thisMonth:
+      return '${l.monthName(a.month)} ${a.year}';
+    case StatsPeriod.thisYear:
+      return '${a.year}';
+    case StatsPeriod.all:
+      return l.allTime;
+  }
+}
 
 /// Statistik-Fenster: Zeitraum-Summen, Monatstrend, Kategorie-Diagramme
 /// (umschaltbar Donut/Kreis/Balken, mit Prozenten), Vermögen/Schulden.
@@ -45,8 +77,9 @@ class StatisticsScreen extends ConsumerWidget {
     final catNames = ref.read(categoryNamesProvider);
     final accounts = ref.read(accountsProvider).asData?.value ?? const [];
     final accountNames = {for (final a in accounts) a.id: a.name};
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
-    final title = catId == null ? 'Ohne Kategorie' : (catNames[catId] ?? '—');
+    final title = catId == null ? l.noCategory : (catNames[catId] ?? '—');
 
     showModalBottomSheet<void>(
       context: context,
@@ -63,7 +96,7 @@ class StatisticsScreen extends ConsumerWidget {
             ListTile(
               title: Text(title,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('${items.length} Buchungen'),
+              subtitle: Text(l.txCount(items.length)),
             ),
             const Divider(height: 1),
             for (final t in items)
@@ -107,16 +140,17 @@ class StatisticsScreen extends ConsumerWidget {
       dailyByDate.update(d, (v) => v + t.amountCents,
           ifAbsent: () => t.amountCents);
     }
+    final l = AppLocalizations.of(context);
     String nameOf(String? id) =>
-        id == null ? 'Ohne Kategorie' : (catNames[id] ?? 'Ohne Kategorie');
+        id == null ? l.noCategory : (catNames[id] ?? l.noCategory);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Statistik'),
+        title: Text(l.navStatistics),
         actions: [
           const ProfileSwitcher(),
           IconButton(
-            tooltip: 'Aktualisieren',
+            tooltip: l.refresh,
             icon: const Icon(Icons.refresh),
             onPressed: () => refreshAllData(ref),
           ),
@@ -130,7 +164,7 @@ class StatisticsScreen extends ConsumerWidget {
             child: SegmentedButton<StatsPeriod>(
               segments: [
                 for (final p in StatsPeriod.values)
-                  ButtonSegment(value: p, label: Text(p.label)),
+                  ButtonSegment(value: p, label: Text(_statsPeriodLabel(l, p))),
               ],
               selected: {period},
               onSelectionChanged: (s) =>
@@ -144,7 +178,7 @@ class StatisticsScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: _SummaryCard(
-                  label: 'Einnahmen',
+                  label: l.income,
                   cents: stats.incomeCents,
                   color: Colors.green.shade700,
                 ),
@@ -152,7 +186,7 @@ class StatisticsScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _SummaryCard(
-                  label: 'Ausgaben',
+                  label: l.expenses,
                   cents: stats.expenseCents,
                   color: Colors.red.shade700,
                 ),
@@ -161,7 +195,7 @@ class StatisticsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           _SummaryCard(
-            label: 'Saldo im Zeitraum',
+            label: l.balanceInPeriod,
             cents: stats.balanceCents,
             color: stats.balanceCents >= 0
                 ? Colors.green.shade700
@@ -169,7 +203,9 @@ class StatisticsScreen extends ConsumerWidget {
           ),
           if (comparison.hasPrevious) ...[
             const SizedBox(height: 8),
-            _ComparisonCard(comparison: comparison),
+            _ComparisonCard(
+                comparison: comparison,
+                prevLabel: _prevPeriodLabel(l, period)),
           ],
           const SizedBox(height: 16),
           _NetWorthTrendCard(history: netWorthHistory),
@@ -183,14 +219,14 @@ class StatisticsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           _CategorySection(
-            title: 'Ausgaben nach Kategorie',
+            title: l.expensesByCategory,
             data: stats.expenseByCategory,
             nameOf: nameOf,
             onTapEntry: (catId) => _showDrilldown(context, ref, catId, true),
           ),
           const SizedBox(height: 12),
           _CategorySection(
-            title: 'Einnahmen nach Kategorie',
+            title: l.incomeByCategory,
             data: stats.incomeByCategory,
             nameOf: nameOf,
             onTapEntry: (catId) => _showDrilldown(context, ref, catId, false),
@@ -211,7 +247,7 @@ class StatisticsScreen extends ConsumerWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.account_balance_outlined),
-                  title: const Text('Gesamtvermögen'),
+                  title: Text(l.netWorth),
                   trailing: MoneyText(
                     stats.netWorthCents,
                     style: TextStyle(
@@ -225,7 +261,7 @@ class StatisticsScreen extends ConsumerWidget {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.trending_down),
-                  title: const Text('Schulden gesamt'),
+                  title: Text(l.totalDebt),
                   trailing: MoneyText(
                     stats.debtCents,
                     style: TextStyle(
@@ -238,9 +274,9 @@ class StatisticsScreen extends ConsumerWidget {
             ),
           ),
           if (stats.txCount == 0)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: Text('Keine Buchungen in diesem Zeitraum.')),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(child: Text(l.noTransactionsPeriod)),
             ),
         ],
       ),
@@ -258,7 +294,8 @@ class _PeriodNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final label = period.labelFor(anchor);
+    final l = AppLocalizations.of(context);
+    final label = _statsRangeLabel(l, period, anchor);
     if (period == StatsPeriod.all) {
       return Center(
         child: Text(label,
@@ -281,7 +318,7 @@ class _PeriodNavBar extends ConsumerWidget {
       children: [
         IconButton(
           icon: const Icon(Icons.chevron_left),
-          tooltip: 'Zurück',
+          tooltip: l.back,
           onPressed: () => notifier.shift(period, -1),
         ),
         Expanded(
@@ -302,14 +339,14 @@ class _PeriodNavBar extends ConsumerWidget {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   onPressed: notifier.reset,
-                  child: const Text('Heute'),
+                  child: Text(l.today),
                 ),
             ],
           ),
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right),
-          tooltip: 'Vor',
+          tooltip: l.forward,
           // Nicht in die Zukunft blättern.
           onPressed: isCurrent ? null : () => notifier.shift(period, 1),
         ),
@@ -361,6 +398,7 @@ class _NetWorthTrendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final hasData = history.length >= 2;
     final current = history.isEmpty ? 0 : history.last.cents;
     final first = history.isEmpty ? 0 : history.first.cents;
@@ -374,7 +412,7 @@ class _NetWorthTrendCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text('Vermögensverlauf (12 Monate)',
+                  child: Text(l.netWorthTrend12,
                       style: Theme.of(context)
                           .textTheme
                           .titleSmall
@@ -408,15 +446,17 @@ class _NetWorthTrendCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             if (!hasData)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text('Noch zu wenige Daten.'),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(l.tooFewData),
               )
             else
               MiniLineChart(
                 values: [for (final h in history) h.cents],
                 color: Theme.of(context).colorScheme.primary,
-                labels: [for (final h in history) _monthAbbr[h.month.month - 1]],
+                labels: [
+                  for (final h in history) l.monthAbbr[h.month.month - 1]
+                ],
               ),
           ],
         ),
@@ -439,7 +479,7 @@ class _SankeyCard extends StatelessWidget {
 
   // Top-N Kategorien + Rest als „Sonstige".
   List<({String label, int value, Color color})> _entries(
-      Map<String?, int> data, int offset) {
+      Map<String?, int> data, int offset, String restLabel) {
     final list = data.entries.where((e) => e.value > 0).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final top = list.take(6).toList();
@@ -454,7 +494,7 @@ class _SankeyCard extends StatelessWidget {
     }
     if (restVal > 0) {
       result.add((
-        label: 'Sonstige',
+        label: restLabel,
         value: restVal,
         color: _palette[(offset + top.length) % _palette.length],
       ));
@@ -464,8 +504,9 @@ class _SankeyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final left = _entries(income, 0);
-    final right = _entries(expense, 8);
+    final l = AppLocalizations.of(context);
+    final left = _entries(income, 0, l.other);
+    final right = _entries(expense, 8, l.other);
     if (left.isEmpty && right.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -475,7 +516,7 @@ class _SankeyCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Geldfluss (Einnahmen → Ausgaben)',
+            Text(l.moneyFlow,
                 style: Theme.of(context)
                     .textTheme
                     .titleSmall
@@ -498,8 +539,8 @@ class _SankeyCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _legend(context, 'Einnahmen', left)),
-                Expanded(child: _legend(context, 'Ausgaben', right)),
+                Expanded(child: _legend(context, l.income, left)),
+                Expanded(child: _legend(context, l.expenses, right)),
               ],
             ),
           ],
@@ -646,6 +687,7 @@ class _HeatmapCardState extends State<_HeatmapCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -656,9 +698,7 @@ class _HeatmapCardState extends State<_HeatmapCard> {
               children: [
                 Expanded(
                   child: Text(
-                    _mode == _HeatMode.month
-                        ? 'Ausgaben-Heatmap (Monat)'
-                        : 'Ausgaben-Heatmap (Jahr)',
+                    _mode == _HeatMode.month ? l.heatmapMonth : l.heatmapYear,
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
@@ -671,9 +711,11 @@ class _HeatmapCardState extends State<_HeatmapCard> {
                     visualDensity: VisualDensity.compact,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  segments: const [
-                    ButtonSegment(value: _HeatMode.month, label: Text('Monat')),
-                    ButtonSegment(value: _HeatMode.year, label: Text('Jahr')),
+                  segments: [
+                    ButtonSegment(
+                        value: _HeatMode.month, label: Text(l.periodMonth)),
+                    ButtonSegment(
+                        value: _HeatMode.year, label: Text(l.periodYear)),
                   ],
                   selected: {_mode},
                   onSelectionChanged: (s) => setState(() => _mode = s.first),
@@ -730,7 +772,7 @@ class _HeatmapCardState extends State<_HeatmapCard> {
       children: [
         Row(
           children: [
-            for (final w in const ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'])
+            for (final w in AppLocalizations.of(context).weekdayAbbr)
               Expanded(
                 child: Center(
                   child:
@@ -801,7 +843,7 @@ class _HeatmapCardState extends State<_HeatmapCard> {
       monthLabels.add(SizedBox(
         width: slot,
         child: show
-            ? Text(_monthAbbr[rep.month - 1],
+            ? Text(AppLocalizations.of(context).monthAbbr[rep.month - 1],
                 style: Theme.of(context).textTheme.labelSmall)
             : const SizedBox.shrink(),
       ));
@@ -835,7 +877,8 @@ class _HeatmapCardState extends State<_HeatmapCard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text('weniger', style: Theme.of(context).textTheme.labelSmall),
+            Text(AppLocalizations.of(context).less,
+                style: Theme.of(context).textTheme.labelSmall),
             const SizedBox(width: 4),
             for (final a in const [0.05, 0.3, 0.55, 0.8, 1.0])
               Container(
@@ -851,7 +894,8 @@ class _HeatmapCardState extends State<_HeatmapCard> {
                 ),
               ),
             const SizedBox(width: 4),
-            Text('mehr', style: Theme.of(context).textTheme.labelSmall),
+            Text(AppLocalizations.of(context).more,
+                style: Theme.of(context).textTheme.labelSmall),
           ],
         ),
       ],
@@ -867,6 +911,7 @@ class _MonthlyTrendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final hasData =
         months.any((m) => m.incomeCents > 0 || m.expenseCents > 0);
     return Card(
@@ -875,16 +920,16 @@ class _MonthlyTrendCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Monatstrend (letzte 12 Monate)',
+            Text(l.monthlyTrend12,
                 style: Theme.of(context)
                     .textTheme
                     .titleSmall
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             if (!hasData)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('Noch keine Daten.'),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(l.noDataYet),
               )
             else ...[
               SizedBox(
@@ -893,6 +938,7 @@ class _MonthlyTrendCard extends StatelessWidget {
                   size: Size.infinite,
                   painter: _TrendPainter(
                     months: months,
+                    monthAbbr: l.monthAbbr,
                     incomeColor: Colors.green.shade600,
                     expenseColor: Colors.red.shade600,
                     axisColor: Theme.of(context).dividerColor,
@@ -904,9 +950,9 @@ class _MonthlyTrendCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _LegendDot(color: Colors.green.shade600, label: 'Einnahmen'),
+                  _LegendDot(color: Colors.green.shade600, label: l.income),
                   const SizedBox(width: 16),
-                  _LegendDot(color: Colors.red.shade600, label: 'Ausgaben'),
+                  _LegendDot(color: Colors.red.shade600, label: l.expenses),
                 ],
               ),
             ],
@@ -943,6 +989,7 @@ class _LegendDot extends StatelessWidget {
 class _TrendPainter extends CustomPainter {
   _TrendPainter({
     required this.months,
+    required this.monthAbbr,
     required this.incomeColor,
     required this.expenseColor,
     required this.axisColor,
@@ -950,6 +997,7 @@ class _TrendPainter extends CustomPainter {
   });
 
   final List<MonthTotals> months;
+  final List<String> monthAbbr;
   final Color incomeColor;
   final Color expenseColor;
   final Color axisColor;
@@ -991,7 +1039,7 @@ class _TrendPainter extends CustomPainter {
       // Monatslabel
       final tp = TextPainter(
         text: TextSpan(
-          text: _monthAbbr[months[i].month.month - 1],
+          text: monthAbbr[months[i].month.month - 1],
           style: TextStyle(color: labelColor, fontSize: 9),
         ),
         textDirection: TextDirection.ltr,
@@ -1028,6 +1076,7 @@ class _CategorySectionState extends State<_CategorySection> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final entries = widget.data.entries.where((e) => e.value > 0).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final total = entries.fold<int>(0, (s, e) => s + e.value);
@@ -1054,19 +1103,19 @@ class _CategorySectionState extends State<_CategorySection> {
                       visualDensity: VisualDensity.compact,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                           value: _ChartStyle.donut,
-                          icon: Icon(Icons.donut_large, size: 18),
-                          tooltip: 'Donut'),
+                          icon: const Icon(Icons.donut_large, size: 18),
+                          tooltip: l.chartDonut),
                       ButtonSegment(
                           value: _ChartStyle.pie,
-                          icon: Icon(Icons.pie_chart, size: 18),
-                          tooltip: 'Kreis'),
+                          icon: const Icon(Icons.pie_chart, size: 18),
+                          tooltip: l.chartPie),
                       ButtonSegment(
                           value: _ChartStyle.bars,
-                          icon: Icon(Icons.bar_chart, size: 18),
-                          tooltip: 'Balken'),
+                          icon: const Icon(Icons.bar_chart, size: 18),
+                          tooltip: l.chartBars),
                     ],
                     selected: {_style},
                     onSelectionChanged: (s) =>
@@ -1076,9 +1125,9 @@ class _CategorySectionState extends State<_CategorySection> {
             ),
             const SizedBox(height: 12),
             if (entries.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('Keine Daten.'),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(l.noData),
               )
             else ...[
               if (_style != _ChartStyle.bars)
@@ -1105,7 +1154,7 @@ class _CategorySectionState extends State<_CategorySection> {
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('Gesamt',
+                              Text(l.total,
                                   style:
                                       Theme.of(context).textTheme.labelSmall),
                               MoneyText(
@@ -1206,12 +1255,14 @@ class _LegendRow extends StatelessWidget {
 }
 
 class _ComparisonCard extends StatelessWidget {
-  const _ComparisonCard({required this.comparison});
+  const _ComparisonCard({required this.comparison, required this.prevLabel});
 
   final PeriodComparison comparison;
+  final String prevLabel;
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     Widget row(String label, double? pct, {required bool expense}) {
       final up = (pct ?? 0) > 0;
       // Ausgaben hoch = schlecht (rot); Einnahmen hoch = gut (grün).
@@ -1220,7 +1271,7 @@ class _ComparisonCard extends StatelessWidget {
           ? null
           : (good ? Colors.green.shade700 : Colors.red.shade700);
       final txt = pct == null
-          ? 'kein Vorwert'
+          ? l.noPrevValue
           : '${up ? '+' : ''}${pct.round()} %';
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
@@ -1244,14 +1295,14 @@ class _ComparisonCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Vergleich zum ${comparison.prevLabel}',
+            Text(l.comparisonTo(prevLabel),
                 style: Theme.of(context)
                     .textTheme
                     .titleSmall
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            row('Ausgaben', comparison.expenseDeltaPct, expense: true),
-            row('Einnahmen', comparison.incomeDeltaPct, expense: false),
+            row(l.expenses, comparison.expenseDeltaPct, expense: true),
+            row(l.income, comparison.incomeDeltaPct, expense: false),
           ],
         ),
       ),
@@ -1270,11 +1321,13 @@ class _TopExpensesCard extends ConsumerWidget {
         ref.watch(accountsProvider).asData?.value ?? const [];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
+    final l = AppLocalizations.of(context);
+    final expenseWord = l.transactionType(TransactionType.expense);
     return Card(
       child: Column(
         children: [
           ListTile(
-            title: Text('Größte Ausgaben',
+            title: Text(l.topExpenses,
                 style: Theme.of(context)
                     .textTheme
                     .titleSmall
@@ -1287,8 +1340,8 @@ class _TopExpensesCard extends ConsumerWidget {
               title: Text(
                 t.title.isEmpty
                     ? (t.categoryId == null
-                        ? 'Ausgabe'
-                        : (catNames[t.categoryId] ?? 'Ausgabe'))
+                        ? expenseWord
+                        : (catNames[t.categoryId] ?? expenseWord))
                     : t.title,
               ),
               subtitle: Text(accountNames[t.accountId] ?? ''),
