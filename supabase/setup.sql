@@ -1345,3 +1345,158 @@ $$;
 revoke all on function public.admin_factory_reset() from public;
 grant execute on function public.admin_factory_reset() to service_role;
 
+
+-- ## Migration: 0024_archived_years.sql
+
+-- 0024: Archivierung alter Jahre nach GitHub (verschlüsselt via Edge Function
+-- archive-proxy). Marker-Tabelle + Carry-over je Konto, damit Salden nach dem
+-- Löschen korrekt bleiben. purge_year_data() löscht ein Jahr endgültig.
+
+create table if not exists public.archived_years (
+  year                 int         primary key,
+  archived_at          timestamptz not null default now(),
+  archived_by          uuid        references public.profiles(id) on delete set null default auth.uid(),
+  tx_count             int         not null default 0,
+  byte_size            bigint      not null default 0,
+  carryover_by_account jsonb       not null default '{}'::jsonb,
+  github_path          text,
+  checksum             text
+);
+
+alter table public.archived_years enable row level security;
+drop policy if exists archived_years_select on public.archived_years;
+create policy archived_years_select on public.archived_years
+  for select to authenticated using (true);
+drop policy if exists archived_years_admin_write on public.archived_years;
+create policy archived_years_admin_write on public.archived_years
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+do $$
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+  begin
+    alter publication supabase_realtime add table public.archived_years;
+  exception when duplicate_object then null; end;
+end $$;
+
+-- Audit-Trigger um Skip-Check erweitern (s. Migration 0024).
+create or replace function public.log_transaction_change()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_action text;
+  v_row    jsonb;
+  v_id     uuid;
+begin
+  if current_setting('app.skip_audit', true) = 'on' then
+    return null;
+  end if;
+  if (tg_op = 'INSERT') then
+    v_action := 'insert'; v_row := to_jsonb(new); v_id := new.id;
+  elsif (tg_op = 'UPDATE') then
+    if old.deleted_at is null and new.deleted_at is not null then
+      v_action := 'delete';
+    elsif old.deleted_at is not null and new.deleted_at is null then
+      v_action := 'restore';
+    else
+      v_action := 'update';
+    end if;
+    v_row := to_jsonb(new); v_id := new.id;
+  else
+    v_action := 'purge'; v_row := to_jsonb(old); v_id := old.id;
+  end if;
+  insert into public.audit_log(table_name, row_id, action, actor, data)
+    values ('transactions', v_id, v_action, auth.uid(), v_row);
+  return null;
+end;
+$$;
+
+create or replace function public.purge_year_data(p_year int)
+returns int language plpgsql security definer set search_path = public as $$
+declare
+  v_count int;
+begin
+  if not public.is_admin() then
+    raise exception 'Nur Admins dürfen Jahre archivieren/löschen.';
+  end if;
+  perform set_config('app.skip_audit', 'on', true);
+  delete from public.audit_log
+  where table_name = 'transactions'
+    and row_id in (
+      select id from public.transactions
+      where extract(year from occurred_on) = p_year
+    );
+  delete from public.transactions
+  where extract(year from occurred_on) = p_year;
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$$;
+revoke all on function public.purge_year_data(int) from public;
+grant execute on function public.purge_year_data(int) to authenticated;
+
+
+-- ## Migration: 0025_archive_config.sql
+
+-- 0025: Archiv-Repo-Verbindung (Repo-URL + Token + Schlüssel) serverseitig.
+-- Nur die Edge Function (service_role) liest die Geheimnisse; der Client kennt
+-- nur den Status. Setzen/Trennen nur Admin.
+
+create table if not exists public.archive_config (
+  id           smallint    primary key default 1 check (id = 1),
+  github_repo  text,
+  github_token text,
+  enc_key      text,
+  updated_at   timestamptz not null default now(),
+  updated_by   uuid        references public.profiles(id) on delete set null
+);
+alter table public.archive_config enable row level security;
+
+create or replace function public.get_archive_config_status()
+returns table (configured boolean, github_repo text, has_token boolean, has_key boolean)
+language sql stable security definer set search_path = public as $$
+  select
+    coalesce(c.github_repo, '') <> ''
+      and coalesce(c.github_token, '') <> ''
+      and coalesce(c.enc_key, '') <> ''        as configured,
+    c.github_repo                              as github_repo,
+    coalesce(c.github_token, '') <> ''         as has_token,
+    coalesce(c.enc_key, '') <> ''              as has_key
+  from (select 1) d
+  left join public.archive_config c on c.id = 1;
+$$;
+revoke all on function public.get_archive_config_status() from public;
+grant execute on function public.get_archive_config_status() to authenticated;
+
+create or replace function public.set_archive_config(p_repo text, p_token text, p_enc_key text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Nur Admins dürfen das Archiv-Repo einrichten.';
+  end if;
+  insert into public.archive_config (id, github_repo, github_token, enc_key, updated_at, updated_by)
+  values (1, nullif(trim(p_repo), ''), nullif(p_token, ''), nullif(p_enc_key, ''), now(), auth.uid())
+  on conflict (id) do update set
+    github_repo  = coalesce(excluded.github_repo,  public.archive_config.github_repo),
+    github_token = coalesce(excluded.github_token, public.archive_config.github_token),
+    enc_key      = coalesce(excluded.enc_key,      public.archive_config.enc_key),
+    updated_at   = now(),
+    updated_by   = auth.uid();
+end;
+$$;
+revoke all on function public.set_archive_config(text, text, text) from public;
+grant execute on function public.set_archive_config(text, text, text) to authenticated;
+
+create or replace function public.clear_archive_config()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Nur Admins dürfen das Archiv-Repo trennen.';
+  end if;
+  delete from public.archive_config where id = 1;
+end;
+$$;
+revoke all on function public.clear_archive_config() from public;
+grant execute on function public.clear_archive_config() to authenticated;
+

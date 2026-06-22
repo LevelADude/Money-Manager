@@ -49,6 +49,7 @@ class MoreScreen extends ConsumerWidget {
           const Divider(),
           tile(Icons.delete_outline, l.moreTrash, '/more/trash'),
           tile(Icons.backup_outlined, l.moreBackup, '/more/backup'),
+          tile(Icons.inventory_2_outlined, l.archiveMenu, '/more/archive'),
           tile(Icons.palette_outlined, l.moreSettings, '/more/settings'),
           tile(Icons.account_circle_outlined, l.moreProfile, '/more/profile'),
           tile(Icons.people_alt_outlined, l.moreSharing, '/more/sharing'),

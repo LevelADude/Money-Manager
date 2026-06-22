@@ -27,6 +27,16 @@ class ReceiptStorage {
   Future<String> signedUrl(String path) =>
       _client.storage.from(bucket).createSignedUrl(path, 60 * 60);
 
+  /// Lädt die Bytes eines Belegs herunter (z. B. für die Archivierung).
+  Future<Uint8List> download(String path) =>
+      _client.storage.from(bucket).download(path);
+
   Future<void> delete(String path) =>
       _client.storage.from(bucket).remove([path]);
+
+  /// Mehrere Belege auf einmal entfernen (gibt Storage-Speicher frei).
+  Future<void> deleteMany(List<String> paths) async {
+    if (paths.isEmpty) return;
+    await _client.storage.from(bucket).remove(paths);
+  }
 }

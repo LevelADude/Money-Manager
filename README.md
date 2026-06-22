@@ -83,6 +83,52 @@ Datenbank**.
 
 ---
 
+## 🗄️ Alte Jahre archivieren (optional – Speicher freigeben)
+
+Wird der kostenlose Supabase-Speicher knapp (v. a. durch Beleg-Fotos), kannst du
+**alte Jahre verschlüsselt in ein privates GitHub-Repo auslagern**. Sie bleiben
+in der App **einsehbar, aber schreibgeschützt** und zählen nicht mehr zu
+Statistik/Budgets. Jede Instanz richtet ihr **eigenes** Archiv-Repo ein.
+
+> ⚠️ Nur nutzen, wenn der Speicher fast voll ist. Archivierte Jahre lassen sich
+> erst nach dem Zurückholen wieder bearbeiten.
+
+**So richtest du es ein:**
+
+1. **Privates Archiv-Repo anlegen.** Auf GitHub ein **neues, privates** Repo
+   erstellen (z. B. `money-manager-archive`) – **leer, ohne Code**, es nimmt nur
+   die Archivdateien (`archive/<jahr>.json.enc`) auf. Privat ist wichtig: dort
+   liegen deine Finanzdaten (zusätzlich verschlüsselt).
+2. **Zugriffs-Token erzeugen.** GitHub → **Settings → Developer settings →
+   Personal access tokens → Fine-grained tokens → Generate new token**:
+   - **Repository access:** „Only select repositories" → dein Archiv-Repo.
+   - **Permissions → Repository permissions → Contents: Read and write.**
+   - Token erzeugen und **kopieren** (wird nur einmal angezeigt).
+3. **Datenbank-Funktionen einspielen.** Bei einer **neuen** Instanz ist alles
+   schon in [`supabase/setup.sql`](supabase/setup.sql) enthalten. Bei einer
+   **bestehenden** Instanz im Supabase **SQL Editor** zusätzlich
+   [`supabase/migrations/0024_archived_years.sql`](supabase/migrations/0024_archived_years.sql)
+   und [`supabase/migrations/0025_archive_config.sql`](supabase/migrations/0025_archive_config.sql)
+   ausführen.
+4. **Edge Function bereitstellen.** Die Funktion
+   [`supabase/functions/archive-proxy`](supabase/functions/archive-proxy) hält
+   Token & Schlüssel serverseitig (nie im Client). Bereitstellen per CLI
+   `supabase functions deploy archive-proxy` **oder** im Supabase-Dashboard unter
+   **Edge Functions → Deploy a new function** (Code aus `index.ts` einfügen).
+   Es sind **keine** Function-Secrets nötig – Repo/Token/Schlüssel kommen aus
+   der App (Schritt 5).
+5. **In der App verbinden.** **Mehr → Archivierte Jahre** (oder
+   **Verwaltung → Alte Jahre archivieren**) → **„Archiv-Repo verbinden"**:
+   Repo (`owner/name` oder URL) und Token eintragen → **Verbinden**. Die App
+   erzeugt einen **Verschlüsselungs-Schlüssel** und zeigt ihn **einmalig** an –
+   **sichere eine Kopie** (ohne ihn sind Archive bei DB-Verlust nicht
+   wiederherstellbar). Token & Schlüssel liegen danach serverseitig in Supabase.
+6. **Archivieren.** Jahre ankreuzen → Warnung bestätigen → fertig. Über
+   **„Ansehen"** liest du ein Jahr read-only; **„Zurückholen"** (Admin) holt es
+   wieder in die DB.
+
+---
+
 ## Voraussetzungen (einmalig einrichten)
 
 1. **Flutter SDK** – in diesem Projekt nach `C:\dev\flutter` installiert.

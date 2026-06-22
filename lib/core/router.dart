@@ -9,6 +9,7 @@ import '../features/accounts/accounts_reorder_screen.dart';
 import '../features/accounts/accounts_screen.dart';
 import '../features/activity/activity_screen.dart';
 import '../features/admin/admin_screen.dart';
+import '../features/archive/archive_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/reset_password_screen.dart';
 import '../features/backup/backup_screen.dart';
@@ -271,6 +272,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'admin',
                     builder: (c, s) => const AdminScreen(),
+                  ),
+                  GoRoute(
+                    path: 'archive',
+                    builder: (c, s) => const ArchiveScreen(),
                   ),
                 ],
               ),

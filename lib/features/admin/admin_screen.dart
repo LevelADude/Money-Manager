@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/profile.dart';
@@ -116,6 +117,13 @@ class AdminScreen extends ConsumerWidget {
         children: [
           _sectionTitle(context, l.storageSection),
           _buildStorage(context, ref),
+          ListTile(
+            leading: const Icon(Icons.inventory_2_outlined),
+            title: Text(l.archiveAdminEntry),
+            subtitle: Text(l.archiveAdminEntrySub),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/more/archive'),
+          ),
           const Divider(height: 24),
           ListTile(
             title: _sectionTextStyle(context, l.allowedEmailsSection),

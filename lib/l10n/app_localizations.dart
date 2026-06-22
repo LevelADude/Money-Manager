@@ -920,6 +920,105 @@ class AppLocalizations {
       '$n records imported. Please restart the app / reload the page.');
   String importError(Object e) =>
       _t('Fehler beim Import: $e', 'Import error: $e');
+
+  // ---- Archivierung alter Jahre ----
+  String get archiveTitle => _t('Jahre archivieren', 'Archive years');
+  String get archiveMenu => _t('Archivierte Jahre', 'Archived years');
+  String get archiveAdminEntry =>
+      _t('Alte Jahre archivieren', 'Archive old years');
+  String get archiveAdminEntrySub => _t(
+      'Lagert alte Jahre verschlüsselt nach GitHub aus und gibt Speicher frei.',
+      'Moves old years to GitHub (encrypted) and frees up storage.');
+  String get archiveIntro => _t(
+      'Alte Jahre werden verschlüsselt nach GitHub ausgelagert und danach aus der Datenbank gelöscht. Sie bleiben hier einsehbar, aber schreibgeschützt.',
+      'Old years are exported to GitHub (encrypted) and then deleted from the database. They stay viewable here, but read-only.');
+  String get archiveWarning => _t(
+      'Achtung: Archivierte Jahre lassen sich danach NICHT mehr bearbeiten und fließen NICHT mehr in Statistiken, Budgets oder Auswertungen ein. Nutze das nur, wenn der Speicher fast voll ist.',
+      'Warning: archived years can NO LONGER be edited and are NO LONGER included in statistics, budgets or reports. Only use this when storage is nearly full.');
+  String get archiveSelectYears =>
+      _t('Jahre zum Archivieren wählen', 'Select years to archive');
+  String get archiveNoYears =>
+      _t('Keine archivierbaren Jahre vorhanden.', 'No archivable years.');
+  String archiveTxCount(int n) => _t('$n Buchungen', '$n transactions');
+  String get archiveAction => _t('Archivieren', 'Archive');
+  String get archiveSelectAtLeastOne => _t(
+      'Bitte mindestens ein Jahr wählen.', 'Please select at least one year.');
+  String get archiveConfirmTitle =>
+      _t('Ausgewählte Jahre archivieren?', 'Archive selected years?');
+  String archiveConfirmBody(String years) => _t(
+      'Folgende Jahre werden ausgelagert und aus der Datenbank gelöscht: $years.\n\nDanach sind sie nur noch schreibgeschützt einsehbar und zählen nicht mehr zu Statistik/Budgets.',
+      'The following years will be exported and deleted from the database: $years.\n\nAfterwards they are only viewable read-only and no longer count toward statistics/budgets.');
+  String get archivedSection => _t('Archivierte Jahre', 'Archived years');
+  String get archiveNoneArchived =>
+      _t('Noch keine Jahre archiviert.', 'No years archived yet.');
+  String get archivedBadge => _t('Archiviert', 'Archived');
+  String get archiveView => _t('Ansehen', 'View');
+  String get archiveRestore => _t('Zurückholen', 'Restore');
+  String archiveRestoreConfirmTitle(int year) =>
+      _t('Jahr $year zurückholen?', 'Restore year $year?');
+  String get archiveRestoreConfirmBody => _t(
+      'Die Buchungen dieses Jahres werden wieder in die Datenbank geschrieben und sind danach wieder bearbeitbar. Der Speicher wird dadurch wieder belegt.',
+      "This year's transactions are written back to the database and become editable again. Storage will be used again.");
+  String get archiveStepRead => _t('Lese Daten …', 'Reading data …');
+  String get archiveStepReceipts => _t('Lade Belege …', 'Loading receipts …');
+  String get archiveStepUpload => _t(
+      'Lade verschlüsselt nach GitHub …', 'Uploading to GitHub (encrypted) …');
+  String get archiveStepMark => _t('Speichere Marker …', 'Saving marker …');
+  String get archiveStepPurge => _t('Gebe Speicher frei …', 'Freeing storage …');
+  String archiveDone(int year) =>
+      _t('Jahr $year archiviert.', 'Year $year archived.');
+  String archiveRestoreDone(int year) =>
+      _t('Jahr $year zurückgeholt.', 'Year $year restored.');
+  String archiveYearViewTitle(int year) => _t('Archiv $year', 'Archive $year');
+  String get archiveReadOnlyNote => _t(
+      'Schreibgeschützt – dieses Jahr ist archiviert.',
+      'Read-only – this year is archived.');
+  String get archiveEmptyYear =>
+      _t('Keine Buchungen in diesem Jahr.', 'No transactions in this year.');
+  String archiveError(Object e) => _t('Archiv-Fehler: $e', 'Archive error: $e');
+
+  // ---- Archiv-Repo einrichten ----
+  String get archiveSetupTitle =>
+      _t('Archiv-Repo verbinden', 'Connect archive repo');
+  String get archiveSetupIntro => _t(
+      'Lege fest, in welches private GitHub-Repo archivierte Jahre verschlüsselt ausgelagert werden. Token und Schlüssel werden serverseitig in Supabase gespeichert – nie im (öffentlichen) Client.',
+      'Choose the private GitHub repo where archived years are exported (encrypted). Token and key are stored server-side in Supabase – never in the (public) client.');
+  String get archiveRepoLabel => _t('Repo (owner/name oder URL)',
+      'Repo (owner/name or URL)');
+  String get archiveTokenLabel => _t(
+      'GitHub-Token (fine-grained, Contents: Read and write)',
+      'GitHub token (fine-grained, Contents: Read and write)');
+  String get archiveTokenKeepHint => _t(
+      'Leer lassen, um das gespeicherte Token zu behalten.',
+      'Leave empty to keep the stored token.');
+  String get archiveConnect => _t('Verbinden', 'Connect');
+  String get archiveSave => _t('Speichern', 'Save');
+  String archiveConnectedTo(String repo) =>
+      _t('Verbunden mit $repo', 'Connected to $repo');
+  String get archiveChange => _t('Repo/Token ändern', 'Change repo/token');
+  String get archiveDisconnect => _t('Verbindung trennen', 'Disconnect');
+  String get archiveDisconnectConfirmTitle =>
+      _t('Verbindung trennen?', 'Disconnect?');
+  String get archiveDisconnectConfirmBody => _t(
+      'Repo, Token und Schlüssel werden aus Supabase entfernt. Bereits archivierte Dateien bleiben im GitHub-Repo, sind danach aber erst nach erneutem Verbinden (mit demselben Schlüssel) lesbar.',
+      'Repo, token and key are removed from Supabase. Already archived files stay in the GitHub repo, but become readable again only after reconnecting (with the same key).');
+  String get archiveNotConfigured =>
+      _t('Kein Archiv-Repo verbunden.', 'No archive repo connected.');
+  String get archiveSetupNeededAdmin => _t(
+      'Verbinde zuerst ein privates GitHub-Repo, um Jahre zu archivieren.',
+      'Connect a private GitHub repo first to archive years.');
+  String get archiveSetupNeededUser => _t(
+      'Es ist noch kein Archiv-Repo eingerichtet. Bitte einen Administrator darum bitten.',
+      'No archive repo has been set up yet. Please ask an administrator.');
+  String get archiveRepoTokenRequired => _t(
+      'Bitte Repo und Token angeben.', 'Please provide repo and token.');
+  String get archiveConfigSaved =>
+      _t('Archiv-Repo gespeichert.', 'Archive repo saved.');
+  String get archiveKeyBackupTitle =>
+      _t('Schlüssel sichern (wichtig!)', 'Back up your key (important!)');
+  String get archiveKeyBackupBody => _t(
+      'Dieser Verschlüsselungs-Schlüssel wurde erzeugt und serverseitig gespeichert. Bewahre eine Kopie sicher auf: Geht die Datenbank verloren, sind die archivierten Daten OHNE diesen Schlüssel nicht wiederherstellbar.',
+      'This encryption key was generated and stored server-side. Keep a copy somewhere safe: if the database is lost, the archived data CANNOT be recovered without this key.');
 }
 
 class _AppLocalizationsDelegate
