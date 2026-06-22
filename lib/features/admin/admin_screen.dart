@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/profile.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../auth/auth_providers.dart';
 import '../profile/profile_providers.dart';
@@ -18,26 +19,27 @@ class AdminScreen extends ConsumerWidget {
   const AdminScreen({super.key});
 
   Future<void> _addEmail(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final controller = TextEditingController();
     final email = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('E-Mail freischalten'),
+        title: Text(l.allowEmailTitle),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(labelText: 'E-Mail-Adresse'),
+          decoration: InputDecoration(labelText: l.emailAddressLabel),
           onSubmitted: (v) => Navigator.pop(ctx, v),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, controller.text),
-            child: const Text('Freischalten'),
+            child: Text(l.allowAction),
           ),
         ],
       ),
@@ -49,29 +51,27 @@ class AdminScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
 
   Future<void> _deleteUser(
       BuildContext context, WidgetRef ref, Profile p) async {
+    final l = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Nutzer „${p.displayName}" löschen?'),
-        content: const Text(
-          'Das Konto wird dauerhaft entfernt. Erfasste Buchungen/Konten bleiben '
-          'erhalten (ohne Zuordnung). Das kann nicht rückgängig gemacht werden.',
-        ),
+        title: Text(l.deleteUserTitle(p.displayName)),
+        content: Text(l.deleteUserBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Abbrechen'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Löschen'),
+            child: Text(l.delete),
           ),
         ],
       ),
@@ -83,23 +83,24 @@ class AdminScreen extends ConsumerWidget {
       ref.invalidate(profileNamesProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Nutzer gelöscht')));
+            .showSnackBar(SnackBar(content: Text(l.userDeleted)));
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final isAdmin = ref.watch(isAdminProvider).asData?.value ?? false;
     if (!isAdmin) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Verwaltung')),
-        body: const Center(child: Text('Kein Zugriff (nur für Admins).')),
+        appBar: AppBar(title: Text(l.adminTitle)),
+        body: Center(child: Text(l.noAdminAccess)),
       );
     }
 
@@ -110,28 +111,25 @@ class AdminScreen extends ConsumerWidget {
     final df = DateFormat('dd.MM.yyyy');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verwaltung')),
+      appBar: AppBar(title: Text(l.adminTitle)),
       body: ListView(
         children: [
-          _sectionTitle(context, 'Speicher'),
+          _sectionTitle(context, l.storageSection),
           _buildStorage(context, ref),
           const Divider(height: 24),
           ListTile(
-            title: _sectionTextStyle(context, 'Freigeschaltete E-Mails'),
+            title: _sectionTextStyle(context, l.allowedEmailsSection),
             trailing: FilledButton.tonalIcon(
               onPressed: () => _addEmail(context, ref),
               icon: const Icon(Icons.add),
-              label: const Text('E-Mail'),
+              label: Text(l.email),
             ),
           ),
           emails.when(
             loading: () => const ListTile(title: LinearProgressIndicator()),
-            error: (e, _) => ListTile(title: Text('Fehler: $e')),
+            error: (e, _) => ListTile(title: Text(l.errorWith(e))),
             data: (list) => list.isEmpty
-                ? const ListTile(
-                    subtitle: Text(
-                        'Noch keine. Nur freigeschaltete E-Mails können sich '
-                        'registrieren (außer dem ersten Konto).'))
+                ? ListTile(subtitle: Text(l.noAllowedEmails))
                 : Column(
                     children: [
                       for (final email in list)
@@ -153,10 +151,10 @@ class AdminScreen extends ConsumerWidget {
                   ),
           ),
           const Divider(height: 24),
-          _sectionTitle(context, 'Nutzer'),
+          _sectionTitle(context, l.usersSection),
           profiles.when(
             loading: () => const ListTile(title: LinearProgressIndicator()),
-            error: (e, _) => ListTile(title: Text('Fehler: $e')),
+            error: (e, _) => ListTile(title: Text(l.errorWith(e))),
             data: (list) => Column(
               children: [
                 for (final p in list) _userTile(context, ref, p, myId, df),
@@ -164,7 +162,7 @@ class AdminScreen extends ConsumerWidget {
             ),
           ),
           const Divider(height: 24),
-          _sectionTitle(context, 'Gefahrenzone'),
+          _sectionTitle(context, l.dangerZone),
           _buildDangerZone(context, ref, isOwner: isOwner),
           const SizedBox(height: 24),
         ],
@@ -175,6 +173,7 @@ class AdminScreen extends ConsumerWidget {
   // ---- Speicher --------------------------------------------------------
 
   Widget _buildStorage(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final stats = ref.watch(storageStatsProvider);
     return stats.when(
       loading: () => const Padding(
@@ -183,15 +182,15 @@ class AdminScreen extends ConsumerWidget {
       ),
       error: (e, _) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Text('Konnte Speichernutzung nicht laden: $e'),
+        child: Text(l.storageLoadFailed(e)),
       ),
       data: (s) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
         child: Column(
           children: [
-            _usageBar(context, 'Datenbank', s.dbBytes, _kDbLimitBytes),
+            _usageBar(context, l.database, s.dbBytes, _kDbLimitBytes),
             const SizedBox(height: 16),
-            _usageBar(context, 'Belege / Dateien', s.storageBytes,
+            _usageBar(context, l.receiptsFiles, s.storageBytes,
                 _kStorageLimitBytes),
           ],
         ),
@@ -239,11 +238,12 @@ class AdminScreen extends ConsumerWidget {
 
   Widget _userTile(BuildContext context, WidgetRef ref, Profile p,
       String? myId, DateFormat df) {
+    final l = AppLocalizations.of(context);
     final roleParts = <String>[
-      if (p.createdAt != null) 'seit ${df.format(p.createdAt!)}',
-      if (p.isOwner) 'Besitzer' else if (p.isAdmin) 'Admin',
-      if (p.readOnly) 'nur Lesen',
-      if (p.id == myId) 'du',
+      if (p.createdAt != null) l.sinceDate(df.format(p.createdAt!)),
+      if (p.isOwner) l.ownerRole else if (p.isAdmin) l.adminRole,
+      if (p.readOnly) l.readOnlyRole,
+      if (p.id == myId) l.youRole,
     ];
     return ListTile(
       leading: CircleAvatar(
@@ -251,12 +251,12 @@ class AdminScreen extends ConsumerWidget {
             ? '?'
             : p.displayName.substring(0, 1).toUpperCase()),
       ),
-      title: Text(p.displayName.isEmpty ? '(ohne Name)' : p.displayName),
+      title: Text(p.displayName.isEmpty ? l.noName : p.displayName),
       subtitle: Text(roleParts.join('  ·  ')),
       trailing: p.isOwner
-          ? const Chip(
-              avatar: Icon(Icons.shield_outlined, size: 18),
-              label: Text('Besitzer'),
+          ? Chip(
+              avatar: const Icon(Icons.shield_outlined, size: 18),
+              label: Text(l.ownerRole),
             )
           : PopupMenuButton<String>(
               onSelected: (v) async {
@@ -279,20 +279,16 @@ class AdminScreen extends ConsumerWidget {
                 if (p.id != myId)
                   PopupMenuItem(
                     value: 'admin',
-                    child: Text(p.isAdmin
-                        ? 'Admin-Recht entziehen'
-                        : 'Zum Admin machen'),
+                    child: Text(p.isAdmin ? l.revokeAdmin : l.makeAdmin),
                   ),
                 PopupMenuItem(
                   value: 'readonly',
-                  child: Text(p.readOnly
-                      ? 'Schreibrechte geben'
-                      : 'Auf „nur Lesen" setzen'),
+                  child: Text(p.readOnly ? l.grantWrite : l.setReadOnlyAction),
                 ),
                 if (p.id != myId)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
-                    child: Text('Nutzer löschen'),
+                    child: Text(l.deleteUserAction),
                   ),
               ],
             ),
@@ -304,25 +300,21 @@ class AdminScreen extends ConsumerWidget {
   Widget _buildDangerZone(BuildContext context, WidgetRef ref,
       {required bool isOwner}) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Column(
       children: [
         ListTile(
           leading: Icon(Icons.cleaning_services_outlined,
               color: theme.colorScheme.error),
-          title: const Text('Datenbank leeren'),
-          subtitle: const Text(
-              'Löscht ALLE Finanzdaten (Buchungen, Konten, Kategorien, Belege …). '
-              'Nutzer, Rollen und Freischaltungen bleiben erhalten.'),
+          title: Text(l.wipeDbTitle),
+          subtitle: Text(l.wipeDbSub),
           onTap: () => _runWipe(context, ref),
         ),
         if (isOwner)
           ListTile(
             leading: Icon(Icons.restart_alt, color: theme.colorScheme.error),
-            title: const Text('Auf Werkseinstellungen zurücksetzen'),
-            subtitle: const Text(
-                'Löscht ALLES inkl. aller Login-Konten und Freischaltungen. '
-                'Danach ist die Datenbank im Neuzustand – die nächste '
-                'Registrierung wird neuer Besitzer. Nur für den Besitzer.'),
+            title: Text(l.factoryResetTitle),
+            subtitle: Text(l.factoryResetSub),
             onTap: () => _runFactoryReset(context, ref),
           ),
       ],
@@ -330,43 +322,35 @@ class AdminScreen extends ConsumerWidget {
   }
 
   Future<void> _runWipe(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final ok = await _confirmTyped(
       context,
-      title: 'Datenbank leeren?',
-      message:
-          'Alle Finanzdaten werden unwiderruflich gelöscht. Nutzer bleiben '
-          'erhalten. Gib zur Bestätigung LEEREN ein.',
-      word: 'LEEREN',
+      title: l.wipeConfirmTitle,
+      message: l.wipeConfirmMsg(l.wipeWord),
+      word: l.wipeWord,
     );
     if (!ok) return;
     try {
       await ref.read(adminRepositoryProvider).wipeData();
       ref.invalidate(storageStatsProvider);
       if (context.mounted) {
-        await _infoDialog(
-          context,
-          'Datenbank geleert',
-          'Alle Daten wurden entfernt. Bitte lade die App neu (Strg+R) bzw. '
-              'starte sie neu, damit alle Ansichten aktualisiert werden.',
-        );
+        await _infoDialog(context, l.dbWiped, l.dbWipedBody);
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
 
   Future<void> _runFactoryReset(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final ok = await _confirmTyped(
       context,
-      title: 'Auf Werkseinstellungen zurücksetzen?',
-      message:
-          'ALLES wird gelöscht: alle Daten, alle Nutzer und Freischaltungen. '
-          'Du wirst danach abgemeldet. Dieser Schritt ist endgültig. Gib zur '
-          'Bestätigung ZURÜCKSETZEN ein.',
-      word: 'ZURÜCKSETZEN',
+      title: l.factoryConfirmTitle,
+      message: l.factoryConfirmMsg(l.factoryWord),
+      word: l.factoryWord,
     );
     if (!ok) return;
     try {
@@ -376,7 +360,7 @@ class AdminScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
@@ -388,6 +372,7 @@ class AdminScreen extends ConsumerWidget {
     required String message,
     required String word,
   }) async {
+    final l = AppLocalizations.of(context);
     final ctrl = TextEditingController();
     final result = await showDialog<bool>(
       context: context,
@@ -408,7 +393,7 @@ class AdminScreen extends ConsumerWidget {
                   textCapitalization: TextCapitalization.characters,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    labelText: '„$word" eingeben',
+                    labelText: l.typeWordLabel(word),
                     border: const OutlineInputBorder(),
                   ),
                 ),
@@ -417,14 +402,14 @@ class AdminScreen extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Abbrechen'),
+                child: Text(l.cancel),
               ),
               FilledButton(
                 onPressed: matches ? () => Navigator.pop(ctx, true) : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: Theme.of(ctx).colorScheme.error,
                 ),
-                child: const Text('Bestätigen'),
+                child: Text(l.confirm),
               ),
             ],
           );
@@ -436,6 +421,7 @@ class AdminScreen extends ConsumerWidget {
 
   Future<void> _infoDialog(
       BuildContext context, String title, String message) {
+    final l = AppLocalizations.of(context);
     return showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -444,7 +430,7 @@ class AdminScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
+            child: Text(l.ok),
           ),
         ],
       ),

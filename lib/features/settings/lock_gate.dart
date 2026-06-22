@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'settings_providers.dart';
 
 /// Legt eine PIN-Sperre über die App, wenn aktiviert. Sperrt beim Kaltstart
@@ -96,6 +97,7 @@ class _PinScreenState extends State<_PinScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
@@ -108,7 +110,7 @@ class _PinScreenState extends State<_PinScreen> {
                 Icon(Icons.lock_outline,
                     size: 48, color: theme.colorScheme.primary),
                 const SizedBox(height: 16),
-                Text('PIN eingeben', style: theme.textTheme.titleMedium),
+                Text(l.enterPin, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -140,7 +142,7 @@ class _PinScreenState extends State<_PinScreen> {
                 if (_error)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: Text('Falsche PIN',
+                    child: Text(l.wrongPin,
                         style: TextStyle(color: theme.colorScheme.error)),
                   ),
                 const SizedBox(height: 20),

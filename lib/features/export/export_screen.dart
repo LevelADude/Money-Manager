@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
@@ -66,6 +67,7 @@ class ExportScreen extends ConsumerWidget {
   }
 
   Future<void> _exportPdf(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final txs = ref.read(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final accounts =
@@ -100,8 +102,9 @@ class ExportScreen extends ConsumerWidget {
 
     try {
       await shareTransactionsPdf(
-        heading: 'Money Manager – Buchungen',
-        periodLabel: '${rows.length} Buchungen · Stand ${df.format(DateTime.now())}',
+        heading: l.pdfHeading,
+        periodLabel:
+            l.pdfStatusLabel(rows.length, df.format(DateTime.now())),
         rows: rows,
         incomeText: formatCents(income),
         expenseText: formatCents(expense),
@@ -111,7 +114,7 @@ class ExportScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('PDF-Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.pdfError(e))));
       }
     }
   }
@@ -122,15 +125,16 @@ class ExportScreen extends ConsumerWidget {
         ref.watch(allTransactionsProvider).asData?.value.length ?? 0;
     final csv = _buildCsv(ref);
     final previewLines = const LineSplitter().convert(csv).take(40).join('\n');
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Export (CSV / PDF)')),
+      appBar: AppBar(title: Text(l.exportTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('$txCount Buchungen · CSV (Excel/Sheets) oder PDF-Bericht',
+            Text(l.exportSubtitle(txCount),
                 style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 12),
             Row(
@@ -143,13 +147,12 @@ class ExportScreen extends ConsumerWidget {
                             await Clipboard.setData(ClipboardData(text: csv));
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('CSV in Zwischenablage kopiert')),
+                                SnackBar(content: Text(l.csvCopied)),
                               );
                             }
                           },
                     icon: const Icon(Icons.copy_all_outlined),
-                    label: const Text('CSV kopieren'),
+                    label: Text(l.copyCsv),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -159,7 +162,7 @@ class ExportScreen extends ConsumerWidget {
                         ? null
                         : () => _share(context, csv),
                     icon: const Icon(Icons.ios_share),
-                    label: const Text('CSV teilen'),
+                    label: Text(l.shareCsv),
                   ),
                 ),
               ],
@@ -168,10 +171,10 @@ class ExportScreen extends ConsumerWidget {
             FilledButton.tonalIcon(
               onPressed: txCount == 0 ? null : () => _exportPdf(context, ref),
               icon: const Icon(Icons.picture_as_pdf_outlined),
-              label: const Text('Als PDF teilen / drucken'),
+              label: Text(l.sharePdf),
             ),
             const SizedBox(height: 16),
-            Text('Vorschau (erste Zeilen):',
+            Text(l.previewFirstLines,
                 style: Theme.of(context).textTheme.labelMedium),
             const SizedBox(height: 4),
             Expanded(
@@ -184,7 +187,7 @@ class ExportScreen extends ConsumerWidget {
                 ),
                 child: SingleChildScrollView(
                   child: SelectableText(
-                    previewLines.isEmpty ? 'Keine Daten.' : previewLines,
+                    previewLines.isEmpty ? l.noData : previewLines,
                     style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                   ),
                 ),
@@ -197,11 +200,12 @@ class ExportScreen extends ConsumerWidget {
   }
 
   Future<void> _share(BuildContext context, String csv) async {
+    final l = AppLocalizations.of(context);
     try {
       final bytes = Uint8List.fromList(utf8.encode(csv));
       await SharePlus.instance.share(
         ShareParams(
-          text: 'Money-Manager Export',
+          text: l.exportShareText,
           files: [
             XFile.fromData(
               bytes,
@@ -214,8 +218,7 @@ class ExportScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Teilen nicht möglich ($e). Nutze „Kopieren".')),
+          SnackBar(content: Text(l.shareFailed(e))),
         );
       }
     }

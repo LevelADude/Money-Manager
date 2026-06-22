@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
 
 /// Komplettes Backup aller Daten als JSON (Export) sowie Wiederherstellung
@@ -50,16 +51,17 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   }
 
   Future<void> _export() async {
+    final l = AppLocalizations.of(context);
     setState(() {
       _busy = true;
-      _status = 'Exportiere …';
+      _status = l.exporting;
     });
     try {
       final json = await _buildBackup();
       final bytes = Uint8List.fromList(utf8.encode(json));
       await SharePlus.instance.share(
         ShareParams(
-          text: 'Money-Manager Backup',
+          text: l.backupShareText,
           files: [
             XFile.fromData(bytes,
                 mimeType: 'application/json',
@@ -67,51 +69,53 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           ],
         ),
       );
-      setState(() => _status = 'Backup erstellt.');
+      setState(() => _status = l.backupCreated);
     } catch (e) {
-      setState(() => _status = 'Fehler beim Export: $e');
+      setState(() => _status = l.exportError(e));
     } finally {
       setState(() => _busy = false);
     }
   }
 
   Future<void> _copy() async {
+    final l = AppLocalizations.of(context);
     setState(() => _busy = true);
     try {
       final json = await _buildBackup();
       await Clipboard.setData(ClipboardData(text: json));
-      setState(() => _status = 'Backup in Zwischenablage kopiert.');
+      setState(() => _status = l.backupCopied);
     } catch (e) {
-      setState(() => _status = 'Fehler: $e');
+      setState(() => _status = l.errorWith(e));
     } finally {
       setState(() => _busy = false);
     }
   }
 
   Future<void> _import() async {
+    final l = AppLocalizations.of(context);
     final controller = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Backup importieren'),
+        title: Text(l.importBackup),
         content: SizedBox(
           width: 500,
           child: TextField(
             controller: controller,
             maxLines: 8,
-            decoration: const InputDecoration(
-              hintText: 'Backup-JSON hier einfügen …',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: l.pasteBackupJson,
+              border: const OutlineInputBorder(),
             ),
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen')),
+              child: Text(l.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Importieren')),
+              child: Text(l.importAction)),
         ],
       ),
     );
@@ -119,7 +123,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
     setState(() {
       _busy = true;
-      _status = 'Importiere …';
+      _status = l.importing;
     });
     try {
       final data = jsonDecode(controller.text) as Map<String, dynamic>;
@@ -142,10 +146,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         await client.from(t).upsert(mapped);
         count += mapped.length;
       }
-      setState(() => _status = '$count Datensätze importiert. '
-          'Bitte App neu starten / Seite neu laden.');
+      setState(() => _status = l.recordsImported(count));
     } catch (e) {
-      setState(() => _status = 'Fehler beim Import: $e');
+      setState(() => _status = l.importError(e));
     } finally {
       setState(() => _busy = false);
     }
@@ -153,15 +156,15 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Backup & Wiederherstellung')),
+      appBar: AppBar(title: Text(l.moreBackup)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Sicherung', style: Theme.of(context).textTheme.titleSmall),
+          Text(l.backupSection, style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 4),
-          const Text('Exportiert alle Konten, Buchungen, Kategorien, Budgets, '
-              'Daueraufträge, Sparziele und Vorlagen als JSON-Datei.'),
+          Text(l.backupDesc),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -169,7 +172,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 child: FilledButton.icon(
                   onPressed: _busy ? null : _export,
                   icon: const Icon(Icons.ios_share),
-                  label: const Text('Teilen / Speichern'),
+                  label: Text(l.shareSave),
                 ),
               ),
               const SizedBox(width: 12),
@@ -177,23 +180,21 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _busy ? null : _copy,
                   icon: const Icon(Icons.copy_all_outlined),
-                  label: const Text('Kopieren'),
+                  label: Text(l.copyAction),
                 ),
               ),
             ],
           ),
           const Divider(height: 40),
-          Text('Wiederherstellung',
+          Text(l.restoreSection,
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 4),
-          const Text('Spielt ein Backup ein (z. B. in ein leeres Projekt). '
-              'Vorhandene Einträge mit gleicher ID werden überschrieben; '
-              'Besitzer werden dem aktuellen Konto zugeordnet.'),
+          Text(l.restoreDesc),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _busy ? null : _import,
             icon: const Icon(Icons.settings_backup_restore),
-            label: const Text('Backup importieren'),
+            label: Text(l.importBackup),
           ),
           const SizedBox(height: 24),
           if (_busy) const Center(child: CircularProgressIndicator()),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
+import '../../l10n/app_localizations.dart';
 import '../profile/profile_providers.dart';
 import 'transaction_providers.dart';
 
@@ -44,6 +45,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
     final async = ref.watch(commentsProvider(widget.transactionId));
     final names =
         ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy HH:mm');
 
     return Column(
@@ -51,7 +53,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
       children: [
         Align(
           alignment: Alignment.centerLeft,
-          child: Text('Kommentare',
+          child: Text(l.comments,
               style: Theme.of(context).textTheme.labelLarge),
         ),
         const SizedBox(height: 4),
@@ -60,12 +62,12 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
             padding: EdgeInsets.all(8),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (e, _) => Text('Fehler: $e'),
+          error: (e, _) => Text(l.errorWith(e)),
           data: (comments) {
             if (comments.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text('Noch keine Kommentare.',
+                child: Text(l.noComments,
                     style: Theme.of(context).textTheme.bodySmall),
               );
             }
@@ -84,7 +86,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
                     ),
                     title: Text(c.body),
                     subtitle: Text(
-                        '${names[c.author] ?? 'Unbekannt'} · ${df.format(c.createdAt.toLocal())}'),
+                        '${names[c.author] ?? l.unknownPerson} · ${df.format(c.createdAt.toLocal())}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline, size: 18),
                       onPressed: () =>
@@ -105,10 +107,10 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
                 maxLines: 3,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _send(),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   isDense: true,
-                  hintText: 'Kommentar …',
-                  border: OutlineInputBorder(),
+                  hintText: l.commentHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ),

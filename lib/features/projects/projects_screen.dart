@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../transactions/transaction_providers.dart';
 
@@ -15,6 +16,7 @@ class ProjectsScreen extends ConsumerWidget {
     final txs = ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final tags = ref.watch(allTagsProvider);
+    final l = AppLocalizations.of(context);
 
     final stats = <String, ({int expense, int income, int count})>{};
     for (final tag in tags) {
@@ -32,16 +34,12 @@ class ProjectsScreen extends ConsumerWidget {
       ..sort((a, b) => stats[b]!.expense.compareTo(stats[a]!.expense));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Projekte / Reisen')),
+      appBar: AppBar(title: Text(l.moreProjects)),
       body: tags.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                    'Noch keine Tags vergeben.\n\nVergib einer Buchung einen '
-                    'Tag (z. B. „Urlaub 2026"), dann erscheint hier die '
-                    'Auswertung dafür.',
-                    textAlign: TextAlign.center),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.noTagsYet, textAlign: TextAlign.center),
               ),
             )
           : ListView(
@@ -50,7 +48,7 @@ class ProjectsScreen extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.sell_outlined),
                     title: Text(tag),
-                    subtitle: Text('${stats[tag]!.count} Buchungen'),
+                    subtitle: Text(l.txCount(stats[tag]!.count)),
                     trailing: MoneyText(stats[tag]!.expense,
                         prefix: '-',
                         style: const TextStyle(fontWeight: FontWeight.bold)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/account.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
 import 'account_providers.dart';
 
@@ -32,11 +33,12 @@ class _AccountsReorderScreenState
   @override
   Widget build(BuildContext context) {
     final accountsAsync = ref.watch(accountsProvider);
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Konten sortieren')),
+      appBar: AppBar(title: Text(l.sortAccounts)),
       body: accountsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Fehler: $e')),
+        error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (accounts) {
           // Lokale Kopie mit Server-Stand synchronisieren: bei gleicher Menge
           // die lokale Reihenfolge behalten (sonst springt es nach dem Ziehen),
@@ -57,7 +59,7 @@ class _AccountsReorderScreenState
           }
           final list = _local!;
           if (list.isEmpty) {
-            return const Center(child: Text('Keine Konten.'));
+            return Center(child: Text(l.noAccountsShort));
           }
           return ReorderableListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -71,7 +73,7 @@ class _AccountsReorderScreenState
                   child: Icon(iconForAccountType(accountTypeToDb(a.type))),
                 ),
                 title: Text(a.name, overflow: TextOverflow.ellipsis),
-                subtitle: Text(a.type.label),
+                subtitle: Text(l.accountType(a.type)),
                 trailing: ReorderableDragStartListener(
                   index: i,
                   child: const Icon(Icons.drag_handle),

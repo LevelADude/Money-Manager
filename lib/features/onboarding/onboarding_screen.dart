@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../config/app_config.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/responsive.dart';
 
 /// Welcher Einrichtungs-Weg wurde gewählt?
@@ -61,20 +62,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _copySetupSql() async {
+    final l = AppLocalizations.of(context);
     try {
       final sql = await rootBundle.loadString('supabase/setup.sql');
       await Clipboard.setData(ClipboardData(text: sql));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'SQL kopiert. Im Supabase-Dashboard unter „SQL Editor" einfügen und „Run".'),
-        ),
+        SnackBar(content: Text(l.sqlCopied)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Konnte SQL nicht laden: $e')));
+          .showSnackBar(SnackBar(content: Text(l.sqlLoadFailed(e))));
     }
   }
 
@@ -95,14 +94,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Einrichtung'),
+        title: Text(l.onboardingTitle),
         leading: _mode == null
             ? null
             : IconButton(
                 icon: const Icon(Icons.arrow_back),
-                tooltip: 'Zurück zur Auswahl',
+                tooltip: l.backToChoice,
                 onPressed: _busy ? null : () => setState(() => _mode = null),
               ),
       ),
@@ -118,37 +118,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// Erststart-Auswahl: neue eigene DB oder bestehende verbinden.
   Widget _buildChooser(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Icon(Icons.cloud_sync_outlined,
             size: 48, color: theme.colorScheme.primary),
         const SizedBox(height: 12),
-        Text('Willkommen bei Money Manager',
+        Text(l.welcomeTitle,
             textAlign: TextAlign.center, style: theme.textTheme.headlineSmall),
         const SizedBox(height: 8),
         Text(
-          'Deine Daten liegen in deinem eigenen, kostenlosen Supabase-Projekt. '
-          'Wie möchtest du starten?',
+          l.welcomeBody,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium,
         ),
         const SizedBox(height: 20),
         _ChoiceCard(
           icon: Icons.add_circle_outline,
-          title: 'Neue Installation',
-          subtitle:
-              'Eigene, leere Datenbank anlegen und einrichten. Die erste Person, '
-              'die sich registriert, wird Besitzer.',
+          title: l.newInstallTitle,
+          subtitle: l.newInstallSub,
           onTap: () => setState(() => _mode = _SetupMode.fresh),
         ),
         const SizedBox(height: 12),
         _ChoiceCard(
           icon: Icons.login_outlined,
-          title: 'Mit bestehender Datenbank verbinden',
-          subtitle:
-              'Jemand hat die Datenbank schon eingerichtet. Du gibst nur die '
-              'Zugangsdaten ein und meldest dich an.',
+          title: l.connectExistingTitle,
+          subtitle: l.connectExistingSub,
           onTap: () => setState(() => _mode = _SetupMode.existing),
         ),
       ],
@@ -157,6 +153,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// Formular je nach gewähltem Modus (mit/ohne ausführlichen Schritten).
   Widget _buildForm(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     final fresh = _mode == _SetupMode.fresh;
     return Form(
       key: _formKey,
@@ -164,7 +161,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            fresh ? 'Neue eigene Datenbank' : 'Bestehende Datenbank verbinden',
+            fresh ? l.newOwnDatabase : l.connectExistingDb,
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineSmall,
           ),
@@ -173,51 +170,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           if (fresh) ...[
             _StepCard(
               number: '1',
-              title: 'Kostenloses Supabase-Projekt anlegen',
-              child: const Text(
-                'Gehe auf supabase.com, registriere dich kostenlos und '
-                'erstelle ein neues Projekt (Region Europa empfohlen). '
-                'Warte, bis das Projekt fertig eingerichtet ist.',
-              ),
+              title: l.step1Title,
+              child: Text(l.step1Body),
             ),
             _StepCard(
               number: '2',
-              title: 'Datenbank einrichten (1 Klick)',
+              title: l.step2Title,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Kopiere das vorbereitete SQL, öffne im Supabase-'
-                    'Dashboard den „SQL Editor", füge es ein und klicke '
-                    '„Run". Damit werden alle Tabellen, Sicherheitsregeln '
-                    'und der Beleg-Speicher angelegt.',
-                  ),
+                  Text(l.step2Body),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: _copySetupSql,
                     icon: const Icon(Icons.copy_all_outlined),
-                    label: const Text('Einrichtungs-SQL kopieren'),
+                    label: Text(l.copySetupSql),
                   ),
                 ],
               ),
             ),
             _StepCard(
               number: '3',
-              title: 'Zugangsdaten eintragen',
+              title: l.step3Title,
               child: _credentials(theme),
             ),
           ] else ...[
             _StepCard(
               number: '✓',
-              title: 'Zugangsdaten der bestehenden Datenbank',
+              title: l.existingCredsTitle,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Trage die Project-URL und den anon/publishable-Schlüssel '
-                    'der bereits eingerichteten Datenbank ein. Anmelden kannst '
-                    'du dich nur, wenn deine E-Mail dort freigeschaltet ist.',
-                  ),
+                  Text(l.existingCredsBody),
                   const SizedBox(height: 12),
                   _credentials(theme),
                 ],
@@ -240,7 +224,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Verbindung fehlgeschlagen: $_error',
+                      l.connectionFailed(_error!),
                       style: TextStyle(
                           color: theme.colorScheme.onErrorContainer),
                     ),
@@ -260,13 +244,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.check),
-            label: const Text('Verbinden & starten'),
+            label: Text(l.connectAndStart),
           ),
           if (fresh) ...[
             const SizedBox(height: 8),
             Text(
-              'Tipp: Die erste Person, die sich registriert, wird '
-              'automatisch Besitzer (Admin mit allen Rechten).',
+              l.ownerTip,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall,
             ),
@@ -278,29 +261,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// Die gemeinsamen URL- + Schlüssel-Felder (in beiden Modi identisch).
   Widget _credentials(ThemeData theme) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Im Supabase-Dashboard unter „Project Settings" → „Data API" findest '
-          'du die Project-URL, unter „API Keys" den „anon"/„publishable"-'
-          'Schlüssel. Beide hier einfügen:',
-        ),
+        Text(l.credentialsIntro),
         const SizedBox(height: 12),
         TextFormField(
           controller: _url,
           keyboardType: TextInputType.url,
-          decoration: const InputDecoration(
-            labelText: 'Supabase Project URL',
+          decoration: InputDecoration(
+            labelText: l.supabaseProjectUrl,
             hintText: 'https://xxxxxxxx.supabase.co',
-            prefixIcon: Icon(Icons.link),
-            border: OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.link),
+            border: const OutlineInputBorder(),
           ),
           validator: (v) {
             final t = (v ?? '').trim();
-            if (t.isEmpty) return 'URL eingeben';
+            if (t.isEmpty) return l.enterUrl;
             if (!t.startsWith('http')) {
-              return 'Muss mit https:// beginnen';
+              return l.mustStartHttps;
             }
             return null;
           },
@@ -310,13 +290,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           controller: _key,
           minLines: 1,
           maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'anon / publishable Key',
-            prefixIcon: Icon(Icons.key_outlined),
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l.anonKeyLabel,
+            prefixIcon: const Icon(Icons.key_outlined),
+            border: const OutlineInputBorder(),
           ),
           validator: (v) => (v == null || v.trim().length < 20)
-              ? 'Schlüssel eingeben'
+              ? l.enterKey
               : null,
         ),
       ],

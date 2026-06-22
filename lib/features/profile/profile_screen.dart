@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_config.dart';
+import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../onboarding/connection_editor.dart';
 import 'profile_providers.dart';
@@ -34,14 +35,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ref.invalidate(profileNamesProvider);
       ref.invalidate(myDisplayNameProvider);
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil gespeichert')),
+          SnackBar(content: Text(l.profileSaved)),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -60,8 +63,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     });
 
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
+      appBar: AppBar(title: Text(l.moreProfile)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -69,15 +73,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.email_outlined),
-              title: const Text('E-Mail'),
+              title: Text(l.email),
               subtitle: Text(email.isEmpty ? '—' : email),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _name,
-              decoration: const InputDecoration(
-                labelText: 'Anzeigename',
-                prefixIcon: Icon(Icons.person_outline),
+              decoration: InputDecoration(
+                labelText: l.displayName,
+                prefixIcon: const Icon(Icons.person_outline),
               ),
             ),
             const SizedBox(height: 24),
@@ -90,13 +94,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.check),
-              label: const Text('Speichern'),
+              label: Text(l.save),
             ),
             const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: () => ref.read(authRepositoryProvider).signOut(),
               icon: const Icon(Icons.logout),
-              label: const Text('Abmelden'),
+              label: Text(l.signOut),
             ),
             const Divider(height: 48),
             const _DatabaseConnectionSection(),
@@ -115,10 +119,11 @@ class _DatabaseConnectionSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(appConfigProvider);
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Datenbank-Verbindung',
+        Text(l.dbConnection,
             style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         ListTile(
@@ -131,14 +136,14 @@ class _DatabaseConnectionSection extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
-              'Eigene (manuell gesetzte) Verbindung aktiv.',
+              l.customConnectionActive,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
         OutlinedButton.icon(
           onPressed: () => showConnectionEditor(context, ref),
           icon: const Icon(Icons.dns_outlined),
-          label: const Text('Verbindung ändern'),
+          label: Text(l.changeConnection),
         ),
       ],
     );

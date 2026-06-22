@@ -7,6 +7,7 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
 import '../../data/models/recurring_rule.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/calculator_sheet.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
@@ -99,8 +100,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     final count = int.tryParse(_count.text.trim()) ?? 1;
     if (cents == null || cents <= 0 || _accountId == null) return;
     if (_type == TransactionType.transfer && _transferTargetId == null) {
+      final l = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bitte ein Zielkonto wählen.')),
+        SnackBar(content: Text(l.chooseTargetAccount)),
       );
       return;
     }
@@ -141,28 +143,28 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
       if (mounted) context.go('/more/recurring');
     } catch (e) {
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
         setState(() => _saving = false);
       }
     }
   }
 
   Future<void> _delete() async {
+    final l = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Dauerauftrag löschen?'),
-        content: const Text(
-            'Bereits erzeugte Buchungen bleiben erhalten; künftige werden '
-            'nicht mehr angelegt.'),
+        title: Text(l.deleteRecurringTitle),
+        content: Text(l.deleteRecurringBody),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Abbrechen')),
+              child: Text(l.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Löschen')),
+              child: Text(l.delete)),
         ],
       ),
     );
@@ -174,6 +176,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   @override
   Widget build(BuildContext context) {
     _prefill();
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
     final isTransfer = _type == TransactionType.transfer;
     final accounts = (ref.watch(accountsProvider).asData?.value ??
@@ -198,21 +201,21 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Dauerauftrag bearbeiten' : 'Neuer Dauerauftrag'),
+        title: Text(widget.isEditing ? l.editRecurring : l.newRecurring),
         actions: [
           if (widget.isEditing)
             IconButton(
-              tooltip: 'Löschen',
+              tooltip: l.delete,
               icon: const Icon(Icons.delete_outline),
               onPressed: _delete,
             ),
         ],
       ),
       body: accounts.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Bitte zuerst ein Konto anlegen.'),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.createAccountFirst),
               ),
             )
           : SingleChildScrollView(
@@ -223,16 +226,16 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SegmentedButton<TransactionType>(
-                      segments: const [
+                      segments: [
                         ButtonSegment(
                             value: TransactionType.expense,
-                            label: Text('Ausgabe')),
+                            label: Text(l.transactionType(TransactionType.expense))),
                         ButtonSegment(
                             value: TransactionType.income,
-                            label: Text('Einnahme')),
+                            label: Text(l.transactionType(TransactionType.income))),
                         ButtonSegment(
                             value: TransactionType.transfer,
-                            label: Text('Übertrag')),
+                            label: Text(l.transactionType(TransactionType.transfer))),
                       ],
                       selected: {_type},
                       onSelectionChanged: (s) =>
@@ -241,9 +244,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       initialValue: _accountId,
-                      decoration: const InputDecoration(
-                        labelText: 'Konto',
-                        prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                      decoration: InputDecoration(
+                        labelText: l.accountLabel,
+                        prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
                       ),
                       items: [
                         for (final a in accounts)
@@ -257,10 +260,10 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
                       decoration: InputDecoration(
-                        labelText: 'Betrag (auch Rechnung möglich)',
+                        labelText: l.amountCalcShort,
                         prefixIcon: const Icon(Icons.euro),
                         suffixIcon: IconButton(
-                          tooltip: 'Taschenrechner',
+                          tooltip: l.calculator,
                           icon: const Icon(Icons.calculate_outlined),
                           onPressed: () async {
                             final r = await showCalculatorSheet(context,
@@ -272,7 +275,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                       validator: (v) {
                         final c = parseToCents(v ?? '');
                         if (c == null || c <= 0) {
-                          return 'Gültigen Betrag eingeben';
+                          return l.enterValidAmount;
                         }
                         return null;
                       },
@@ -281,13 +284,13 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     if (isTransfer)
                       DropdownButtonFormField<String?>(
                         initialValue: _transferTargetId,
-                        decoration: const InputDecoration(
-                          labelText: 'Zielkonto',
-                          prefixIcon: Icon(Icons.swap_horiz),
+                        decoration: InputDecoration(
+                          labelText: l.targetAccount,
+                          prefixIcon: const Icon(Icons.swap_horiz),
                         ),
                         items: [
-                          const DropdownMenuItem<String?>(
-                              value: null, child: Text('— wählen —')),
+                          DropdownMenuItem<String?>(
+                              value: null, child: Text(l.chooseDash)),
                           for (final a in targets)
                             DropdownMenuItem<String?>(
                                 value: a.id, child: Text(a.name)),
@@ -298,13 +301,13 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     else
                       DropdownButtonFormField<String?>(
                         initialValue: _categoryId,
-                        decoration: const InputDecoration(
-                          labelText: 'Kategorie',
-                          prefixIcon: Icon(Icons.label_outline),
+                        decoration: InputDecoration(
+                          labelText: l.category,
+                          prefixIcon: const Icon(Icons.label_outline),
                         ),
                         items: [
-                          const DropdownMenuItem<String?>(
-                              value: null, child: Text('Keine Kategorie')),
+                          DropdownMenuItem<String?>(
+                              value: null, child: Text(l.noCategoryOption)),
                           for (final c in categories)
                             DropdownMenuItem<String?>(
                                 value: c.id, child: Text(c.name)),
@@ -315,15 +318,15 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     TextFormField(
                       controller: _title,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        labelText: 'Titel (z. B. Miete, Gehalt, Netflix)',
-                        prefixIcon: Icon(Icons.storefront_outlined),
+                      decoration: InputDecoration(
+                        labelText: l.recurringTitleHint,
+                        prefixIcon: const Icon(Icons.storefront_outlined),
                       ),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        const Text('Alle '),
+                        Text(l.everyWord),
                         SizedBox(
                           width: 64,
                           child: TextFormField(
@@ -339,7 +342,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                             items: [
                               for (final u in IntervalUnit.values)
                                 DropdownMenuItem(
-                                    value: u, child: Text(u.label)),
+                                    value: u, child: Text(l.intervalUnitLabel(u))),
                             ],
                             onChanged: (v) => setState(
                                 () => _unit = v ?? IntervalUnit.month),
@@ -351,7 +354,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.event),
-                      title: const Text('Nächste Fälligkeit'),
+                      title: Text(l.nextDueLabel),
                       subtitle: Text(df.format(_nextDue)),
                       trailing: const Icon(Icons.edit_calendar),
                       onTap: _pickNextDue,
@@ -359,9 +362,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.event_busy),
-                      title: const Text('Enddatum (optional)'),
+                      title: Text(l.endDateOptional),
                       subtitle: Text(
-                          _endDate == null ? 'kein Ende' : df.format(_endDate!)),
+                          _endDate == null ? l.noEnd : df.format(_endDate!)),
                       trailing: _endDate == null
                           ? const Icon(Icons.edit_calendar)
                           : IconButton(
@@ -375,10 +378,10 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                       controller: _note,
                       minLines: 2,
                       maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: 'Notiz',
+                      decoration: InputDecoration(
+                        labelText: l.note,
                         alignLabelWithHint: true,
-                        prefixIcon: Icon(Icons.notes),
+                        prefixIcon: const Icon(Icons.notes),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -392,7 +395,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                                   CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.check),
-                      label: const Text('Speichern'),
+                      label: Text(l.save),
                     ),
                   ],
                 ),

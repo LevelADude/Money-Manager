@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../transactions/transaction_providers.dart';
@@ -31,15 +32,14 @@ class DebtsScreen extends ConsumerWidget {
       return s + (b < 0 ? -b : 0);
     });
 
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Schulden & Kredite')),
+      appBar: AppBar(title: Text(l.moreDebts)),
       body: liabilities.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                    'Keine Schulden-Konten. Lege ein Konto vom Typ '
-                    '„Kreditkarte" oder „Kredit/Darlehen" an.'),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.noDebtAccounts),
               ),
             )
           : ListView(
@@ -48,7 +48,7 @@ class DebtsScreen extends ConsumerWidget {
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.trending_down),
-                    title: const Text('Schulden gesamt'),
+                    title: Text(l.totalDebt),
                     trailing: MoneyText(totalDebt,
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -71,6 +71,7 @@ class _DebtCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     // Aktueller Saldo (negativ = Schuld).
     var current = account.openingBalanceCents;
     for (final t in txs) {
@@ -134,7 +135,7 @@ class _DebtCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Kreditrahmen-Auslastung',
+                  Text(l.creditUtilization,
                       style: Theme.of(context).textTheme.bodySmall),
                   Text('${(utilization * 100).round()} %',
                       style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -142,7 +143,7 @@ class _DebtCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 12),
-            Text('Restschuld-Verlauf (12 Monate)',
+            Text(l.debtTrend12,
                 style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 6),
             SizedBox(

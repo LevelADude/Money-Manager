@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../categories/category_providers.dart';
 import 'transaction_providers.dart';
@@ -16,21 +17,20 @@ class TrashScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(deletedTransactionsProvider);
     final catNames = ref.watch(categoryNamesProvider);
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Papierkorb')),
+      appBar: AppBar(title: Text(l.moreTrash)),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Fehler: $e')),
+        error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (items) {
           if (items.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Papierkorb ist leer.\n\n'
-                    'Gelöschte Buchungen erscheinen hier 30 Tage lang und '
-                    'können wiederhergestellt werden.'),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.trashEmpty),
               ),
             );
           }
@@ -41,13 +41,13 @@ class TrashScreen extends ConsumerWidget {
               final tx = items[i].tx;
               final title = tx.title.isEmpty
                   ? (tx.categoryId == null
-                      ? tx.type.label
-                      : (catNames[tx.categoryId] ?? tx.type.label))
+                      ? l.transactionType(tx.type)
+                      : (catNames[tx.categoryId] ?? l.transactionType(tx.type)))
                   : tx.title;
               return ListTile(
                 title: Text(title),
                 subtitle: Text(
-                    'Gelöscht am ${df.format(items[i].deletedAt.toLocal())}'),
+                    l.deletedOn(df.format(items[i].deletedAt.toLocal()))),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -61,7 +61,7 @@ class TrashScreen extends ConsumerWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     IconButton(
-                      tooltip: 'Wiederherstellen',
+                      tooltip: l.restore,
                       icon: const Icon(Icons.restore_from_trash),
                       onPressed: () async {
                         await ref
@@ -72,7 +72,7 @@ class TrashScreen extends ConsumerWidget {
                       },
                     ),
                     IconButton(
-                      tooltip: 'Endgültig löschen',
+                      tooltip: l.purge,
                       icon: const Icon(Icons.delete_forever),
                       onPressed: () async {
                         await ref

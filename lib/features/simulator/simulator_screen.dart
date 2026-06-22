@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../shared/mini_line_chart.dart';
 import '../../shared/money.dart';
 import '../../shared/money_text.dart';
@@ -56,22 +57,22 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
       for (var i = 1; i <= 12; i++) current + surplus * i,
     ];
     final inOneYear = current + surplus * 12;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Was-wäre-wenn')),
+      appBar: AppBar(title: Text(l.moreSimulator)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Passe Einnahmen/Ausgaben an und sieh die Auswirkung auf '
-              'dein Vermögen in 12 Monaten. (Vorbelegt mit deinen Durchschnitten.)'),
+          Text(l.simulatorIntro),
           const SizedBox(height: 16),
           TextField(
             controller: _income,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Einnahmen / Monat',
-              prefixIcon: Icon(Icons.south_west),
+            decoration: InputDecoration(
+              labelText: l.incomePerMonth,
+              prefixIcon: const Icon(Icons.south_west),
             ),
           ),
           const SizedBox(height: 12),
@@ -79,13 +80,13 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
             controller: _expense,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Ausgaben / Monat',
-              prefixIcon: Icon(Icons.north_east),
+            decoration: InputDecoration(
+              labelText: l.expensePerMonth,
+              prefixIcon: const Icon(Icons.north_east),
             ),
           ),
           const SizedBox(height: 8),
-          Text('Ausgaben reduzieren: ${_reducePct.round()} %'),
+          Text(l.reduceExpenses(_reducePct.round())),
           Slider(
             value: _reducePct,
             max: 50,
@@ -100,13 +101,13 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _row(context, 'Effektive Ausgaben', effExpense),
-                  _row(context, 'Überschuss / Monat', surplus, bold: true),
+                  _row(context, l.effectiveExpenses, effExpense),
+                  _row(context, l.surplusPerMonth, surplus, bold: true),
                   const Divider(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Vermögen in 12 Monaten',
+                      Text(l.wealthIn12Months,
                           style: Theme.of(context).textTheme.titleSmall),
                       MoneyText(
                         inOneYear,
@@ -122,14 +123,14 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
                   ),
                   const SizedBox(height: 4),
                   MoneyText(inOneYear - current,
-                      prefix: (inOneYear - current) >= 0 ? 'Veränderung: +' : 'Veränderung: ',
+                      prefix: l.wealthChangePrefix((inOneYear - current) >= 0),
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 12),
-          Text('Projektion', style: Theme.of(context).textTheme.titleSmall),
+          Text(l.projection, style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
           MiniLineChart(
             values: projection,

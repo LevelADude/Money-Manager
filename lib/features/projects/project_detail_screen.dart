@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
@@ -28,6 +29,7 @@ class ProjectDetailScreen extends ConsumerWidget {
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
 
     var income = 0, expense = 0;
@@ -47,9 +49,9 @@ class ProjectDetailScreen extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _kpi(context, 'Einnahmen', income, Colors.green.shade700),
-                  _kpi(context, 'Ausgaben', expense, Colors.red.shade700),
-                  _kpi(context, 'Saldo', income - expense,
+                  _kpi(context, l.income, income, Colors.green.shade700),
+                  _kpi(context, l.expenses, expense, Colors.red.shade700),
+                  _kpi(context, l.balance, income - expense,
                       (income - expense) >= 0
                           ? Colors.green.shade700
                           : Colors.red.shade700),
@@ -63,8 +65,8 @@ class ProjectDetailScreen extends ConsumerWidget {
               dense: true,
               title: Text(t.title.isEmpty
                   ? (t.categoryId == null
-                      ? t.type.label
-                      : (catNames[t.categoryId] ?? t.type.label))
+                      ? l.transactionType(t.type)
+                      : (catNames[t.categoryId] ?? l.transactionType(t.type)))
                   : t.title),
               subtitle: Text(
                   '${df.format(t.occurredOn)} · ${accountNames[t.accountId] ?? ''}'),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'reminders_providers.dart';
 
 /// Erinnerungen: offene Hinweise (fällige Daueraufträge, Budget-Warnungen,
@@ -19,9 +20,10 @@ class RemindersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reminders = ref.watch(remindersProvider);
     final streak = ref.watch(streakProvider);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Erinnerungen')),
+      appBar: AppBar(title: Text(l.moreReminders)),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -33,23 +35,22 @@ class RemindersScreen extends ConsumerWidget {
                     : Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Text('🔥', style: const TextStyle(fontSize: 18)),
               ),
-              title: Text('${streak.days}-Tage-Streak'),
-              subtitle: Text(streak.bookedToday
-                  ? 'Heute schon gebucht – weiter so!'
-                  : 'Heute noch nichts gebucht.'),
+              title: Text(l.streakDays(streak.days)),
+              subtitle: Text(
+                  streak.bookedToday ? l.bookedToday : l.notBookedToday),
               trailing: streak.bookedToday
                   ? null
                   : FilledButton.tonal(
                       onPressed: () => context.go('/transactions/new'),
-                      child: const Text('Buchen'),
+                      child: Text(l.bookAction),
                     ),
             ),
           ),
           const SizedBox(height: 8),
           if (reminders.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: Text('Keine offenen Erinnerungen 🎉')),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(child: Text(l.noReminders)),
             )
           else
             for (final r in reminders)

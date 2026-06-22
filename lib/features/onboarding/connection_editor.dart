@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_config.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Dialog zum Ändern der Datenbank-Verbindung (URL + Key) pro Gerät – inkl.
 /// Zurücksetzen auf die fest eingebaute Standard-Verbindung.
@@ -9,6 +10,7 @@ import '../../config/app_config.dart';
 /// Erreichbar vom Login (falls man eine falsche URL eingegeben hat und sonst
 /// nicht mehr herankäme) und aus dem Profil.
 Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
+  final l = AppLocalizations.of(context);
   final config = ref.read(appConfigProvider);
   final urlCtrl = TextEditingController(text: config.url);
   final keyCtrl = TextEditingController(text: config.anonKey);
@@ -16,23 +18,19 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
   final action = await showDialog<String>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Datenbank-Verbindung'),
+      title: Text(l.dbConnection),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Nur ändern, wenn du eine andere Supabase-Datenbank nutzen willst '
-              '(z. B. weil die URL falsch war). Die Änderung gilt nur auf diesem '
-              'Gerät.',
-            ),
+            Text(l.connectionEditorIntro),
             const SizedBox(height: 12),
             TextField(
               controller: urlCtrl,
               keyboardType: TextInputType.url,
-              decoration: const InputDecoration(
-                labelText: 'Supabase-URL',
+              decoration: InputDecoration(
+                labelText: l.supabaseUrlLabel,
                 hintText: 'https://xxxx.supabase.co',
               ),
             ),
@@ -41,8 +39,8 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
               controller: keyCtrl,
               minLines: 1,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'anon / publishable Key',
+              decoration: InputDecoration(
+                labelText: l.anonKeyLabel,
               ),
             ),
           ],
@@ -55,12 +53,12 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'reset'),
             child: Text(config.hasBakedDefault
-                ? 'Auf Standard zurücksetzen'
-                : 'Verbindung trennen'),
+                ? l.resetToDefault
+                : l.disconnect),
           ),
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Abbrechen'),
+          child: Text(l.cancel),
         ),
         FilledButton(
           onPressed: () {
@@ -69,7 +67,7 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
             }
             Navigator.pop(ctx, 'save');
           },
-          child: const Text('Speichern'),
+          child: Text(l.save),
         ),
       ],
     ),
@@ -86,15 +84,12 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
   await showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Verbindung geändert'),
-      content: const Text(
-        'Bitte lade die Seite neu (Strg+R) bzw. starte die App neu, damit die '
-        'neue Verbindung wirksam wird. Deine Daten in Supabase bleiben erhalten.',
-      ),
+      title: Text(l.connectionChanged),
+      content: Text(l.connectionChangedBody),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('OK'),
+          child: Text(l.ok),
         ),
       ],
     ),

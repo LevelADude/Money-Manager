@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/access_grant.dart';
+import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../profile/profile_providers.dart';
 import 'access_grant_providers.dart';
@@ -29,15 +30,16 @@ class SharingScreen extends ConsumerWidget {
         ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
     final iGave = ref.watch(grantsIGaveProvider);
     final iReceived = ref.watch(grantsIReceivedProvider);
+    final l = AppLocalizations.of(context);
 
     String nameOf(String id) =>
-        names[id]?.isNotEmpty == true ? names[id]! : 'Unbekannt';
+        names[id]?.isNotEmpty == true ? names[id]! : l.unknownPerson;
 
     final others = names.keys.where((id) => id != myId).toList()
       ..sort((a, b) => nameOf(a).toLowerCase().compareTo(nameOf(b).toLowerCase()));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Freigaben')),
+      appBar: AppBar(title: Text(l.sharingTitle)),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -45,10 +47,7 @@ class SharingScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Text(
-                'Standardmäßig sieht jede Person nur die eigenen Finanzen. '
-                'Hier gibst du anderen Zugriff:\n'
-                '• Ansehen: kann deine Konten/Buchungen sehen.\n'
-                '• Verwalten: darf zusätzlich Buchungen anlegen und ändern.',
+                l.sharingIntro,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -56,16 +55,16 @@ class SharingScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
-            child: Text('Wer darf auf meine Finanzen zugreifen?',
+            child: Text(l.whoCanAccess,
                 style: Theme.of(context)
                     .textTheme
                     .titleSmall
                     ?.copyWith(fontWeight: FontWeight.bold)),
           ),
           if (others.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Es sind keine weiteren Personen registriert.'),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(l.noOtherPeople),
             )
           else
             for (final id in others)
@@ -94,11 +93,11 @@ class SharingScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       SegmentedButton<String>(
                         showSelectedIcon: false,
-                        segments: const [
-                          ButtonSegment(value: 'none', label: Text('Kein')),
-                          ButtonSegment(value: 'view', label: Text('Ansehen')),
+                        segments: [
+                          ButtonSegment(value: 'none', label: Text(l.accessNone)),
+                          ButtonSegment(value: 'view', label: Text(l.accessView)),
                           ButtonSegment(
-                              value: 'manage', label: Text('Verwalten')),
+                              value: 'manage', label: Text(l.accessManage)),
                         ],
                         selected: {
                           switch (iGave[id]) {
@@ -116,16 +115,16 @@ class SharingScreen extends ConsumerWidget {
           const Divider(height: 32),
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
-            child: Text('Wer hat mir Zugriff gegeben?',
+            child: Text(l.whoGrantedMe,
                 style: Theme.of(context)
                     .textTheme
                     .titleSmall
                     ?.copyWith(fontWeight: FontWeight.bold)),
           ),
           if (iReceived.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Noch niemand hat dir Zugriff gegeben.'),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(l.nobodyGrantedYou),
             )
           else
             for (final e in iReceived.entries)
@@ -133,8 +132,8 @@ class SharingScreen extends ConsumerWidget {
                 leading: const Icon(Icons.visibility_outlined),
                 title: Text(nameOf(e.key)),
                 subtitle: Text(e.value == GrantLevel.manage
-                    ? 'Du darfst ansehen und verwalten'
-                    : 'Du darfst ansehen'),
+                    ? l.youMayViewManage
+                    : l.youMayView),
               ),
         ],
       ),

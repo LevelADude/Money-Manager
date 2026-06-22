@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
-import '../../data/models/recurring_rule.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import 'recurring_providers.dart';
 
@@ -14,19 +14,16 @@ class SubscriptionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final candidates = ref.watch(subscriptionSuggestionsProvider);
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Erkannte Abos')),
+      appBar: AppBar(title: Text(l.moreSubscriptions)),
       body: candidates.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                    'Keine wiederkehrenden Muster erkannt.\n\nSobald sich eine '
-                    'Buchung (gleicher Titel + Betrag) regelmäßig wiederholt, '
-                    'wird sie hier als Dauerauftrag vorgeschlagen.',
-                    textAlign: TextAlign.center),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.noSubscriptions, textAlign: TextAlign.center),
               ),
             )
           : ListView(
@@ -38,8 +35,9 @@ class SubscriptionsScreen extends ConsumerWidget {
                       leading: const Icon(Icons.autorenew),
                       title: Text(c.title),
                       subtitle: Text(
-                          'alle ${c.intervalCount} ${c.intervalUnit.label} · '
-                          '${c.occurrences}× erkannt · ab ${df.format(c.nextDue)}'),
+                          '${l.everyInterval(c.intervalCount, c.intervalUnit)} · '
+                          '${l.detectedTimes(c.occurrences)} · '
+                          '${l.fromDate(df.format(c.nextDue))}'),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -63,12 +61,12 @@ class SubscriptionsScreen extends ConsumerWidget {
                                   );
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('Dauerauftrag angelegt')),
+                                  SnackBar(
+                                      content: Text(l.recurringCreated)),
                                 );
                               }
                             },
-                            child: const Text('Anlegen'),
+                            child: Text(l.create),
                           ),
                         ],
                       ),

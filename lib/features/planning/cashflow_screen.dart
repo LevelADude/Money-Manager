@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/recurring_rule.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../recurring/recurring_providers.dart';
@@ -25,6 +26,7 @@ class CashflowScreen extends ConsumerWidget {
         const <AppTransaction>[];
     final rules = ref.watch(recurringRulesProvider).asData?.value ??
         const <RecurringRule>[];
+    final l = AppLocalizations.of(context);
     final df = DateFormat('EEEE, dd.MM.yyyy', 'de');
 
     // Aktueller Gesamt-Kontostand (nicht archivierte Konten).
@@ -64,7 +66,7 @@ class CashflowScreen extends ConsumerWidget {
         if (signed != 0) {
           events.add((
             date: d,
-            title: r.title.isEmpty ? 'Dauerauftrag' : r.title,
+            title: r.title.isEmpty ? l.standingOrderNoun : r.title,
             signed: signed,
           ));
         }
@@ -85,7 +87,7 @@ class CashflowScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Cashflow-Kalender')),
+      appBar: AppBar(title: Text(l.moreCashflow)),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -95,7 +97,7 @@ class CashflowScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Aktueller Kontostand',
+                  Text(l.currentBalance,
                       style: Theme.of(context).textTheme.labelLarge),
                   const SizedBox(height: 4),
                   MoneyText(current,
@@ -107,7 +109,7 @@ class CashflowScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Tiefststand (60 Tage)',
+                      Text(l.lowestBalance60,
                           style: Theme.of(context).textTheme.bodySmall),
                       MoneyText(
                         lowest,
@@ -122,7 +124,7 @@ class CashflowScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        'Achtung: Der prognostizierte Kontostand wird negativ.',
+                        l.balanceGoesNegative,
                         style: TextStyle(color: Colors.red.shade700),
                       ),
                     ),
@@ -132,12 +134,10 @@ class CashflowScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           if (rows.isEmpty)
-            const Card(
+            Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                    'Keine geplanten Buchungen in den nächsten 60 Tagen. '
-                    'Lege Daueraufträge unter „Mehr → Daueraufträge" an.'),
+                padding: const EdgeInsets.all(16),
+                child: Text(l.noPlannedTx60),
               ),
             )
           else

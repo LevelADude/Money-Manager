@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../profile/profile_providers.dart';
 import '../transactions/transaction_providers.dart';
@@ -24,23 +25,24 @@ class ActivityScreen extends ConsumerWidget {
     final async = ref.watch(recentActivityProvider);
     final names =
         ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy HH:mm');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Aktivität')),
+      appBar: AppBar(title: Text(l.moreActivity)),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(recentActivityProvider),
         child: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => ListView(children: [
             const SizedBox(height: 80),
-            Center(child: Text('Fehler: $e')),
+            Center(child: Text(l.errorWith(e))),
           ]),
           data: (items) {
             if (items.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 80),
-                Center(child: Text('Noch keine Aktivität.')),
+              return ListView(children: [
+                const SizedBox(height: 80),
+                Center(child: Text(l.noActivity)),
               ]);
             }
             return ListView.separated(
@@ -50,12 +52,12 @@ class ActivityScreen extends ConsumerWidget {
                 final e = items[i];
                 final title = (e.data?['title'] as String?)?.trim();
                 final amount = (e.data?['amount_cents'] as num?)?.toInt();
-                final who = names[e.actor] ?? 'Unbekannt';
+                final who = names[e.actor] ?? l.unknownPerson;
                 return ListTile(
                   leading: Icon(_icon(e.action)),
                   title: Text(title == null || title.isEmpty
-                      ? '${e.actionLabel}: Buchung'
-                      : '${e.actionLabel}: $title'),
+                      ? '${l.auditAction(e.action)}: ${l.transactionNoun}'
+                      : '${l.auditAction(e.action)}: $title'),
                   subtitle: Text('$who · ${df.format(e.at.toLocal())}'),
                   trailing: amount == null
                       ? null

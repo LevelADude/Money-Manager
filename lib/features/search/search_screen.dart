@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
@@ -37,6 +38,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
 
     final matchedAccounts = q.isEmpty
@@ -66,8 +68,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           controller: _query,
           autofocus: true,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            hintText: 'Suchen (Titel, Notiz, Tag, Konto, Betrag) …',
+          decoration: InputDecoration(
+            hintText: l.searchFieldHint,
             border: InputBorder.none,
           ),
         ),
@@ -80,13 +82,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ],
       ),
       body: q.isEmpty
-          ? const Center(child: Text('Suchbegriff eingeben.'))
+          ? Center(child: Text(l.enterSearchTerm))
           : (matchedAccounts.isEmpty && limitedTx.isEmpty)
-              ? const Center(child: Text('Keine Treffer.'))
+              ? Center(child: Text(l.noResults))
               : ListView(
                   children: [
                     if (matchedAccounts.isNotEmpty) ...[
-                      const _Header('Konten'),
+                      _Header(l.navAccounts),
                       for (final a in matchedAccounts)
                         ListTile(
                           leading: const Icon(Icons.account_balance_wallet_outlined),
@@ -95,7 +97,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                     ],
                     if (limitedTx.isNotEmpty) ...[
-                      _Header('Buchungen (${matchedTx.length})'),
+                      _Header('${l.navTransactions} (${matchedTx.length})'),
                       for (final t in limitedTx)
                         ListTile(
                           leading: Icon(switch (t.type) {
@@ -106,8 +108,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           title: Text(
                             t.title.isEmpty
                                 ? (t.categoryId == null
-                                    ? t.type.label
-                                    : (catNames[t.categoryId] ?? t.type.label))
+                                    ? l.transactionType(t.type)
+                                    : (catNames[t.categoryId] ??
+                                        l.transactionType(t.type)))
                                 : t.title,
                           ),
                           subtitle: Text(

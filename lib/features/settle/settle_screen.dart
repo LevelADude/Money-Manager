@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../profile/profile_providers.dart';
@@ -23,9 +24,10 @@ class SettleScreen extends ConsumerWidget {
         const <AppTransaction>[];
     final names =
         ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+    final l = AppLocalizations.of(context);
 
     String nameOf(String id) =>
-        names[id]?.isNotEmpty == true ? names[id]! : 'Unbekannt';
+        names[id]?.isNotEmpty == true ? names[id]! : l.unknownPerson;
 
     final ownerOf = {for (final a in accounts) a.id: a.ownerId};
     final members = <String>{
@@ -71,14 +73,12 @@ class SettleScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ausgleich')),
+      appBar: AppBar(title: Text(l.settleTitle)),
       body: members.length < 2
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                    'Für den Ausgleich werden mindestens zwei Personen mit '
-                    'eigenen Konten benötigt.'),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.settleNeedsTwo),
               ),
             )
           : ListView(
@@ -90,7 +90,7 @@ class SettleScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Geteilte Ausgaben diesen Monat',
+                        Text(l.sharedExpensesMonth,
                             style: Theme.of(context).textTheme.labelLarge),
                         const SizedBox(height: 4),
                         MoneyText(total,
@@ -102,7 +102,7 @@ class SettleScreen extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Fairer Anteil je Person',
+                            Text(l.fairSharePerPerson,
                                 style: Theme.of(context).textTheme.bodySmall),
                             MoneyText(share),
                           ],
@@ -112,7 +112,7 @@ class SettleScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text('Salden je Person',
+                Text(l.balancesPerPerson,
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
@@ -122,7 +122,7 @@ class SettleScreen extends ConsumerWidget {
                     dense: true,
                     leading: CircleAvatar(child: Text(nameOf(m)[0])),
                     title: Text(nameOf(m)),
-                    subtitle: MoneyText(spent[m]!, prefix: 'ausgegeben '),
+                    subtitle: MoneyText(spent[m]!, prefix: l.spentPrefix),
                     trailing: MoneyText(
                       balance[m]!,
                       prefix: balance[m]! > 0 ? '+' : '',
@@ -135,16 +135,16 @@ class SettleScreen extends ConsumerWidget {
                     ),
                   ),
                 const Divider(height: 24),
-                Text('Ausgleichsvorschlag',
+                Text(l.settleSuggestion,
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 if (plan.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Alles ausgeglichen 🎉'),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(l.allSettled),
                   )
                 else
                   for (final p in plan)
@@ -160,9 +160,7 @@ class SettleScreen extends ConsumerWidget {
                     ),
                 const SizedBox(height: 12),
                 Text(
-                  'Hinweis: Es werden alle Ausgaben des Monats gleichmäßig auf '
-                  'alle Personen aufgeteilt (Haushalts-Modell). Wer mehr bezahlt '
-                  'hat, bekommt etwas zurück.',
+                  l.settleHint,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/app_transaction.dart';
 import '../../data/models/recurring_rule.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../recurring/recurring_providers.dart';
 import '../transactions/transaction_providers.dart';
@@ -32,6 +33,7 @@ class PlanningScreen extends ConsumerWidget {
         const <AppTransaction>[];
     final rules = ref.watch(recurringRulesProvider).asData?.value ??
         const <RecurringRule>[];
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
 
     var incomeMonth = 0;
@@ -81,7 +83,7 @@ class PlanningScreen extends ConsumerWidget {
     final projectedNet = incomeMonth - projectedExpense;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verfügbar & Fixkosten')),
+      appBar: AppBar(title: Text(l.morePlanning)),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -91,7 +93,7 @@ class PlanningScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Verfügbar bis Monatsende',
+                  Text(l.availableUntilMonthEnd,
                       style: Theme.of(context).textTheme.labelLarge),
                   const SizedBox(height: 4),
                   MoneyText(
@@ -104,9 +106,9 @@ class PlanningScreen extends ConsumerWidget {
                         ),
                   ),
                   const Divider(height: 24),
-                  _line(context, 'Einnahmen (Monat)', incomeMonth),
-                  _line(context, '− Ausgaben bisher', -expenseMonth),
-                  _line(context, '− offene Fixkosten', -upcomingFix),
+                  _line(context, l.incomeMonthLabel, incomeMonth),
+                  _line(context, l.minusExpensesSoFar, -expenseMonth),
+                  _line(context, l.minusOpenFixed, -upcomingFix),
                 ],
               ),
             ),
@@ -122,7 +124,7 @@ class PlanningScreen extends ConsumerWidget {
                     children: [
                       const Icon(Icons.trending_up, size: 20),
                       const SizedBox(width: 8),
-                      Text('Hochrechnung Monatsende',
+                      Text(l.projectionMonthEnd,
                           style: Theme.of(context)
                               .textTheme
                               .titleSmall
@@ -133,22 +135,22 @@ class PlanningScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Ausgaben voraussichtlich'),
+                      Text(l.expectedExpenses),
                       MoneyText(projectedExpense,
                           style:
                               const TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Text(
-                    'bei aktuellem Tempo (Tag $daysElapsed von $daysInMonth)'
-                    '${projDeltaPct == null ? '' : ' · ${projDeltaPct >= 0 ? '+' : ''}${projDeltaPct.round()} % ggü. Vormonat'}',
+                    '${l.atCurrentPace(daysElapsed, daysInMonth)}'
+                    '${projDeltaPct == null ? '' : ' · ${l.vsPrevMonthPct('${projDeltaPct >= 0 ? '+' : ''}${projDeltaPct.round()}')}'}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Voraussichtl. Saldo'),
+                      Text(l.expectedBalance),
                       MoneyText(
                         projectedNet,
                         style: TextStyle(
@@ -168,7 +170,7 @@ class PlanningScreen extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: Text('Fixkosten (monatlich)',
+                child: Text(l.fixedCostsMonthly,
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
@@ -180,12 +182,10 @@ class PlanningScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           if (fixedExpenses.isEmpty)
-            const Card(
+            Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                    'Keine wiederkehrenden Ausgaben. Lege Daueraufträge unter '
-                    '„Mehr → Daueraufträge" an.'),
+                padding: const EdgeInsets.all(16),
+                child: Text(l.noFixedCosts),
               ),
             )
           else
@@ -194,10 +194,10 @@ class PlanningScreen extends ConsumerWidget {
                 margin: const EdgeInsets.only(bottom: 6),
                 child: ListTile(
                   leading: const Icon(Icons.repeat),
-                  title: Text(r.title.isEmpty ? 'Dauerauftrag' : r.title),
+                  title: Text(r.title.isEmpty ? l.standingOrderNoun : r.title),
                   subtitle: Text(
-                      'Nächste: ${df.format(r.nextDue)} · alle '
-                      '${r.intervalCount} ${r.intervalUnit.label}'),
+                      '${l.nextDuePrefix(df.format(r.nextDue))} · '
+                      '${l.everyInterval(r.intervalCount, r.intervalUnit)}'),
                   trailing: MoneyText(r.amountCents,
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),

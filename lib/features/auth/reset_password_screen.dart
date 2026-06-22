@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'auth_providers.dart';
 
 /// Neues Passwort setzen (nach Klick auf den Reset-Link / Recovery-Session).
@@ -30,23 +31,26 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     try {
       await ref.read(authRepositoryProvider).updatePassword(_pw.text);
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Passwort aktualisiert')));
+            SnackBar(content: Text(l.passwordUpdated)));
         context.go('/');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
+            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Neues Passwort')),
+      appBar: AppBar(title: Text(l.newPasswordTitle)),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -58,17 +62,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Lege ein neues Passwort fest.'),
+                  Text(l.setNewPasswordHint),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _pw,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Neues Passwort',
-                      prefixIcon: Icon(Icons.lock_outline),
+                    decoration: InputDecoration(
+                      labelText: l.newPasswordLabel,
+                      prefixIcon: const Icon(Icons.lock_outline),
                     ),
                     validator: (v) =>
-                        (v == null || v.length < 6) ? 'Mind. 6 Zeichen' : null,
+                        (v == null || v.length < 6) ? l.passwordMin : null,
                   ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
@@ -79,7 +83,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.check),
-                    label: const Text('Speichern'),
+                    label: Text(l.save),
                   ),
                 ],
               ),

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
@@ -81,11 +82,12 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   }
 
   Future<void> _import() async {
+    final l = AppLocalizations.of(context);
     final text = _input.text.trim();
     if (text.isEmpty) return;
     setState(() {
       _busy = true;
-      _status = 'Importiere …';
+      _status = l.importing;
     });
     try {
       final accounts =
@@ -100,7 +102,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           .where((l) => l.trim().isNotEmpty)
           .toList();
       if (lines.isEmpty) {
-        setState(() => _status = 'Keine Zeilen erkannt.');
+        setState(() => _status = l.noLinesDetected);
         return;
       }
       final delim = lines.first.contains(';') ? ';' : ',';
@@ -116,8 +118,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       final iTitle = col('titel');
       final iNote = col('notiz');
       if (iDate < 0 || iAmount < 0 || iAccount < 0) {
-        setState(() => _status =
-            'Kopfzeile braucht mind. Spalten: Datum, Betrag, Konto.');
+        setState(() => _status = l.csvHeaderNeeds);
         return;
       }
 
@@ -159,10 +160,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
         imported++;
       }
       ref.invalidate(allTransactionsProvider);
-      setState(() => _status =
-          '$imported importiert, $skipped übersprungen (kein Konto/Datum/Betrag).');
+      setState(() => _status = l.importResult(imported, skipped));
     } catch (e) {
-      setState(() => _status = 'Fehler: $e');
+      setState(() => _status = l.errorWith(e));
     } finally {
       setState(() => _busy = false);
     }
@@ -170,15 +170,13 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('CSV-Import')),
+      appBar: AppBar(title: Text(l.moreImport)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Füge hier CSV-Daten ein (Trenner „;" oder „,"). '
-              'Erwartete Spalten in der Kopfzeile: Datum, Typ, Betrag, Konto, '
-              'Zielkonto, Kategorie, Titel, Notiz. Konten und Kategorien werden '
-              'über den Namen zugeordnet (vorher anlegen).'),
+          Text(l.csvImportIntro),
           const SizedBox(height: 12),
           TextField(
             controller: _input,
@@ -194,7 +192,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           FilledButton.icon(
             onPressed: _busy ? null : _import,
             icon: const Icon(Icons.file_download_outlined),
-            label: const Text('Importieren'),
+            label: Text(l.importAction),
           ),
           if (_busy)
             const Padding(

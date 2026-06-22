@@ -8,6 +8,7 @@ import 'app.dart';
 import 'config/app_config.dart';
 import 'data/local/app_cache.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -92,15 +93,27 @@ class _BootstrapState extends State<_Bootstrap> {
       );
     }
 
+    // Sprache aus den Einstellungen (Default Deutsch) – auch schon vor der
+    // Riverpod-Initialisierung, damit Lade- und Onboarding-Screen lokalisiert
+    // sind.
+    final locale =
+        Locale(widget.prefs.getString('settings_locale') == 'en' ? 'en' : 'de');
+
     if (_initializing) {
-      return const MaterialApp(
+      return MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       theme: ThemeData(
         colorSchemeSeed: const Color(0xFF2E7D32),
         useMaterial3: true,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../transactions/person_filter.dart';
 import 'profile_providers.dart';
@@ -20,12 +21,13 @@ class ProfileSwitcher extends ConsumerWidget {
     final names =
         ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
     final selected = ref.watch(personFilterProvider);
+    final l = AppLocalizations.of(context);
 
     String nameOf(String id) =>
-        names[id]?.isNotEmpty == true ? names[id]! : 'Person';
+        names[id]?.isNotEmpty == true ? names[id]! : l.personFallback;
     final myName = myId == null
-        ? 'Ich'
-        : (names[myId]?.isNotEmpty == true ? names[myId]! : 'Ich');
+        ? l.meWord
+        : (names[myId]?.isNotEmpty == true ? names[myId]! : l.meWord);
 
     // Avatar-Inhalt: Gruppen-Icon bei „Alle", sonst Initiale der Person.
     Widget avatar() {
@@ -43,7 +45,7 @@ class ProfileSwitcher extends ConsumerWidget {
     final hasOthers = otherOwners.isNotEmpty;
 
     return PopupMenuButton<String?>(
-      tooltip: 'Person wechseln',
+      tooltip: l.switchPerson,
       offset: const Offset(0, 48),
       icon: CircleAvatar(
         radius: 15,
@@ -59,7 +61,7 @@ class ProfileSwitcher extends ConsumerWidget {
           CheckedPopupMenuItem<String?>(
             value: myId,
             checked: selected == myId,
-            child: Text('$myName (ich)'),
+            child: Text(l.nameWithMe(myName)),
           ),
         // „Alle Personen" nur anzeigen, wenn es überhaupt andere gibt – sonst
         // wäre es identisch zur Eigenansicht (und schien „ohne Funktion").
@@ -67,7 +69,7 @@ class ProfileSwitcher extends ConsumerWidget {
           CheckedPopupMenuItem<String?>(
             value: null,
             checked: selected == null,
-            child: const Text('Alle Personen (gesamt)'),
+            child: Text(l.allPersons),
           ),
         for (final o in otherOwners)
           CheckedPopupMenuItem<String?>(
