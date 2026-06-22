@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
-import '../../data/models/recurring_rule.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
@@ -22,25 +22,26 @@ class RecurringScreen extends ConsumerWidget {
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
+    final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Daueraufträge')),
+      appBar: AppBar(title: Text(l.moreRecurring)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/more/recurring/new'),
         icon: const Icon(Icons.add),
-        label: const Text('Dauerauftrag'),
+        label: Text(l.recurringFab),
       ),
       body: rulesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Fehler: $e')),
+        error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (rules) {
           if (rules.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Noch keine Daueraufträge.\nLege z. B. Miete oder Gehalt an.',
+                  l.noRecurring,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -56,12 +57,12 @@ class RecurringScreen extends ConsumerWidget {
               final title = r.title.isNotEmpty
                   ? r.title
                   : (r.categoryId != null
-                      ? (catNames[r.categoryId] ?? r.type.label)
-                      : r.type.label);
+                      ? (catNames[r.categoryId] ?? l.transactionType(r.type))
+                      : l.transactionType(r.type));
               final acc = accountNames[r.accountId] ?? '';
-              final sub = '$acc · alle ${r.intervalCount} ${r.intervalUnit.label}'
-                  ' · nächste: ${df.format(r.nextDue)}'
-                  '${r.active ? '' : ' · pausiert'}';
+              final sub = '$acc · ${l.everyInterval(r.intervalCount, r.intervalUnit)}'
+                  ' · ${l.nextDuePrefix(df.format(r.nextDue))}'
+                  '${r.active ? '' : ' · ${l.paused}'}';
               return ListTile(
                 onTap: () => context.go('/more/recurring/${r.id}/edit'),
                 leading: CircleAvatar(

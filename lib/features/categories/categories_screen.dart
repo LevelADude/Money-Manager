@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/category.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
 import 'category_providers.dart';
 
@@ -11,28 +12,31 @@ class CategoriesScreen extends ConsumerWidget {
   const CategoriesScreen({super.key});
 
   Future<void> _addDialog(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final controller = TextEditingController();
     var kind = CategoryKind.expense;
     final result = await showDialog<({String name, CategoryKind kind})>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('Neue Kategorie'),
+          title: Text(l.newCategory),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: controller,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(labelText: l.name),
               ),
               const SizedBox(height: 16),
               SegmentedButton<CategoryKind>(
-                segments: const [
+                segments: [
                   ButtonSegment(
-                      value: CategoryKind.expense, label: Text('Ausgabe')),
+                      value: CategoryKind.expense,
+                      label: Text(l.expenseSingular)),
                   ButtonSegment(
-                      value: CategoryKind.income, label: Text('Einnahme')),
+                      value: CategoryKind.income,
+                      label: Text(l.incomeSingular)),
                 ],
                 selected: {kind},
                 onSelectionChanged: (s) => setState(() => kind = s.first),
@@ -42,14 +46,14 @@ class CategoriesScreen extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen'),
+              child: Text(l.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(
                 ctx,
                 (name: controller.text.trim(), kind: kind),
               ),
-              child: const Text('Anlegen'),
+              child: Text(l.create),
             ),
           ],
         ),
@@ -64,17 +68,18 @@ class CategoriesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final catsAsync = ref.watch(categoriesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Kategorien')),
+      appBar: AppBar(title: Text(l.moreCategories)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addDialog(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Kategorie'),
+        label: Text(l.category),
       ),
       body: catsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Fehler: $e')),
+        error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (items) {
           final expense =
               items.where((c) => c.kind == CategoryKind.expense).toList();
@@ -82,9 +87,9 @@ class CategoriesScreen extends ConsumerWidget {
               items.where((c) => c.kind == CategoryKind.income).toList();
           return ListView(
             children: [
-              const _SectionHeader('Ausgaben'),
+              _SectionHeader(l.expenses),
               _ReorderableCats(items: expense),
-              const _SectionHeader('Einnahmen'),
+              _SectionHeader(l.income),
               _ReorderableCats(items: income),
               const SizedBox(height: 80),
             ],
@@ -191,10 +196,11 @@ class _CategoryTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     return ListTile(
       leading: Icon(iconForToken(category.icon)),
       title: Text(category.name),
-      subtitle: Text(category.isPreset ? 'Vorlage' : 'Eigene'),
+      subtitle: Text(category.isPreset ? l.preset : l.custom),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -205,7 +211,7 @@ class _CategoryTile extends ConsumerWidget {
                 .setActive(id: category.id, active: v),
           ),
           IconButton(
-            tooltip: 'Löschen',
+            tooltip: l.delete,
             icon: const Icon(Icons.delete_outline),
             onPressed: () =>
                 ref.read(categoryRepositoryProvider).deleteCategory(category.id),

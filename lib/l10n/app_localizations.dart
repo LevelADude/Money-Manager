@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../data/models/account.dart';
 import '../data/models/app_transaction.dart';
+import '../data/models/recurring_rule.dart';
 
 /// Leichtgewichtige, hand-gepflegte Lokalisierung (DE/EN).
 ///
@@ -445,6 +446,31 @@ class AppLocalizations {
   String perMonthNeeded(String x) => _t('$x/Monat nötig', '$x/month needed');
   String get ofWithSpace => _t('von ', 'of ');
   String get goalReached => _t('Ziel erreicht! 🎉', 'Goal reached! 🎉');
+
+  // ---- Kategorien ----
+  String get newCategory => _t('Neue Kategorie', 'New category');
+  String get create => _t('Anlegen', 'Create');
+  String get expenseSingular => _t('Ausgabe', 'Expense');
+  String get incomeSingular => _t('Einnahme', 'Income');
+  String get preset => _t('Vorlage', 'Preset');
+  String get custom => _t('Eigene', 'Custom');
+
+  // ---- Daueraufträge ----
+  String get recurringFab => _t('Dauerauftrag', 'Standing order');
+  String get noRecurring => _t(
+      'Noch keine Daueraufträge.\nLege z. B. Miete oder Gehalt an.',
+      'No standing orders yet.\nAdd e.g. rent or salary.');
+  String get paused => _t('pausiert', 'paused');
+  String intervalUnitLabel(IntervalUnit u) => switch (u) {
+        IntervalUnit.day => _t('Tag(e)', 'day(s)'),
+        IntervalUnit.week => _t('Woche(n)', 'week(s)'),
+        IntervalUnit.month => _t('Monat(e)', 'month(s)'),
+        IntervalUnit.year => _t('Jahr(e)', 'year(s)'),
+      };
+  String everyInterval(int count, IntervalUnit unit) => _t(
+      'alle $count ${intervalUnitLabel(unit)}',
+      'every $count ${intervalUnitLabel(unit)}');
+  String nextDuePrefix(String date) => _t('nächste: $date', 'next: $date');
 }
 
 class _AppLocalizationsDelegate
