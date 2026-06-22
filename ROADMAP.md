@@ -1,5 +1,7 @@
 # Money-Manager · Roadmap
 
+🇩🇪 **Deutsch** · [🇬🇧 English](ROADMAP.en.md)
+
 Vollwertige **Personal-Finance-App** für eine kleine, vertrauenswürdige Gruppe –
 eine Flutter-Codebasis für **Windows · Android · Web**, Backend **Supabase**.
 

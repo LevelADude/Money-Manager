@@ -1,5 +1,7 @@
 # Money-Manager
 
+🇩🇪 **Deutsch** · [🇬🇧 English](README.en.md)
+
 Gemeinsame **Finanz-Buchhaltung für eine kleine, vertraute Gruppe** – als
 native App für **Windows** und **Android** aus einer einzigen Codebasis
 (Flutter). Jede Person führt ihre Bücher getrennt, aber alle Mitglieder können

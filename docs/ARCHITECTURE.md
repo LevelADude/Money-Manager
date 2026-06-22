@@ -1,5 +1,7 @@
 # Architektur
 
+🇩🇪 **Deutsch** · [🇬🇧 English](ARCHITECTURE.en.md)
+
 ## Überblick
 
 ```

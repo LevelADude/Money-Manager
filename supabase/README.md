@@ -1,5 +1,7 @@
 # Supabase-Backend einrichten
 
+🇩🇪 **Deutsch** · [🇬🇧 English](README.en.md)
+
 Das gesamte Backend (Datenbank, Auth, Realtime-Sync) läuft auf Supabase.
 Die App braucht nur **Projekt-URL** + **anon (publishable) Key**.
 
