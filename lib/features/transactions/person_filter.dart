@@ -18,8 +18,9 @@ class PersonFilterNotifier extends Notifier<String?> {
   void set(String? ownerId) => state = ownerId;
 }
 
-final personFilterProvider =
-    NotifierProvider<PersonFilterNotifier, String?>(PersonFilterNotifier.new);
+final personFilterProvider = NotifierProvider<PersonFilterNotifier, String?>(
+  PersonFilterNotifier.new,
+);
 
 /// Auswahloptionen: (ownerId, Anzeigename) für alle Konto-Besitzer.
 final ownerOptionsProvider = Provider<List<({String id, String name})>>((ref) {
@@ -55,9 +56,11 @@ final _personAccountIdsProvider = Provider<Set<String>?>((ref) {
 });
 
 /// Buchungen, gefiltert auf die gewählte Person (eigene + geteilte Konten).
-final personFilteredTransactionsProvider =
-    Provider<List<AppTransaction>>((ref) {
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+final personFilteredTransactionsProvider = Provider<List<AppTransaction>>((
+  ref,
+) {
+  final txs =
+      ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
   final ids = ref.watch(_personAccountIdsProvider);
   if (ids == null) return txs;

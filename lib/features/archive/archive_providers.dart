@@ -17,8 +17,7 @@ final archiveRepositoryProvider = Provider<ArchiveRepository>((ref) {
 });
 
 /// Status der Archiv-Repo-Verbindung (eingerichtet? welches Repo?).
-final archiveConfigStatusProvider =
-    FutureProvider<ArchiveConfigStatus>((ref) {
+final archiveConfigStatusProvider = FutureProvider<ArchiveConfigStatus>((ref) {
   return ref.watch(archiveRepositoryProvider).archiveConfigStatus();
 });
 
@@ -52,11 +51,13 @@ final archivedYearSetProvider = Provider<Set<int>>((ref) {
 /// neueste zuerst. Wird in der read-only-Ansicht angezeigt.
 final archivedYearTransactionsProvider =
     FutureProvider.family<List<AppTransaction>, int>((ref, year) async {
-  final data = await ref.watch(archiveRepositoryProvider).loadArchivedYear(year);
-  final rows = (data['transactions'] as List?) ?? const [];
-  final txs = [
-    for (final r in rows)
-      AppTransaction.fromJson(Map<String, dynamic>.from(r as Map)),
-  ]..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
-  return txs;
-});
+      final data = await ref
+          .watch(archiveRepositoryProvider)
+          .loadArchivedYear(year);
+      final rows = (data['transactions'] as List?) ?? const [];
+      final txs = [
+        for (final r in rows)
+          AppTransaction.fromJson(Map<String, dynamic>.from(r as Map)),
+      ]..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
+      return txs;
+    });

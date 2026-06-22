@@ -12,13 +12,28 @@ final _isoDateRe = RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})');
 
 // Zeilen, die auf den Gesamtbetrag hindeuten (bewusst ohne "eur" – zu häufig).
 const _totalKeywords = [
-  'summe', 'gesamt', 'total', 'zu zahlen', 'zahlbetrag', 'betrag',
+  'summe',
+  'gesamt',
+  'total',
+  'zu zahlen',
+  'zahlbetrag',
+  'betrag',
 ];
 
 // Generische Kopfzeilen, die kein Händlername sind.
 const _merchantSkip = [
-  'rechnung', 'quittung', 'beleg', 'kassenbon', 'tel', 'telefon',
-  'www', 'http', 'datum', 'uhrzeit', 'steuer', 'ust',
+  'rechnung',
+  'quittung',
+  'beleg',
+  'kassenbon',
+  'tel',
+  'telefon',
+  'www',
+  'http',
+  'datum',
+  'uhrzeit',
+  'steuer',
+  'ust',
 ];
 
 ReceiptScan parseReceiptText(String raw) {
@@ -70,7 +85,10 @@ DateTime? _buildDate(int day, int month, int year) {
 DateTime? _extractDate(String raw) {
   for (final m in _isoDateRe.allMatches(raw)) {
     final d = _buildDate(
-        int.parse(m.group(3)!), int.parse(m.group(2)!), int.parse(m.group(1)!));
+      int.parse(m.group(3)!),
+      int.parse(m.group(2)!),
+      int.parse(m.group(1)!),
+    );
     if (d != null) return d;
   }
   for (final m in _dateRe.allMatches(raw)) {
@@ -102,9 +120,11 @@ String? _extractMerchant(List<String> lines) {
 String _titleCase(String s) {
   final words = s.split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
   final result = words
-      .map((w) => w.length == 1
-          ? w.toUpperCase()
-          : w[0].toUpperCase() + w.substring(1).toLowerCase())
+      .map(
+        (w) => w.length == 1
+            ? w.toUpperCase()
+            : w[0].toUpperCase() + w.substring(1).toLowerCase(),
+      )
       .join(' ');
   return result.length > 40 ? result.substring(0, 40).trim() : result;
 }

@@ -45,9 +45,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Wenn E-Mail-Bestätigung aktiv ist, gibt es noch keine Session.
         if (res.session == null && mounted) {
           setState(() => _isSignUp = false);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(AppLocalizations.of(context).almostDone),
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).almostDone)),
+          );
         }
       } else {
         await auth.signIn(email: _email.text.trim(), password: _password.text);
@@ -64,8 +64,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _forgotPassword() async {
@@ -86,10 +87,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.cancel),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, emailCtrl.text.trim()),
-              child: Text(l.sendLink)),
+            onPressed: () => Navigator.pop(ctx, emailCtrl.text.trim()),
+            child: Text(l.sendLink),
+          ),
         ],
       ),
     );
@@ -97,8 +101,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(authRepositoryProvider).resetPassword(email);
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.resetSent)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.resetSent)));
       }
     } catch (e) {
       _showError('Fehler: $e');
@@ -193,22 +198,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Zuruecksetzen) oder gar keine feste Verbindung eingebaut ist
                   // (Fork). Fuer normale Besucher der Standard-Instanz bleibt er
                   // verborgen.
-                  Builder(builder: (context) {
-                    final config = ref.watch(appConfigProvider);
-                    if (config.hasBakedDefault && !config.isUsingOverride) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: TextButton.icon(
-                        onPressed: _loading
-                            ? null
-                            : () => showConnectionEditor(context, ref),
-                        icon: const Icon(Icons.dns_outlined, size: 18),
-                        label: Text(l.changeDbConnection),
-                      ),
-                    );
-                  }),
+                  Builder(
+                    builder: (context) {
+                      final config = ref.watch(appConfigProvider);
+                      if (config.hasBakedDefault && !config.isUsingOverride) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: TextButton.icon(
+                          onPressed: _loading
+                              ? null
+                              : () => showConnectionEditor(context, ref),
+                          icon: const Icon(Icons.dns_outlined, size: 18),
+                          label: Text(l.changeDbConnection),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

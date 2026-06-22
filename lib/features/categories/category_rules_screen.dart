@@ -12,11 +12,13 @@ class CategoryRulesScreen extends ConsumerWidget {
 
   Future<void> _addRule(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
-    final cats = (ref.read(categoriesProvider).asData?.value ??
-            const <Category>[])
-        .where((c) => c.active)
-        .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final cats =
+        (ref.read(categoriesProvider).asData?.value ?? const <Category>[])
+            .where((c) => c.active)
+            .toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
     if (cats.isEmpty) return;
     final keywordCtrl = TextEditingController();
     var categoryId = cats.first.id;
@@ -51,8 +53,11 @@ class CategoryRulesScreen extends ConsumerWidget {
                           Icon(iconForToken(c.icon), size: 18),
                           const SizedBox(width: 8),
                           Flexible(
-                              child: Text(c.name,
-                                  overflow: TextOverflow.ellipsis)),
+                            child: Text(
+                              c.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -63,11 +68,13 @@ class CategoryRulesScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(l.cancel)),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l.cancel),
+            ),
             FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(l.create)),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.create),
+            ),
           ],
         ),
       ),

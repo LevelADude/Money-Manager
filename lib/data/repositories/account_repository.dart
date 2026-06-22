@@ -16,7 +16,9 @@ class AccountRepository {
     final list = accs.toList()
       ..sort((a, b) {
         final c = a.sortOrder.compareTo(b.sortOrder);
-        return c != 0 ? c : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        return c != 0
+            ? c
+            : a.name.toLowerCase().compareTo(b.name.toLowerCase());
       });
     return list;
   }
@@ -25,7 +27,8 @@ class AccountRepository {
     final cached = _cache.readRows('accounts');
     if (cached.isNotEmpty) {
       yield _sorted(
-          cached.where((r) => r['deleted_at'] == null).map(Account.fromJson));
+        cached.where((r) => r['deleted_at'] == null).map(Account.fromJson),
+      );
     }
     try {
       yield* _client
@@ -33,11 +36,14 @@ class AccountRepository {
           .stream(primaryKey: ['id'])
           .order('sort_order')
           .map((rows) {
-        final unique = dedupRowsById(rows);
-        _cache.writeRows('accounts', unique);
-        return _sorted(
-            unique.where((r) => r['deleted_at'] == null).map(Account.fromJson));
-      });
+            final unique = dedupRowsById(rows);
+            _cache.writeRows('accounts', unique);
+            return _sorted(
+              unique
+                  .where((r) => r['deleted_at'] == null)
+                  .map(Account.fromJson),
+            );
+          });
     } catch (_) {
       // Offline: beim Cache bleiben.
     }
@@ -49,7 +55,8 @@ class AccountRepository {
       for (final o in orders)
         _client
             .from('accounts')
-            .update({'sort_order': o.sortOrder}).eq('id', o.id),
+            .update({'sort_order': o.sortOrder})
+            .eq('id', o.id),
     ]);
   }
 
@@ -64,16 +71,20 @@ class AccountRepository {
     int? creditLimitCents,
     bool includeInNetWorth = true,
   }) async {
-    final row = await _client.from('accounts').insert({
-      'name': name,
-      'type': accountTypeToDb(type),
-      'currency': currency,
-      'opening_balance_cents': openingBalanceCents,
-      'icon': icon,
-      'color': color,
-      'credit_limit_cents': creditLimitCents,
-      'include_in_net_worth': includeInNetWorth,
-    }).select('id').single();
+    final row = await _client
+        .from('accounts')
+        .insert({
+          'name': name,
+          'type': accountTypeToDb(type),
+          'currency': currency,
+          'opening_balance_cents': openingBalanceCents,
+          'icon': icon,
+          'color': color,
+          'credit_limit_cents': creditLimitCents,
+          'include_in_net_worth': includeInNetWorth,
+        })
+        .select('id')
+        .single();
     return row['id'] as String;
   }
 
@@ -111,10 +122,12 @@ class AccountRepository {
     final now = DateTime.now().toUtc().toIso8601String();
     await _client
         .from('transactions')
-        .update({'deleted_at': now}).eq('account_id', id);
+        .update({'deleted_at': now})
+        .eq('account_id', id);
     await _client
         .from('transactions')
-        .update({'deleted_at': now}).eq('transfer_account_id', id);
+        .update({'deleted_at': now})
+        .eq('transfer_account_id', id);
     await _client.from('accounts').update({'deleted_at': now}).eq('id', id);
     _cache.removeFromCache('accounts', id);
     _cache.removeWhereFromCache(

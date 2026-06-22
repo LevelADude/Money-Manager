@@ -67,13 +67,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final sql = await rootBundle.loadString('supabase/setup.sql');
       await Clipboard.setData(ClipboardData(text: sql));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.sqlCopied)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.sqlCopied)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l.sqlLoadFailed(e))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.sqlLoadFailed(e))));
     }
   }
 
@@ -122,11 +123,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(Icons.cloud_sync_outlined,
-            size: 48, color: theme.colorScheme.primary),
+        Icon(
+          Icons.cloud_sync_outlined,
+          size: 48,
+          color: theme.colorScheme.primary,
+        ),
         const SizedBox(height: 12),
-        Text(l.welcomeTitle,
-            textAlign: TextAlign.center, style: theme.textTheme.headlineSmall),
+        Text(
+          l.welcomeTitle,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineSmall,
+        ),
         const SizedBox(height: 8),
         Text(
           l.welcomeBody,
@@ -219,14 +226,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline,
-                      color: theme.colorScheme.onErrorContainer),
+                  Icon(
+                    Icons.error_outline,
+                    color: theme.colorScheme.onErrorContainer,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       l.connectionFailed(_error!),
                       style: TextStyle(
-                          color: theme.colorScheme.onErrorContainer),
+                        color: theme.colorScheme.onErrorContainer,
+                      ),
                     ),
                   ),
                 ],
@@ -295,9 +305,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             prefixIcon: const Icon(Icons.key_outlined),
             border: const OutlineInputBorder(),
           ),
-          validator: (v) => (v == null || v.trim().length < 20)
-              ? l.enterKey
-              : null,
+          validator: (v) =>
+              (v == null || v.trim().length < 20) ? l.enterKey : null,
         ),
       ],
     );
@@ -338,9 +347,12 @@ class _ChoiceCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text(subtitle, style: theme.textTheme.bodySmall),
                   ],
@@ -379,19 +391,25 @@ class _StepCard extends StatelessWidget {
             CircleAvatar(
               radius: 14,
               backgroundColor: theme.colorScheme.primary,
-              child: Text(number,
-                  style: TextStyle(
-                      color: theme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold)),
+              child: Text(
+                number,
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   child,
                 ],

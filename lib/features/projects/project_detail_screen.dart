@@ -20,11 +20,12 @@ class ProjectDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lt = tag.toLowerCase();
-    final txs = (ref.watch(allTransactionsProvider).asData?.value ??
-            const <AppTransaction>[])
-        .where((t) => t.tags.any((x) => x.toLowerCase() == lt))
-        .toList()
-      ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
+    final txs =
+        (ref.watch(allTransactionsProvider).asData?.value ??
+                const <AppTransaction>[])
+            .where((t) => t.tags.any((x) => x.toLowerCase() == lt))
+            .toList()
+          ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
     final accounts =
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
@@ -51,10 +52,14 @@ class ProjectDetailScreen extends ConsumerWidget {
                 children: [
                   _kpi(context, l.income, income, Colors.green.shade700),
                   _kpi(context, l.expenses, expense, Colors.red.shade700),
-                  _kpi(context, l.balance, income - expense,
-                      (income - expense) >= 0
-                          ? Colors.green.shade700
-                          : Colors.red.shade700),
+                  _kpi(
+                    context,
+                    l.balance,
+                    income - expense,
+                    (income - expense) >= 0
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
+                  ),
                 ],
               ),
             ),
@@ -63,13 +68,17 @@ class ProjectDetailScreen extends ConsumerWidget {
           for (final t in txs)
             ListTile(
               dense: true,
-              title: Text(t.title.isEmpty
-                  ? (t.categoryId == null
-                      ? l.transactionType(t.type)
-                      : (catNames[t.categoryId] ?? l.transactionType(t.type)))
-                  : t.title),
+              title: Text(
+                t.title.isEmpty
+                    ? (t.categoryId == null
+                          ? l.transactionType(t.type)
+                          : (catNames[t.categoryId] ??
+                                l.transactionType(t.type)))
+                    : t.title,
+              ),
               subtitle: Text(
-                  '${df.format(t.occurredOn)} · ${accountNames[t.accountId] ?? ''}'),
+                '${df.format(t.occurredOn)} · ${accountNames[t.accountId] ?? ''}',
+              ),
               trailing: MoneyText(
                 t.amountCents,
                 prefix: switch (t.type) {
@@ -91,8 +100,10 @@ class ProjectDetailScreen extends ConsumerWidget {
       children: [
         Text(label, style: Theme.of(context).textTheme.labelSmall),
         const SizedBox(height: 2),
-        MoneyText(cents,
-            style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+        MoneyText(
+          cents,
+          style: TextStyle(fontWeight: FontWeight.bold, color: color),
+        ),
       ],
     );
   }

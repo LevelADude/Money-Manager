@@ -20,12 +20,12 @@ class SavingsGoal {
   bool get reached => targetCents > 0 && savedCents >= targetCents;
 
   factory SavingsGoal.fromJson(Map<String, dynamic> json) => SavingsGoal(
-        id: json['id'] as String,
-        name: (json['name'] as String?) ?? '',
-        targetCents: (json['target_cents'] as num?)?.toInt() ?? 0,
-        savedCents: (json['saved_cents'] as num?)?.toInt() ?? 0,
-        targetDate: json['target_date'] == null
-            ? null
-            : DateTime.parse(json['target_date'] as String),
-      );
+    id: json['id'] as String,
+    name: (json['name'] as String?) ?? '',
+    targetCents: (json['target_cents'] as num?)?.toInt() ?? 0,
+    savedCents: (json['saved_cents'] as num?)?.toInt() ?? 0,
+    targetDate: json['target_date'] == null
+        ? null
+        : DateTime.parse(json['target_date'] as String),
+  );
 }

@@ -55,8 +55,10 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
               ),
             ),
           const SizedBox(height: 8),
-          Text(l.archiveSetupIntro,
-              style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            l.archiveSetupIntro,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _repo,
@@ -107,12 +109,14 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
     final l = AppLocalizations.of(context);
     final repo = _repo.text.trim();
     final token = _token.text.trim();
-    final hasKey = ref.read(archiveConfigStatusProvider).asData?.value.hasKey ?? false;
+    final hasKey =
+        ref.read(archiveConfigStatusProvider).asData?.value.hasKey ?? false;
 
     // Erst-Einrichtung braucht Repo + Token; spätere Änderung braucht nur Repo.
     if (repo.isEmpty || (!hasKey && token.isEmpty)) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l.archiveRepoTokenRequired)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.archiveRepoTokenRequired)));
       return;
     }
 
@@ -120,7 +124,9 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
     try {
       // Beim ersten Einrichten einen Schlüssel erzeugen und einmalig anzeigen.
       final newKey = hasKey ? null : ArchiveRepository.generateEncKey();
-      await ref.read(archiveRepositoryProvider).setArchiveConfig(
+      await ref
+          .read(archiveRepositoryProvider)
+          .setArchiveConfig(
             repo: repo,
             token: token.isEmpty ? null : token,
             encKey: newKey,
@@ -130,12 +136,14 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
       if (!mounted) return;
       if (newKey != null) await _showKeyBackup(newKey);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l.archiveConfigSaved)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.archiveConfigSaved)));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.archiveError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.archiveError(e))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -167,10 +175,7 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
             icon: const Icon(Icons.copy_all_outlined),
             label: Text(l.copyAction),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l.ok),
-          ),
+          FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(l.ok)),
         ],
       ),
     );
@@ -185,10 +190,13 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
         content: Text(l.archiveDisconnectConfirmBody),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.archiveDisconnect)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.archiveDisconnect),
+          ),
         ],
       ),
     );
@@ -201,8 +209,9 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
       _token.clear();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.archiveError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.archiveError(e))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);

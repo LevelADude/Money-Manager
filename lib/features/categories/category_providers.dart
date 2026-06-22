@@ -20,7 +20,8 @@ final categoriesProvider = StreamProvider<List<Category>>((ref) {
 
 /// Map: Kategorie-ID -> Name (für Anzeige auf Buchungen).
 final categoryNamesProvider = Provider<Map<String, String>>((ref) {
-  final cats = ref.watch(categoriesProvider).asData?.value ?? const <Category>[];
+  final cats =
+      ref.watch(categoriesProvider).asData?.value ?? const <Category>[];
   return {for (final c in cats) c.id: c.name};
 });
 

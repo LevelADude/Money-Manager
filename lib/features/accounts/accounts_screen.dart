@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/balances.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/data_refresh.dart';
 import '../../shared/money_text.dart';
@@ -12,6 +13,7 @@ import '../auth/auth_providers.dart';
 import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
 import '../profile/profile_switcher.dart';
+import '../archive/archive_providers.dart';
 import '../recurring/recurring_providers.dart';
 import '../reminders/reminders_providers.dart';
 import '../sharing/account_member_providers.dart';
@@ -48,19 +50,16 @@ class AccountsScreen extends ConsumerWidget {
     final canAddAccount = personFilter == null || personFilter == myId;
     final readOnly = ref.watch(isReadOnlyProvider).asData?.value ?? false;
     final convert = ref.watch(converterProvider);
-    final txs = ref.watch(allTransactionsProvider).asData?.value ??
+    final txs =
+        ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
+    final carryover = ref.watch(archivedCarryoverProvider);
     final memberNames =
-        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.watch(profileNamesProvider).asData?.value ??
+        const <String, String>{};
     final l = AppLocalizations.of(context);
 
-    int balanceOf(Account a) {
-      var s = a.openingBalanceCents;
-      for (final t in txs) {
-        s += t.signedCentsFor(a.id);
-      }
-      return s;
-    }
+    int balanceOf(Account a) => accountBalanceCents(a, txs, carryover);
 
     return Scaffold(
       appBar: AppBar(
@@ -72,23 +71,25 @@ class AccountsScreen extends ConsumerWidget {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               refreshAllData(ref);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l.refreshed)),
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l.refreshed)));
+            },
+          ),
+          Builder(
+            builder: (context) {
+              final count = ref.watch(remindersProvider).length;
+              return IconButton(
+                tooltip: l.moreReminders,
+                icon: Badge(
+                  isLabelVisible: count > 0,
+                  label: Text('$count'),
+                  child: const Icon(Icons.notifications_outlined),
+                ),
+                onPressed: () => context.go('/more/reminders'),
               );
             },
           ),
-          Builder(builder: (context) {
-            final count = ref.watch(remindersProvider).length;
-            return IconButton(
-              tooltip: l.moreReminders,
-              icon: Badge(
-                isLabelVisible: count > 0,
-                label: Text('$count'),
-                child: const Icon(Icons.notifications_outlined),
-              ),
-              onPressed: () => context.go('/more/reminders'),
-            );
-          }),
           IconButton(
             tooltip: l.moreSearch,
             icon: const Icon(Icons.search),
@@ -124,7 +125,9 @@ class AccountsScreen extends ConsumerWidget {
           }
 
           final children = <Widget>[
-            _NetWorthCard(totalCents: ref.watch(netWorthProvider(personFilter))),
+            _NetWorthCard(
+              totalCents: ref.watch(netWorthProvider(personFilter)),
+            ),
           ];
 
           // Vermögen je Person nur in der Gesamtansicht („Alle Personen").
@@ -148,29 +151,35 @@ class AccountsScreen extends ConsumerWidget {
             final group = byType[type];
             if (group == null || group.isEmpty) continue;
             final subtotal = group.fold<int>(
-                0, (s, a) => s + convert(balanceOf(a), a.currency));
-            children.add(_CategoryHeader(
-              label: l.accountType(type),
-              cents: subtotal,
-              isLiability: type.isLiability,
-            ));
+              0,
+              (s, a) => s + convert(balanceOf(a), a.currency),
+            );
+            children.add(
+              _CategoryHeader(
+                label: l.accountType(type),
+                cents: subtotal,
+                isLiability: type.isLiability,
+              ),
+            );
             for (final a in group) {
-              children.add(_AccountTile(
-                account: a,
-                balanceCents: balanceOf(a),
-                currency: a.currency,
-                ownerName: memberNames[a.ownerId] ?? '',
-                shared: membersByAccount[a.id]?.isNotEmpty ?? false,
-                onTap: () => context.go('/account/${a.id}'),
-                onEdit: () => context.go('/account/${a.id}/edit'),
-                onArchive: () async {
-                  await ref
-                      .read(accountRepositoryProvider)
-                      .setArchived(id: a.id, archived: !a.archived);
-                  ref.invalidate(accountsProvider);
-                },
-                onDelete: () => _confirmDelete(context, ref, a),
-              ));
+              children.add(
+                _AccountTile(
+                  account: a,
+                  balanceCents: balanceOf(a),
+                  currency: a.currency,
+                  ownerName: memberNames[a.ownerId] ?? '',
+                  shared: membersByAccount[a.id]?.isNotEmpty ?? false,
+                  onTap: () => context.go('/account/${a.id}'),
+                  onEdit: () => context.go('/account/${a.id}/edit'),
+                  onArchive: () async {
+                    await ref
+                        .read(accountRepositoryProvider)
+                        .setArchived(id: a.id, archived: !a.archived);
+                    ref.invalidate(accountsProvider);
+                  },
+                  onDelete: () => _confirmDelete(context, ref, a),
+                ),
+              );
             }
           }
           return ListView(children: children);
@@ -180,7 +189,10 @@ class AccountsScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(
-      BuildContext context, WidgetRef ref, Account a) async {
+    BuildContext context,
+    WidgetRef ref,
+    Account a,
+  ) async {
     final l = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
@@ -221,16 +233,17 @@ class _NetWorthCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Text(AppLocalizations.of(context).netWorth,
-                style: Theme.of(context).textTheme.labelLarge),
+            Text(
+              AppLocalizations.of(context).netWorth,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
             const SizedBox(height: 6),
             MoneyText(
               totalCents,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color:
-                        positive ? Colors.green.shade700 : Colors.red.shade700,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: positive ? Colors.green.shade700 : Colors.red.shade700,
+              ),
             ),
           ],
         ),
@@ -253,11 +266,12 @@ class _PerPersonCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(AppLocalizations.of(context).wealthPerPerson,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              AppLocalizations.of(context).wealthPerPerson,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             for (final e in entries)
               Padding(
@@ -304,17 +318,18 @@ class _CategoryHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
           MoneyText(
             cents,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: negative ? Colors.red.shade700 : null,
-                ),
+              fontWeight: FontWeight.bold,
+              color: negative ? Colors.red.shade700 : null,
+            ),
           ),
         ],
       ),
@@ -394,9 +409,11 @@ class _AccountTile extends StatelessWidget {
               PopupMenuItem(
                 value: 'archive',
                 child: ListTile(
-                  leading: Icon(account.archived
-                      ? Icons.unarchive_outlined
-                      : Icons.archive_outlined),
+                  leading: Icon(
+                    account.archived
+                        ? Icons.unarchive_outlined
+                        : Icons.archive_outlined,
+                  ),
                   title: Text(account.archived ? l.activate : l.archive),
                 ),
               ),

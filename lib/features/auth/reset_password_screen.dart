@@ -32,16 +32,18 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       await ref.read(authRepositoryProvider).updatePassword(_pw.text);
       if (mounted) {
         final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l.passwordUpdated)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.passwordUpdated)));
         context.go('/');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
         final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
@@ -81,7 +83,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2))
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(Icons.check),
                     label: Text(l.save),
                   ),

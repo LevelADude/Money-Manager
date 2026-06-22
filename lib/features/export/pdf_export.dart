@@ -29,16 +29,21 @@ Future<void> shareTransactionsPdf({
           : pw.Container(
               alignment: pw.Alignment.centerRight,
               margin: const pw.EdgeInsets.only(bottom: 8),
-              child: pw.Text(heading,
-                  style: const pw.TextStyle(
-                      fontSize: 9, color: PdfColors.grey600)),
+              child: pw.Text(
+                heading,
+                style: const pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.grey600,
+                ),
+              ),
             ),
       footer: (ctx) => pw.Container(
         alignment: pw.Alignment.centerRight,
         margin: const pw.EdgeInsets.only(top: 8),
-        child: pw.Text('Seite ${ctx.pageNumber} / ${ctx.pagesCount}',
-            style:
-                const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+        child: pw.Text(
+          'Seite ${ctx.pageNumber} / ${ctx.pagesCount}',
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+        ),
       ),
       build: (ctx) => [
         pw.Header(
@@ -46,13 +51,21 @@ Future<void> shareTransactionsPdf({
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text(heading,
-                  style: pw.TextStyle(
-                      fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.Text(
+                heading,
+                style: pw.TextStyle(
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
               pw.SizedBox(height: 2),
-              pw.Text(periodLabel,
-                  style: const pw.TextStyle(
-                      fontSize: 11, color: PdfColors.grey700)),
+              pw.Text(
+                periodLabel,
+                style: const pw.TextStyle(
+                  fontSize: 11,
+                  color: PdfColors.grey700,
+                ),
+              ),
             ],
           ),
         ),
@@ -75,9 +88,10 @@ Future<void> shareTransactionsPdf({
             headers: headers,
             data: rows,
             headerStyle: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold, fontSize: 10),
-            headerDecoration:
-                const pw.BoxDecoration(color: PdfColors.grey300),
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 10,
+            ),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
             cellStyle: const pw.TextStyle(fontSize: 9),
             cellHeight: 18,
             cellAlignments: {
@@ -115,13 +129,15 @@ pw.Widget _summaryBox({required String label, required String value}) {
     child: pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(label,
-            style:
-                const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+        pw.Text(
+          label,
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+        ),
         pw.SizedBox(height: 2),
-        pw.Text(value,
-            style:
-                pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.Text(
+          value,
+          style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+        ),
       ],
     ),
   );

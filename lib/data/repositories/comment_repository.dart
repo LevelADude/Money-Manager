@@ -15,8 +15,10 @@ class CommentRepository {
         .stream(primaryKey: ['id'])
         .eq('transaction_id', transactionId)
         .order('created_at')
-        .map((rows) =>
-            dedupRowsById(rows).map(TransactionComment.fromJson).toList());
+        .map(
+          (rows) =>
+              dedupRowsById(rows).map(TransactionComment.fromJson).toList(),
+        );
   }
 
   Future<void> add(String transactionId, String body) {

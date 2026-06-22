@@ -21,5 +21,6 @@ class ReceiptScan {
   final String rawText;
 
   /// True, wenn mindestens ein verwertbares Feld erkannt wurde.
-  bool get hasAnything => amountCents != null || date != null || merchant != null;
+  bool get hasAnything =>
+      amountCents != null || date != null || merchant != null;
 }

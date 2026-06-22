@@ -63,12 +63,12 @@ class AppLocalizations {
   String get moreRecurring => _t('Daueraufträge', 'Standing orders');
   String get moreSubscriptions => _t('Erkannte Abos', 'Detected subscriptions');
   String get moreCategories => _t('Kategorien', 'Categories');
-  String get moreRules => _t('Auto-Kategorien (Regeln)', 'Auto-categories (rules)');
+  String get moreRules =>
+      _t('Auto-Kategorien (Regeln)', 'Auto-categories (rules)');
   String get moreExport => _t('Export (CSV)', 'Export (CSV)');
   String get moreImport => _t('CSV-Import', 'CSV import');
   String get moreTrash => _t('Papierkorb', 'Trash');
-  String get moreBackup =>
-      _t('Backup & Wiederherstellung', 'Backup & restore');
+  String get moreBackup => _t('Backup & Wiederherstellung', 'Backup & restore');
   String get moreSettings => _t('Einstellungen', 'Settings');
   String get moreProfile => _t('Profil', 'Profile');
   String get moreSharing =>
@@ -90,14 +90,19 @@ class AppLocalizations {
       _t('Zeigt „••••" statt Geldbeträgen', 'Shows "••••" instead of amounts');
   String get currency => _t('Währung', 'Currency');
   String get mainCurrency => _t('Hauptwährung', 'Main currency');
-  String get mainCurrencyHelp => _t('Summen werden in diese Währung umgerechnet.',
-      'Totals are converted to this currency.');
+  String get mainCurrencyHelp => _t(
+    'Summen werden in diese Währung umgerechnet.',
+    'Totals are converted to this currency.',
+  );
   String get addCurrency =>
       _t('Eigene Währung hinzufügen', 'Add custom currency');
-  String get manageRates => _t('Wechselkurse verwalten', 'Manage exchange rates');
+  String get manageRates =>
+      _t('Wechselkurse verwalten', 'Manage exchange rates');
   String get appLock => _t('App-Sperre (PIN)', 'App lock (PIN)');
-  String get appLockSub => _t('PIN-Abfrage beim Start und nach Pause',
-      'PIN prompt on start and after pause');
+  String get appLockSub => _t(
+    'PIN-Abfrage beim Start und nach Pause',
+    'PIN prompt on start and after pause',
+  );
   String get changePin => _t('PIN ändern', 'Change PIN');
   String get setPinTitle => _t('PIN festlegen', 'Set PIN');
   String get pinLabel => _t('PIN (4–6 Ziffern)', 'PIN (4–6 digits)');
@@ -108,8 +113,9 @@ class AppLocalizations {
   String get database => _t('Datenbank', 'Database');
   String get dbConnection => _t('Datenbank-Verbindung', 'Database connection');
   String get dbConnectionSub => _t(
-      'Andere Supabase-Datenbank verbinden oder Verbindung trennen (nur dieses Gerät, Daten bleiben erhalten)',
-      'Connect a different Supabase database or disconnect (this device only, data is kept)');
+    'Andere Supabase-Datenbank verbinden oder Verbindung trennen (nur dieses Gerät, Daten bleiben erhalten)',
+    'Connect a different Supabase database or disconnect (this device only, data is kept)',
+  );
   String get language => _t('Sprache', 'Language');
   String get languageGerman => 'Deutsch';
   String get languageEnglish => 'English';
@@ -123,9 +129,11 @@ class AppLocalizations {
       _t('Anzeigename (optional)', 'Display name (optional)');
   String get haveAccount =>
       _t('Schon ein Konto? Anmelden', 'Already have an account? Sign in');
-  String get newHere => _t('Neu hier? Konto erstellen', 'New here? Create account');
+  String get newHere =>
+      _t('Neu hier? Konto erstellen', 'New here? Create account');
   String get forgotPassword => _t('Passwort vergessen?', 'Forgot password?');
-  String get invalidEmail => _t('Gültige E-Mail eingeben', 'Enter a valid email');
+  String get invalidEmail =>
+      _t('Gültige E-Mail eingeben', 'Enter a valid email');
   String get passwordMin => _t('Mind. 6 Zeichen', 'Min. 6 characters');
   String get changeDbConnection =>
       _t('Datenbank-Verbindung ändern', 'Change database connection');
@@ -133,11 +141,13 @@ class AppLocalizations {
       _t('Passwort zurücksetzen', 'Reset password');
   String get sendLink => _t('Link senden', 'Send link');
   String get resetSent => _t(
-      'E-Mail zum Zurücksetzen gesendet (falls registriert).',
-      'Password reset email sent (if registered).');
+    'E-Mail zum Zurücksetzen gesendet (falls registriert).',
+    'Password reset email sent (if registered).',
+  );
   String get almostDone => _t(
-      'Fast geschafft! Bitte bestätige deine E-Mail, dann anmelden.',
-      'Almost done! Please confirm your email, then sign in.');
+    'Fast geschafft! Bitte bestätige deine E-Mail, dann anmelden.',
+    'Almost done! Please confirm your email, then sign in.',
+  );
 
   // ---- Insights ----
   String get insightsTitle => 'Insights';
@@ -147,11 +157,13 @@ class AppLocalizations {
   String get secOverview => _t('Überblick', 'Overview');
   String get secHint => _t('Hinweise', 'Tips');
   String get insightsEmpty => _t(
-      'Noch zu wenig Daten für Auswertungen. Erfasse ein paar Buchungen – dann erscheinen hier automatisch Hinweise.',
-      'Not enough data yet. Add a few transactions and insights will appear here automatically.');
+    'Noch zu wenig Daten für Auswertungen. Erfasse ein paar Buchungen – dann erscheinen hier automatisch Hinweise.',
+    'Not enough data yet. Add a few transactions and insights will appear here automatically.',
+  );
   String get insightsLocalNote => _t(
-      'Alles wird lokal auf diesem Gerät berechnet – es werden keine Daten an Dritte gesendet.',
-      'Everything is computed locally on this device – no data is sent to third parties.');
+    'Alles wird lokal auf diesem Gerät berechnet – es werden keine Daten an Dritte gesendet.',
+    'Everything is computed locally on this device – no data is sent to third parties.',
+  );
 
   // ---- Allgemeine Aktionen ----
   String get refresh => _t('Aktualisieren', 'Refresh');
@@ -164,7 +176,9 @@ class AppLocalizations {
   String get accountFab => _t('Konto', 'Account');
   String get sortAccounts => _t('Konten sortieren', 'Sort accounts');
   String get noAccounts => _t(
-      'Noch keine Konten. Lege unten eines an.', 'No accounts yet. Add one below.');
+    'Noch keine Konten. Lege unten eines an.',
+    'No accounts yet. Add one below.',
+  );
   String get netWorth => _t('Gesamtvermögen', 'Net worth');
   String get wealthPerPerson => _t('Vermögen je Person', 'Wealth per person');
   String get unknownPerson => _t('Unbekannt', 'Unknown');
@@ -175,19 +189,20 @@ class AppLocalizations {
   String deleteAccountTitle(String name) =>
       _t('„$name" löschen?', 'Delete "$name"?');
   String get deleteAccountBody => _t(
-      'Alle Buchungen dieses Kontos werden ebenfalls entfernt. Das kann nicht rückgängig gemacht werden.',
-      'All transactions of this account will be removed too. This cannot be undone.');
+    'Alle Buchungen dieses Kontos werden ebenfalls entfernt. Das kann nicht rückgängig gemacht werden.',
+    'All transactions of this account will be removed too. This cannot be undone.',
+  );
 
   String accountType(AccountType t) => switch (t) {
-        AccountType.bank => _t('Bankkonto', 'Bank account'),
-        AccountType.cash => _t('Bargeld', 'Cash'),
-        AccountType.creditCard => _t('Kreditkarte', 'Credit card'),
-        AccountType.savings => _t('Sparkonto', 'Savings account'),
-        AccountType.loan => _t('Kredit / Darlehen', 'Loan'),
-        AccountType.investment => _t('Depot / Investment', 'Investment'),
-        AccountType.wallet => _t('E-Wallet', 'E-wallet'),
-        AccountType.other => _t('Sonstiges', 'Other'),
-      };
+    AccountType.bank => _t('Bankkonto', 'Bank account'),
+    AccountType.cash => _t('Bargeld', 'Cash'),
+    AccountType.creditCard => _t('Kreditkarte', 'Credit card'),
+    AccountType.savings => _t('Sparkonto', 'Savings account'),
+    AccountType.loan => _t('Kredit / Darlehen', 'Loan'),
+    AccountType.investment => _t('Depot / Investment', 'Investment'),
+    AccountType.wallet => _t('E-Wallet', 'E-wallet'),
+    AccountType.other => _t('Sonstiges', 'Other'),
+  };
 
   // ---- Buchungen (Liste) ----
   String get transactionFab => _t('Buchung', 'Transaction');
@@ -204,47 +219,99 @@ class AppLocalizations {
   String get searchHint => _t('Suchen …', 'Search …');
   String get splitLabel => _t('Aufgeteilt', 'Split');
   String get noTransactionsPeriod => _t(
-      'Keine Buchungen in diesem Zeitraum.', 'No transactions in this period.');
+    'Keine Buchungen in diesem Zeitraum.',
+    'No transactions in this period.',
+  );
   String get pdfHeading =>
       _t('Money Manager – Buchungen', 'Money Manager – Transactions');
   String txCount(int n) => _t('$n Buchungen', '$n transactions');
 
   String transactionType(TransactionType t) => switch (t) {
-        TransactionType.income => _t('Einnahme', 'Income'),
-        TransactionType.expense => _t('Ausgabe', 'Expense'),
-        TransactionType.transfer => _t('Übertrag', 'Transfer'),
-      };
+    TransactionType.income => _t('Einnahme', 'Income'),
+    TransactionType.expense => _t('Ausgabe', 'Expense'),
+    TransactionType.transfer => _t('Übertrag', 'Transfer'),
+  };
 
   List<String> get _monthNames => _en
       ? const [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December',
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
         ]
       : const [
-          'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-          'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+          'Januar',
+          'Februar',
+          'März',
+          'April',
+          'Mai',
+          'Juni',
+          'Juli',
+          'August',
+          'September',
+          'Oktober',
+          'November',
+          'Dezember',
         ];
 
   List<String> get _weekdayNames => _en
       ? const [
-          'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
-          'Saturday', 'Sunday',
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+          'Sunday',
         ]
       : const [
-          'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag',
-          'Samstag', 'Sonntag',
+          'Montag',
+          'Dienstag',
+          'Mittwoch',
+          'Donnerstag',
+          'Freitag',
+          'Samstag',
+          'Sonntag',
         ];
 
   String monthName(int month) => _monthNames[month - 1];
 
   List<String> get monthAbbr => _en
       ? const [
-          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
         ]
       : const [
-          'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez',
+          'Jan',
+          'Feb',
+          'Mär',
+          'Apr',
+          'Mai',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Okt',
+          'Nov',
+          'Dez',
         ];
 
   List<String> get weekdayAbbr => _en
@@ -309,40 +376,50 @@ class AppLocalizations {
       _t('Bitte zuerst ein Konto anlegen.', 'Please create an account first.');
   String get fromTemplate => _t('Aus Vorlage', 'From template');
   String get accountLabel => _t('Konto', 'Account');
-  String get amountHintLabel =>
-      _t('Betrag (auch Rechnung, z. B. 12,50+3)', 'Amount (math ok, e.g. 12.50+3)');
+  String get amountHintLabel => _t(
+    'Betrag (auch Rechnung, z. B. 12,50+3)',
+    'Amount (math ok, e.g. 12.50+3)',
+  );
   String get calculator => _t('Taschenrechner', 'Calculator');
   String get enterValidAmount =>
       _t('Gültigen Betrag eingeben', 'Enter a valid amount');
   String get targetAccount => _t('Zielkonto', 'Target account');
   String get chooseDash => _t('— wählen —', '— choose —');
-  String get splitMultiple =>
-      _t('Auf mehrere Kategorien aufteilen', 'Split across multiple categories');
+  String get splitMultiple => _t(
+    'Auf mehrere Kategorien aufteilen',
+    'Split across multiple categories',
+  );
   String get category => _t('Kategorie', 'Category');
   String get noCategoryOption => _t('Keine Kategorie', 'No category');
   String get titleHintLabel =>
       _t('Titel (z. B. Aldi, Rewe, Aral)', 'Title (e.g. Aldi, Rewe, Aral)');
   String get note => _t('Notiz', 'Note');
   String get dateLabel => _t('Datum', 'Date');
-  String get chooseAccount => _t('Bitte ein Konto wählen.', 'Please choose an account.');
+  String get chooseAccount =>
+      _t('Bitte ein Konto wählen.', 'Please choose an account.');
   String get chooseTargetAccount =>
       _t('Bitte ein Zielkonto wählen.', 'Please choose a target account.');
   String splitSumMismatch(String sum, String amount) => _t(
-      'Summe der Aufteilungen ($sum) muss dem Betrag ($amount) entsprechen.',
-      'Split total ($sum) must equal the amount ($amount).');
+    'Summe der Aufteilungen ($sum) muss dem Betrag ($amount) entsprechen.',
+    'Split total ($sum) must equal the amount ($amount).',
+  );
   String get deleteTransactionTitle =>
       _t('Buchung löschen?', 'Delete transaction?');
   String get cannotUndo =>
       _t('Das kann nicht rückgängig gemacht werden.', 'This cannot be undone.');
-  String get noHistory => _t('Kein Verlauf vorhanden.', 'No history available.');
+  String get noHistory =>
+      _t('Kein Verlauf vorhanden.', 'No history available.');
   String get templateNameLabel => _t('Name der Vorlage', 'Template name');
   String get templateSaved => _t('Vorlage gespeichert', 'Template saved');
   String get chooseTemplate => _t('Vorlage wählen', 'Choose template');
   String get noTemplates => _t(
-      'Noch keine Vorlagen. Speichere eine über das Lesezeichen-Symbol oben.',
-      'No templates yet. Save one via the bookmark icon at the top.');
+    'Noch keine Vorlagen. Speichere eine über das Lesezeichen-Symbol oben.',
+    'No templates yet. Save one via the bookmark icon at the top.',
+  );
   String get enterValidValuesFirst => _t(
-      'Bitte zuerst gültige Werte eingeben.', 'Please enter valid values first.');
+    'Bitte zuerst gültige Werte eingeben.',
+    'Please enter valid values first.',
+  );
   String get transactionDuplicated =>
       _t('Buchung dupliziert', 'Transaction duplicated');
   String get cameraTakePhoto =>
@@ -350,7 +427,9 @@ class AppLocalizations {
   String get galleryFile => _t('Galerie / Datei', 'Gallery / file');
   String receiptError(Object e) => _t('Beleg-Fehler: $e', 'Receipt error: $e');
   String receiptRecognized(String fields) => _t(
-      'Beleg erkannt – $fields übernommen.', 'Receipt scanned – $fields filled in.');
+    'Beleg erkannt – $fields übernommen.',
+    'Receipt scanned – $fields filled in.',
+  );
   String get fieldAmount => _t('Betrag', 'Amount');
   String get fieldTitle => _t('Titel', 'Title');
   String get fieldDate => _t('Datum', 'Date');
@@ -367,16 +446,16 @@ class AppLocalizations {
   String rest(String x) => _t('Rest $x', 'Remainder $x');
   String distributedBalanced(String x) =>
       _t('Verteilt: $x ✓', 'Allocated: $x ✓');
-  String distributedOf(String x, String y, String z) => _t(
-      'Verteilt: $x von $y · Rest $z', 'Allocated: $x of $y · remainder $z');
+  String distributedOf(String x, String y, String z) =>
+      _t('Verteilt: $x von $y · Rest $z', 'Allocated: $x of $y · remainder $z');
 
   String auditAction(String action) => switch (action) {
-        'insert' => _t('Angelegt', 'Created'),
-        'delete' => _t('Gelöscht', 'Deleted'),
-        'restore' => _t('Wiederhergestellt', 'Restored'),
-        'purge' => _t('Endgültig gelöscht', 'Purged'),
-        _ => _t('Geändert', 'Edited'),
-      };
+    'insert' => _t('Angelegt', 'Created'),
+    'delete' => _t('Gelöscht', 'Deleted'),
+    'restore' => _t('Wiederhergestellt', 'Restored'),
+    'purge' => _t('Endgültig gelöscht', 'Purged'),
+    _ => _t('Geändert', 'Edited'),
+  };
 
   // ---- Konto-Formular / -Detail ----
   String get newAccount => _t('Neues Konto', 'New account');
@@ -386,11 +465,13 @@ class AppLocalizations {
   String get accountTypeLabel => _t('Kontotyp', 'Account type');
   String get openingBalance => _t('Anfangssaldo', 'Opening balance');
   String get openingBalanceHelp => _t(
-      'Aktueller Stand des Kontos beim Anlegen',
-      'Current balance of the account when created');
+    'Aktueller Stand des Kontos beim Anlegen',
+    'Current balance of the account when created',
+  );
   String get openingBalanceLiabilityHelp => _t(
-      'Bestehende Schuld als negativen Wert eingeben, z. B. -500',
-      'Enter an existing debt as a negative value, e.g. -500');
+    'Bestehende Schuld als negativen Wert eingeben, z. B. -500',
+    'Enter an existing debt as a negative value, e.g. -500',
+  );
   String get creditLimitOptional =>
       _t('Kreditrahmen (optional)', 'Credit limit (optional)');
   String get countsToNetWorth =>
@@ -398,8 +479,9 @@ class AppLocalizations {
   String get shareWithTitle =>
       _t('Teilen mit (Gemeinschaftskonto)', 'Share with (joint account)');
   String get shareWithHelp => _t(
-      'Ausgewählte Personen sehen dieses Konto und dürfen darauf buchen.',
-      'Selected people can see this account and post transactions to it.');
+    'Ausgewählte Personen sehen dieses Konto und dürfen darauf buchen.',
+    'Selected people can see this account and post transactions to it.',
+  );
   String get noTransactions =>
       _t('Noch keine Buchungen.', 'No transactions yet.');
   String byAuthor(String name) => _t('von $name', 'by $name');
@@ -414,8 +496,9 @@ class AppLocalizations {
   String budgetExceededBy(String x) =>
       _t('Budget um $x überschritten', 'Budget exceeded by $x');
   String budgetRemainingLine(String remaining, int days, String perDay) => _t(
-      'Noch $remaining · $days Tage übrig · $perDay/Tag',
-      'Remaining $remaining · $days days left · $perDay/day');
+    'Noch $remaining · $days Tage übrig · $perDay/Tag',
+    'Remaining $remaining · $days days left · $perDay/day',
+  );
   String overBy(String x) => _t('+$x über', '+$x over');
   String amountLeft(String x) => _t('noch $x', '$x left');
   String noBudgetThisMonth(String x) =>
@@ -424,24 +507,33 @@ class AppLocalizations {
   // ---- Sparziele ----
   String get roundupSaving => _t('Rundungs-Sparen', 'Round-up saving');
   String get newItem => _t('Neu', 'New');
-  String get targetAmountHint =>
-      _t('Zielbetrag (leer = offener Topf)', 'Target amount (empty = open jar)');
+  String get targetAmountHint => _t(
+    'Zielbetrag (leer = offener Topf)',
+    'Target amount (empty = open jar)',
+  );
   String get noTargetDate => _t('Kein Zieldatum', 'No target date');
   String targetDateLabel(String date) => _t('Ziel: $date', 'Target: $date');
   String get deposit => _t('Einzahlen', 'Deposit');
   String get withdraw => _t('Abheben', 'Withdraw');
-  String get noRoundupThisMonth =>
-      _t('Kein Rundungsbetrag in diesem Monat.', 'No round-up amount this month.');
-  String get createGoalFirst => _t('Lege zuerst ein Sparziel oder einen Topf an.',
-      'Create a savings goal or jar first.');
+  String get noRoundupThisMonth => _t(
+    'Kein Rundungsbetrag in diesem Monat.',
+    'No round-up amount this month.',
+  );
+  String get createGoalFirst => _t(
+    'Lege zuerst ein Sparziel oder einen Topf an.',
+    'Create a savings goal or jar first.',
+  );
   String roundupThisMonth(String x) => _t(
-      'Aufrundung der Ausgaben diesen Monat: $x',
-      'Round-up of this month\'s expenses: $x');
+    'Aufrundung der Ausgaben diesen Monat: $x',
+    'Round-up of this month\'s expenses: $x',
+  );
   String get depositInto => _t('Einzahlen in', 'Deposit into');
   String depositedInto(String x, String name) =>
       _t('$x in „$name" eingezahlt', '$x deposited into "$name"');
-  String get noGoals =>
-      _t('Noch keine Sparziele. Lege unten eines an.', 'No savings goals yet. Add one below.');
+  String get noGoals => _t(
+    'Noch keine Sparziele. Lege unten eines an.',
+    'No savings goals yet. Add one below.',
+  );
   String get openPot => _t('Offener Topf', 'Open jar');
   String perMonthNeeded(String x) => _t('$x/Monat nötig', '$x/month needed');
   String get ofWithSpace => _t('von ', 'of ');
@@ -458,31 +550,37 @@ class AppLocalizations {
   // ---- Daueraufträge ----
   String get recurringFab => _t('Dauerauftrag', 'Standing order');
   String get noRecurring => _t(
-      'Noch keine Daueraufträge.\nLege z. B. Miete oder Gehalt an.',
-      'No standing orders yet.\nAdd e.g. rent or salary.');
+    'Noch keine Daueraufträge.\nLege z. B. Miete oder Gehalt an.',
+    'No standing orders yet.\nAdd e.g. rent or salary.',
+  );
   String get paused => _t('pausiert', 'paused');
   String intervalUnitLabel(IntervalUnit u) => switch (u) {
-        IntervalUnit.day => _t('Tag(e)', 'day(s)'),
-        IntervalUnit.week => _t('Woche(n)', 'week(s)'),
-        IntervalUnit.month => _t('Monat(e)', 'month(s)'),
-        IntervalUnit.year => _t('Jahr(e)', 'year(s)'),
-      };
+    IntervalUnit.day => _t('Tag(e)', 'day(s)'),
+    IntervalUnit.week => _t('Woche(n)', 'week(s)'),
+    IntervalUnit.month => _t('Monat(e)', 'month(s)'),
+    IntervalUnit.year => _t('Jahr(e)', 'year(s)'),
+  };
   String everyInterval(int count, IntervalUnit unit) => _t(
-      'alle $count ${intervalUnitLabel(unit)}',
-      'every $count ${intervalUnitLabel(unit)}');
+    'alle $count ${intervalUnitLabel(unit)}',
+    'every $count ${intervalUnitLabel(unit)}',
+  );
   String nextDuePrefix(String date) => _t('nächste: $date', 'next: $date');
 
   // ---- Suche ----
-  String get searchFieldHint => _t('Suchen (Titel, Notiz, Tag, Konto, Betrag) …',
-      'Search (title, note, tag, account, amount) …');
+  String get searchFieldHint => _t(
+    'Suchen (Titel, Notiz, Tag, Konto, Betrag) …',
+    'Search (title, note, tag, account, amount) …',
+  );
   String get enterSearchTerm =>
       _t('Suchbegriff eingeben.', 'Enter a search term.');
   String get noResults => _t('Keine Treffer.', 'No results.');
 
   // ---- Erinnerungen ----
   String streakDays(int n) => _t('$n-Tage-Streak', '$n-day streak');
-  String get bookedToday =>
-      _t('Heute schon gebucht – weiter so!', 'Already booked today – keep it up!');
+  String get bookedToday => _t(
+    'Heute schon gebucht – weiter so!',
+    'Already booked today – keep it up!',
+  );
   String get notBookedToday =>
       _t('Heute noch nichts gebucht.', 'Nothing booked today yet.');
   String get bookAction => _t('Buchen', 'Book');
@@ -491,16 +589,18 @@ class AppLocalizations {
 
   // ---- Papierkorb ----
   String get trashEmpty => _t(
-      'Papierkorb ist leer.\n\nGelöschte Buchungen erscheinen hier 30 Tage lang und können wiederhergestellt werden.',
-      'Trash is empty.\n\nDeleted transactions appear here for 30 days and can be restored.');
+    'Papierkorb ist leer.\n\nGelöschte Buchungen erscheinen hier 30 Tage lang und können wiederhergestellt werden.',
+    'Trash is empty.\n\nDeleted transactions appear here for 30 days and can be restored.',
+  );
   String deletedOn(String date) => _t('Gelöscht am $date', 'Deleted on $date');
   String get restore => _t('Wiederherstellen', 'Restore');
   String get purge => _t('Endgültig löschen', 'Delete permanently');
 
   // ---- Erkannte Abos ----
   String get noSubscriptions => _t(
-      'Keine wiederkehrenden Muster erkannt.\n\nSobald sich eine Buchung (gleicher Titel + Betrag) regelmäßig wiederholt, wird sie hier als Dauerauftrag vorgeschlagen.',
-      'No recurring patterns detected.\n\nWhen a transaction (same title + amount) repeats regularly, it will be suggested here as a standing order.');
+    'Keine wiederkehrenden Muster erkannt.\n\nSobald sich eine Buchung (gleicher Titel + Betrag) regelmäßig wiederholt, wird sie hier als Dauerauftrag vorgeschlagen.',
+    'No recurring patterns detected.\n\nWhen a transaction (same title + amount) repeats regularly, it will be suggested here as a standing order.',
+  );
   String detectedTimes(int n) => _t('$n× erkannt', '$n× detected');
   String fromDate(String date) => _t('ab $date', 'from $date');
   String get recurringCreated =>
@@ -518,8 +618,7 @@ class AppLocalizations {
   String get setNewPasswordHint =>
       _t('Lege ein neues Passwort fest.', 'Set a new password.');
   String get newPasswordLabel => _t('Neues Passwort', 'New password');
-  String get passwordUpdated =>
-      _t('Passwort aktualisiert', 'Password updated');
+  String get passwordUpdated => _t('Passwort aktualisiert', 'Password updated');
 
   // ---- Auto-Kategorien (Regeln) ----
   String get rulesTitle => _t('Auto-Kategorien', 'Auto-categories');
@@ -529,18 +628,19 @@ class AppLocalizations {
       _t('Stichwort (im Titel enthalten)', 'Keyword (contained in title)');
   String get keywordHint => _t('z. B. Aldi', 'e.g. Aldi');
   String get noRules => _t(
-      'Noch keine Regeln.\n\nLege fest, dass z. B. Titel mit „Aldi" automatisch der Kategorie „Lebensmittel" zugeordnet werden.',
-      'No rules yet.\n\nDefine that e.g. titles containing "Aldi" are automatically assigned to the "Groceries" category.');
-  String containsKeyword(String kw) =>
-      _t('enthält „$kw"', 'contains "$kw"');
+    'Noch keine Regeln.\n\nLege fest, dass z. B. Titel mit „Aldi" automatisch der Kategorie „Lebensmittel" zugeordnet werden.',
+    'No rules yet.\n\nDefine that e.g. titles containing "Aldi" are automatically assigned to the "Groceries" category.',
+  );
+  String containsKeyword(String kw) => _t('enthält „$kw"', 'contains "$kw"');
 
   // ---- Eigene Währung / Wechselkurse ----
   String get customCurrency => _t('Eigene Währung', 'Custom currency');
   String get currencyCodeLabel =>
       _t('Währungscode (z. B. BTC)', 'Currency code (e.g. BTC)');
   String get currencyCodeHelper => _t(
-      'Kurs später unter „Wechselkurse" festlegen.',
-      'Set the rate later under "Exchange rates".');
+    'Kurs später unter „Wechselkurse" festlegen.',
+    'Set the rate later under "Exchange rates".',
+  );
   String get add => _t('Hinzufügen', 'Add');
   String get exchangeRatesTitle => _t('Wechselkurse', 'Exchange rates');
   String rateForCode(String code) => _t('Kurs für $code', 'Rate for $code');
@@ -548,19 +648,22 @@ class AppLocalizations {
       _t('Hauptwährung: $code', 'Main currency: $code');
   String get baseRateNote => _t('Basis (Kurs = 1,00)', 'Base (rate = 1.00)');
   String exchangeRatesIntro(String base) => _t(
-      'Lege fest, wie viel 1 Einheit einer Fremdwährung in $base wert ist. Beträge auf Fremdwährungs-Konten werden damit in Summen umgerechnet.',
-      'Define how much 1 unit of a foreign currency is worth in $base. Balances on foreign-currency accounts are converted into totals accordingly.');
+    'Lege fest, wie viel 1 Einheit einer Fremdwährung in $base wert ist. Beträge auf Fremdwährungs-Konten werden damit in Summen umgerechnet.',
+    'Define how much 1 unit of a foreign currency is worth in $base. Balances on foreign-currency accounts are converted into totals accordingly.',
+  );
   String get noForeignCurrencies => _t(
-      'Keine Fremdwährungen in Benutzung. Lege ein Konto mit anderer Währung an oder füge unten einen Kurs hinzu.',
-      'No foreign currencies in use. Create an account with a different currency or add a rate below.');
-  String get noRateSet => _t(
-      'Kein Kurs gesetzt (wird 1:1 gerechnet)', 'No rate set (counted 1:1)');
+    'Keine Fremdwährungen in Benutzung. Lege ein Konto mit anderer Währung an oder füge unten einen Kurs hinzu.',
+    'No foreign currencies in use. Create an account with a different currency or add a rate below.',
+  );
+  String get noRateSet =>
+      _t('Kein Kurs gesetzt (wird 1:1 gerechnet)', 'No rate set (counted 1:1)');
   String get customEllipsis => _t('Eigene…', 'Custom…');
 
   // ---- Schulden & Kredite ----
   String get noDebtAccounts => _t(
-      'Keine Schulden-Konten. Lege ein Konto vom Typ „Kreditkarte" oder „Kredit/Darlehen" an.',
-      'No debt accounts. Create an account of type "Credit card" or "Loan".');
+    'Keine Schulden-Konten. Lege ein Konto vom Typ „Kreditkarte" oder „Kredit/Darlehen" an.',
+    'No debt accounts. Create an account of type "Credit card" or "Loan".',
+  );
   String get creditUtilization =>
       _t('Kreditrahmen-Auslastung', 'Credit limit utilization');
   String get debtTrend12 =>
@@ -569,36 +672,42 @@ class AppLocalizations {
   // ---- Export (CSV / PDF) ----
   String get exportTitle => _t('Export (CSV / PDF)', 'Export (CSV / PDF)');
   String exportSubtitle(int n) => _t(
-      '$n Buchungen · CSV (Excel/Sheets) oder PDF-Bericht',
-      '$n transactions · CSV (Excel/Sheets) or PDF report');
+    '$n Buchungen · CSV (Excel/Sheets) oder PDF-Bericht',
+    '$n transactions · CSV (Excel/Sheets) or PDF report',
+  );
   String get copyCsv => _t('CSV kopieren', 'Copy CSV');
   String get shareCsv => _t('CSV teilen', 'Share CSV');
   String get csvCopied =>
       _t('CSV in Zwischenablage kopiert', 'CSV copied to clipboard');
-  String get sharePdf =>
-      _t('Als PDF teilen / drucken', 'Share / print as PDF');
+  String get sharePdf => _t('Als PDF teilen / drucken', 'Share / print as PDF');
   String get previewFirstLines =>
       _t('Vorschau (erste Zeilen):', 'Preview (first lines):');
-  String get exportShareText => _t('Money-Manager Export', 'Money Manager export');
+  String get exportShareText =>
+      _t('Money-Manager Export', 'Money Manager export');
   String shareFailed(Object e) => _t(
-      'Teilen nicht möglich ($e). Nutze „Kopieren".',
-      'Sharing failed ($e). Use "Copy".');
-  String pdfStatusLabel(int n, String date) => _t(
-      '$n Buchungen · Stand $date', '$n transactions · as of $date');
+    'Teilen nicht möglich ($e). Nutze „Kopieren".',
+    'Sharing failed ($e). Use "Copy".',
+  );
+  String pdfStatusLabel(int n, String date) =>
+      _t('$n Buchungen · Stand $date', '$n transactions · as of $date');
 
   // ---- CSV-Import ----
   String get csvImportIntro => _t(
-      'Füge hier CSV-Daten ein (Trenner „;" oder „,"). Erwartete Spalten in der Kopfzeile: Datum, Typ, Betrag, Konto, Zielkonto, Kategorie, Titel, Notiz. Konten und Kategorien werden über den Namen zugeordnet (vorher anlegen).',
-      'Paste CSV data here (separator ";" or ","). Expected header columns: Datum, Typ, Betrag, Konto, Zielkonto, Kategorie, Titel, Notiz. Accounts and categories are matched by name (create them first).');
+    'Füge hier CSV-Daten ein (Trenner „;" oder „,"). Erwartete Spalten in der Kopfzeile: Datum, Typ, Betrag, Konto, Zielkonto, Kategorie, Titel, Notiz. Konten und Kategorien werden über den Namen zugeordnet (vorher anlegen).',
+    'Paste CSV data here (separator ";" or ","). Expected header columns: Datum, Typ, Betrag, Konto, Zielkonto, Kategorie, Titel, Notiz. Accounts and categories are matched by name (create them first).',
+  );
   String get importAction => _t('Importieren', 'Import');
   String get importing => _t('Importiere …', 'Importing …');
-  String get noLinesDetected => _t('Keine Zeilen erkannt.', 'No lines detected.');
+  String get noLinesDetected =>
+      _t('Keine Zeilen erkannt.', 'No lines detected.');
   String get csvHeaderNeeds => _t(
-      'Kopfzeile braucht mind. Spalten: Datum, Betrag, Konto.',
-      'Header needs at least the columns: Datum, Betrag, Konto.');
+    'Kopfzeile braucht mind. Spalten: Datum, Betrag, Konto.',
+    'Header needs at least the columns: Datum, Betrag, Konto.',
+  );
   String importResult(int imported, int skipped) => _t(
-      '$imported importiert, $skipped übersprungen (kein Konto/Datum/Betrag).',
-      '$imported imported, $skipped skipped (missing account/date/amount).');
+    '$imported importiert, $skipped übersprungen (kein Konto/Datum/Betrag).',
+    '$imported imported, $skipped skipped (missing account/date/amount).',
+  );
 
   // ---- Gemeinsam: Dauerauftrag ----
   String get standingOrderNoun => _t('Dauerauftrag', 'Standing order');
@@ -607,50 +716,51 @@ class AppLocalizations {
   String get availableUntilMonthEnd =>
       _t('Verfügbar bis Monatsende', 'Available until month end');
   String get incomeMonthLabel => _t('Einnahmen (Monat)', 'Income (month)');
-  String get minusExpensesSoFar =>
-      _t('− Ausgaben bisher', '− expenses so far');
-  String get minusOpenFixed =>
-      _t('− offene Fixkosten', '− open fixed costs');
+  String get minusExpensesSoFar => _t('− Ausgaben bisher', '− expenses so far');
+  String get minusOpenFixed => _t('− offene Fixkosten', '− open fixed costs');
   String get projectionMonthEnd =>
       _t('Hochrechnung Monatsende', 'Projection to month end');
   String get expectedExpenses =>
       _t('Ausgaben voraussichtlich', 'Expected expenses');
   String atCurrentPace(int day, int total) => _t(
-      'bei aktuellem Tempo (Tag $day von $total)',
-      'at current pace (day $day of $total)');
+    'bei aktuellem Tempo (Tag $day von $total)',
+    'at current pace (day $day of $total)',
+  );
   String vsPrevMonthPct(String pct) =>
       _t('$pct % ggü. Vormonat', '$pct % vs. previous month');
-  String get expectedBalance =>
-      _t('Voraussichtl. Saldo', 'Expected balance');
+  String get expectedBalance => _t('Voraussichtl. Saldo', 'Expected balance');
   String get fixedCostsMonthly =>
       _t('Fixkosten (monatlich)', 'Fixed costs (monthly)');
   String get noFixedCosts => _t(
-      'Keine wiederkehrenden Ausgaben. Lege Daueraufträge unter „Mehr → Daueraufträge" an.',
-      'No recurring expenses. Create standing orders under "More → Standing orders".');
+    'Keine wiederkehrenden Ausgaben. Lege Daueraufträge unter „Mehr → Daueraufträge" an.',
+    'No recurring expenses. Create standing orders under "More → Standing orders".',
+  );
 
   // ---- Cashflow-Kalender ----
   String get currentBalance => _t('Aktueller Kontostand', 'Current balance');
   String get lowestBalance60 =>
       _t('Tiefststand (60 Tage)', 'Lowest point (60 days)');
   String get balanceGoesNegative => _t(
-      'Achtung: Der prognostizierte Kontostand wird negativ.',
-      'Warning: the projected balance goes negative.');
+    'Achtung: Der prognostizierte Kontostand wird negativ.',
+    'Warning: the projected balance goes negative.',
+  );
   String get noPlannedTx60 => _t(
-      'Keine geplanten Buchungen in den nächsten 60 Tagen. Lege Daueraufträge unter „Mehr → Daueraufträge" an.',
-      'No planned transactions in the next 60 days. Create standing orders under "More → Standing orders".');
+    'Keine geplanten Buchungen in den nächsten 60 Tagen. Lege Daueraufträge unter „Mehr → Daueraufträge" an.',
+    'No planned transactions in the next 60 days. Create standing orders under "More → Standing orders".',
+  );
 
   // ---- Was-wäre-wenn (Simulator) ----
   String get simulatorIntro => _t(
-      'Passe Einnahmen/Ausgaben an und sieh die Auswirkung auf dein Vermögen in 12 Monaten. (Vorbelegt mit deinen Durchschnitten.)',
-      'Adjust income/expenses and see the impact on your net worth in 12 months. (Pre-filled with your averages.)');
+    'Passe Einnahmen/Ausgaben an und sieh die Auswirkung auf dein Vermögen in 12 Monaten. (Vorbelegt mit deinen Durchschnitten.)',
+    'Adjust income/expenses and see the impact on your net worth in 12 months. (Pre-filled with your averages.)',
+  );
   String get incomePerMonth => _t('Einnahmen / Monat', 'Income / month');
   String get expensePerMonth => _t('Ausgaben / Monat', 'Expenses / month');
   String reduceExpenses(int pct) =>
       _t('Ausgaben reduzieren: $pct %', 'Reduce expenses: $pct %');
   String get effectiveExpenses =>
       _t('Effektive Ausgaben', 'Effective expenses');
-  String get surplusPerMonth =>
-      _t('Überschuss / Monat', 'Surplus / month');
+  String get surplusPerMonth => _t('Überschuss / Monat', 'Surplus / month');
   String get wealthIn12Months =>
       _t('Vermögen in 12 Monaten', 'Net worth in 12 months');
   String wealthChangePrefix(bool positive) => positive
@@ -660,55 +770,63 @@ class AppLocalizations {
 
   // ---- Projekte / Reisen ----
   String get noTagsYet => _t(
-      'Noch keine Tags vergeben.\n\nVergib einer Buchung einen Tag (z. B. „Urlaub 2026"), dann erscheint hier die Auswertung dafür.',
-      'No tags assigned yet.\n\nAdd a tag to a transaction (e.g. "Vacation 2026"), then the analysis appears here.');
+    'Noch keine Tags vergeben.\n\nVergib einer Buchung einen Tag (z. B. „Urlaub 2026"), dann erscheint hier die Auswertung dafür.',
+    'No tags assigned yet.\n\nAdd a tag to a transaction (e.g. "Vacation 2026"), then the analysis appears here.',
+  );
 
   // ---- Ausgleich (wer schuldet wem) ----
   String get settleTitle => _t('Ausgleich', 'Settle up');
   String get settleNeedsTwo => _t(
-      'Für den Ausgleich werden mindestens zwei Personen mit eigenen Konten benötigt.',
-      'Settling up requires at least two people with their own accounts.');
+    'Für den Ausgleich werden mindestens zwei Personen mit eigenen Konten benötigt.',
+    'Settling up requires at least two people with their own accounts.',
+  );
   String get sharedExpensesMonth =>
       _t('Geteilte Ausgaben diesen Monat', 'Shared expenses this month');
   String get fairSharePerPerson =>
       _t('Fairer Anteil je Person', 'Fair share per person');
-  String get balancesPerPerson =>
-      _t('Salden je Person', 'Balances per person');
+  String get balancesPerPerson => _t('Salden je Person', 'Balances per person');
   String get spentPrefix => _t('ausgegeben ', 'spent ');
   String get settleSuggestion =>
       _t('Ausgleichsvorschlag', 'Settlement suggestion');
   String get allSettled => _t('Alles ausgeglichen 🎉', 'All settled 🎉');
   String get settleHint => _t(
-      'Hinweis: Es werden alle Ausgaben des Monats gleichmäßig auf alle Personen aufgeteilt (Haushalts-Modell). Wer mehr bezahlt hat, bekommt etwas zurück.',
-      'Note: all of the month\'s expenses are split equally across all people (household model). Whoever paid more gets some back.');
+    'Hinweis: Es werden alle Ausgaben des Monats gleichmäßig auf alle Personen aufgeteilt (Haushalts-Modell). Wer mehr bezahlt hat, bekommt etwas zurück.',
+    'Note: all of the month\'s expenses are split equally across all people (household model). Whoever paid more gets some back.',
+  );
 
   // ---- Profil ----
   String get profileSaved => _t('Profil gespeichert', 'Profile saved');
   String get displayName => _t('Anzeigename', 'Display name');
   String get signOut => _t('Abmelden', 'Sign out');
   String get customConnectionActive => _t(
-      'Eigene (manuell gesetzte) Verbindung aktiv.',
-      'Custom (manually set) connection active.');
-  String get changeConnection =>
-      _t('Verbindung ändern', 'Change connection');
+    'Eigene (manuell gesetzte) Verbindung aktiv.',
+    'Custom (manually set) connection active.',
+  );
+  String get changeConnection => _t('Verbindung ändern', 'Change connection');
 
   // ---- Freigaben ----
   String get sharingTitle => _t('Freigaben', 'Sharing');
   String get sharingIntro => _t(
-      'Standardmäßig sieht jede Person nur die eigenen Finanzen. Hier gibst du anderen Zugriff:\n• Ansehen: kann deine Konten/Buchungen sehen.\n• Verwalten: darf zusätzlich Buchungen anlegen und ändern.',
-      'By default each person only sees their own finances. Here you give others access:\n• View: can see your accounts/transactions.\n• Manage: may also create and edit transactions.');
-  String get whoCanAccess =>
-      _t('Wer darf auf meine Finanzen zugreifen?', 'Who may access my finances?');
+    'Standardmäßig sieht jede Person nur die eigenen Finanzen. Hier gibst du anderen Zugriff:\n• Ansehen: kann deine Konten/Buchungen sehen.\n• Verwalten: darf zusätzlich Buchungen anlegen und ändern.',
+    'By default each person only sees their own finances. Here you give others access:\n• View: can see your accounts/transactions.\n• Manage: may also create and edit transactions.',
+  );
+  String get whoCanAccess => _t(
+    'Wer darf auf meine Finanzen zugreifen?',
+    'Who may access my finances?',
+  );
   String get noOtherPeople => _t(
-      'Es sind keine weiteren Personen registriert.',
-      'No other people are registered.');
+    'Es sind keine weiteren Personen registriert.',
+    'No other people are registered.',
+  );
   String get accessNone => _t('Kein', 'None');
   String get accessView => _t('Ansehen', 'View');
   String get accessManage => _t('Verwalten', 'Manage');
   String get whoGrantedMe =>
       _t('Wer hat mir Zugriff gegeben?', 'Who gave me access?');
   String get nobodyGrantedYou => _t(
-      'Noch niemand hat dir Zugriff gegeben.', 'Nobody has given you access yet.');
+    'Noch niemand hat dir Zugriff gegeben.',
+    'Nobody has given you access yet.',
+  );
   String get youMayViewManage =>
       _t('Du darfst ansehen und verwalten', 'You may view and manage');
   String get youMayView => _t('Du darfst ansehen', 'You may view');
@@ -720,73 +838,87 @@ class AppLocalizations {
   String get deleteRecurringTitle =>
       _t('Dauerauftrag löschen?', 'Delete standing order?');
   String get deleteRecurringBody => _t(
-      'Bereits erzeugte Buchungen bleiben erhalten; künftige werden nicht mehr angelegt.',
-      'Transactions already created are kept; future ones will no longer be created.');
+    'Bereits erzeugte Buchungen bleiben erhalten; künftige werden nicht mehr angelegt.',
+    'Transactions already created are kept; future ones will no longer be created.',
+  );
   String get amountCalcShort =>
       _t('Betrag (auch Rechnung möglich)', 'Amount (math ok)');
   String get recurringTitleHint => _t(
-      'Titel (z. B. Miete, Gehalt, Netflix)', 'Title (e.g. rent, salary, Netflix)');
+    'Titel (z. B. Miete, Gehalt, Netflix)',
+    'Title (e.g. rent, salary, Netflix)',
+  );
   String get everyWord => _t('Alle ', 'Every ');
   String get nextDueLabel => _t('Nächste Fälligkeit', 'Next due date');
-  String get endDateOptional => _t('Enddatum (optional)', 'End date (optional)');
+  String get endDateOptional =>
+      _t('Enddatum (optional)', 'End date (optional)');
   String get noEnd => _t('kein Ende', 'no end');
 
   // ---- Onboarding / Einrichtung ----
   String get onboardingTitle => _t('Einrichtung', 'Setup');
-  String get backToChoice =>
-      _t('Zurück zur Auswahl', 'Back to selection');
+  String get backToChoice => _t('Zurück zur Auswahl', 'Back to selection');
   String get sqlCopied => _t(
-      'SQL kopiert. Im Supabase-Dashboard unter „SQL Editor" einfügen und „Run".',
-      'SQL copied. Paste it into the "SQL Editor" in the Supabase dashboard and click "Run".');
+    'SQL kopiert. Im Supabase-Dashboard unter „SQL Editor" einfügen und „Run".',
+    'SQL copied. Paste it into the "SQL Editor" in the Supabase dashboard and click "Run".',
+  );
   String sqlLoadFailed(Object e) =>
       _t('Konnte SQL nicht laden: $e', 'Could not load SQL: $e');
   String get welcomeTitle =>
       _t('Willkommen bei Money Manager', 'Welcome to Money Manager');
   String get welcomeBody => _t(
-      'Deine Daten liegen in deinem eigenen, kostenlosen Supabase-Projekt. Wie möchtest du starten?',
-      'Your data lives in your own free Supabase project. How would you like to start?');
+    'Deine Daten liegen in deinem eigenen, kostenlosen Supabase-Projekt. Wie möchtest du starten?',
+    'Your data lives in your own free Supabase project. How would you like to start?',
+  );
   String get newInstallTitle => _t('Neue Installation', 'New installation');
   String get newInstallSub => _t(
-      'Eigene, leere Datenbank anlegen und einrichten. Die erste Person, die sich registriert, wird Besitzer.',
-      'Create and set up your own empty database. The first person to register becomes the owner.');
+    'Eigene, leere Datenbank anlegen und einrichten. Die erste Person, die sich registriert, wird Besitzer.',
+    'Create and set up your own empty database. The first person to register becomes the owner.',
+  );
   String get connectExistingTitle => _t(
-      'Mit bestehender Datenbank verbinden', 'Connect to an existing database');
+    'Mit bestehender Datenbank verbinden',
+    'Connect to an existing database',
+  );
   String get connectExistingSub => _t(
-      'Jemand hat die Datenbank schon eingerichtet. Du gibst nur die Zugangsdaten ein und meldest dich an.',
-      'Someone has already set up the database. You just enter the credentials and sign in.');
-  String get newOwnDatabase =>
-      _t('Neue eigene Datenbank', 'New own database');
-  String get connectExistingDb => _t(
-      'Bestehende Datenbank verbinden', 'Connect existing database');
+    'Jemand hat die Datenbank schon eingerichtet. Du gibst nur die Zugangsdaten ein und meldest dich an.',
+    'Someone has already set up the database. You just enter the credentials and sign in.',
+  );
+  String get newOwnDatabase => _t('Neue eigene Datenbank', 'New own database');
+  String get connectExistingDb =>
+      _t('Bestehende Datenbank verbinden', 'Connect existing database');
   String get step1Title => _t(
-      'Kostenloses Supabase-Projekt anlegen', 'Create a free Supabase project');
+    'Kostenloses Supabase-Projekt anlegen',
+    'Create a free Supabase project',
+  );
   String get step1Body => _t(
-      'Gehe auf supabase.com, registriere dich kostenlos und erstelle ein neues Projekt (Region Europa empfohlen). Warte, bis das Projekt fertig eingerichtet ist.',
-      'Go to supabase.com, sign up for free and create a new project (Europe region recommended). Wait until the project is fully set up.');
+    'Gehe auf supabase.com, registriere dich kostenlos und erstelle ein neues Projekt (Region Europa empfohlen). Warte, bis das Projekt fertig eingerichtet ist.',
+    'Go to supabase.com, sign up for free and create a new project (Europe region recommended). Wait until the project is fully set up.',
+  );
   String get step2Title =>
       _t('Datenbank einrichten (1 Klick)', 'Set up the database (1 click)');
   String get step2Body => _t(
-      'Kopiere das vorbereitete SQL, öffne im Supabase-Dashboard den „SQL Editor", füge es ein und klicke „Run". Damit werden alle Tabellen, Sicherheitsregeln und der Beleg-Speicher angelegt.',
-      'Copy the prepared SQL, open the "SQL Editor" in the Supabase dashboard, paste it and click "Run". This creates all tables, security rules and the receipt storage.');
-  String get copySetupSql =>
-      _t('Einrichtungs-SQL kopieren', 'Copy setup SQL');
+    'Kopiere das vorbereitete SQL, öffne im Supabase-Dashboard den „SQL Editor", füge es ein und klicke „Run". Damit werden alle Tabellen, Sicherheitsregeln und der Beleg-Speicher angelegt.',
+    'Copy the prepared SQL, open the "SQL Editor" in the Supabase dashboard, paste it and click "Run". This creates all tables, security rules and the receipt storage.',
+  );
+  String get copySetupSql => _t('Einrichtungs-SQL kopieren', 'Copy setup SQL');
   String get step3Title => _t('Zugangsdaten eintragen', 'Enter credentials');
   String get existingCredsTitle => _t(
-      'Zugangsdaten der bestehenden Datenbank',
-      'Credentials of the existing database');
+    'Zugangsdaten der bestehenden Datenbank',
+    'Credentials of the existing database',
+  );
   String get existingCredsBody => _t(
-      'Trage die Project-URL und den anon/publishable-Schlüssel der bereits eingerichteten Datenbank ein. Anmelden kannst du dich nur, wenn deine E-Mail dort freigeschaltet ist.',
-      'Enter the project URL and the anon/publishable key of the already configured database. You can only sign in if your email is enabled there.');
+    'Trage die Project-URL und den anon/publishable-Schlüssel der bereits eingerichteten Datenbank ein. Anmelden kannst du dich nur, wenn deine E-Mail dort freigeschaltet ist.',
+    'Enter the project URL and the anon/publishable key of the already configured database. You can only sign in if your email is enabled there.',
+  );
   String connectionFailed(Object e) =>
       _t('Verbindung fehlgeschlagen: $e', 'Connection failed: $e');
-  String get connectAndStart =>
-      _t('Verbinden & starten', 'Connect & start');
+  String get connectAndStart => _t('Verbinden & starten', 'Connect & start');
   String get ownerTip => _t(
-      'Tipp: Die erste Person, die sich registriert, wird automatisch Besitzer (Admin mit allen Rechten).',
-      'Tip: the first person to register automatically becomes the owner (admin with all rights).');
+    'Tipp: Die erste Person, die sich registriert, wird automatisch Besitzer (Admin mit allen Rechten).',
+    'Tip: the first person to register automatically becomes the owner (admin with all rights).',
+  );
   String get credentialsIntro => _t(
-      'Im Supabase-Dashboard unter „Project Settings" → „Data API" findest du die Project-URL, unter „API Keys" den „anon"/„publishable"-Schlüssel. Beide hier einfügen:',
-      'In the Supabase dashboard under "Project Settings" → "Data API" you find the project URL, under "API Keys" the "anon"/"publishable" key. Paste both here:');
+    'Im Supabase-Dashboard unter „Project Settings" → „Data API" findest du die Project-URL, unter „API Keys" den „anon"/„publishable"-Schlüssel. Beide hier einfügen:',
+    'In the Supabase dashboard under "Project Settings" → "Data API" you find the project URL, under "API Keys" the "anon"/"publishable" key. Paste both here:',
+  );
   String get supabaseProjectUrl =>
       _t('Supabase Project URL', 'Supabase project URL');
   String get enterUrl => _t('URL eingeben', 'Enter URL');
@@ -798,8 +930,9 @@ class AppLocalizations {
 
   // ---- Verbindungs-Editor ----
   String get connectionEditorIntro => _t(
-      'Nur ändern, wenn du eine andere Supabase-Datenbank nutzen willst (z. B. weil die URL falsch war). Die Änderung gilt nur auf diesem Gerät.',
-      'Only change this if you want to use a different Supabase database (e.g. because the URL was wrong). The change only applies to this device.');
+    'Nur ändern, wenn du eine andere Supabase-Datenbank nutzen willst (z. B. weil die URL falsch war). Die Änderung gilt nur auf diesem Gerät.',
+    'Only change this if you want to use a different Supabase database (e.g. because the URL was wrong). The change only applies to this device.',
+  );
   String get supabaseUrlLabel => _t('Supabase-URL', 'Supabase URL');
   String get resetToDefault =>
       _t('Auf Standard zurücksetzen', 'Reset to default');
@@ -807,8 +940,9 @@ class AppLocalizations {
   String get connectionChanged =>
       _t('Verbindung geändert', 'Connection changed');
   String get connectionChangedBody => _t(
-      'Bitte lade die Seite neu (Strg+R) bzw. starte die App neu, damit die neue Verbindung wirksam wird. Deine Daten in Supabase bleiben erhalten.',
-      'Please reload the page (Ctrl+R) or restart the app for the new connection to take effect. Your data in Supabase is kept.');
+    'Bitte lade die Seite neu (Strg+R) bzw. starte die App neu, damit die neue Verbindung wirksam wird. Deine Daten in Supabase bleiben erhalten.',
+    'Please reload the page (Ctrl+R) or restart the app for the new connection to take effect. Your data in Supabase is kept.',
+  );
   String get ok => 'OK';
 
   // ---- App-Sperre (PIN-Eingabe) ----
@@ -837,20 +971,23 @@ class AppLocalizations {
   String deleteUserTitle(String name) =>
       _t('Nutzer „$name" löschen?', 'Delete user "$name"?');
   String get deleteUserBody => _t(
-      'Das Konto wird dauerhaft entfernt. Erfasste Buchungen/Konten bleiben erhalten (ohne Zuordnung). Das kann nicht rückgängig gemacht werden.',
-      'The account is permanently removed. Recorded transactions/accounts are kept (unassigned). This cannot be undone.');
+    'Das Konto wird dauerhaft entfernt. Erfasste Buchungen/Konten bleiben erhalten (ohne Zuordnung). Das kann nicht rückgängig gemacht werden.',
+    'The account is permanently removed. Recorded transactions/accounts are kept (unassigned). This cannot be undone.',
+  );
   String get userDeleted => _t('Nutzer gelöscht', 'User deleted');
   String get storageSection => _t('Speicher', 'Storage');
   String get allowedEmailsSection =>
       _t('Freigeschaltete E-Mails', 'Allowed emails');
   String get noAllowedEmails => _t(
-      'Noch keine. Nur freigeschaltete E-Mails können sich registrieren (außer dem ersten Konto).',
-      'None yet. Only allowed emails can register (except the first account).');
+    'Noch keine. Nur freigeschaltete E-Mails können sich registrieren (außer dem ersten Konto).',
+    'None yet. Only allowed emails can register (except the first account).',
+  );
   String get usersSection => _t('Nutzer', 'Users');
   String get dangerZone => _t('Gefahrenzone', 'Danger zone');
   String storageLoadFailed(Object e) => _t(
-      'Konnte Speichernutzung nicht laden: $e',
-      'Could not load storage usage: $e');
+    'Konnte Speichernutzung nicht laden: $e',
+    'Could not load storage usage: $e',
+  );
   String get receiptsFiles => _t('Belege / Dateien', 'Receipts / files');
   String sinceDate(String date) => _t('seit $date', 'since $date');
   String get ownerRole => _t('Besitzer', 'Owner');
@@ -858,8 +995,7 @@ class AppLocalizations {
   String get readOnlyRole => _t('nur Lesen', 'read only');
   String get youRole => _t('du', 'you');
   String get noName => _t('(ohne Name)', '(no name)');
-  String get revokeAdmin =>
-      _t('Admin-Recht entziehen', 'Revoke admin rights');
+  String get revokeAdmin => _t('Admin-Recht entziehen', 'Revoke admin rights');
   String get makeAdmin => _t('Zum Admin machen', 'Make admin');
   String get grantWrite => _t('Schreibrechte geben', 'Grant write access');
   String get setReadOnlyAction =>
@@ -867,43 +1003,49 @@ class AppLocalizations {
   String get deleteUserAction => _t('Nutzer löschen', 'Delete user');
   String get wipeDbTitle => _t('Datenbank leeren', 'Wipe database');
   String get wipeDbSub => _t(
-      'Löscht ALLE Finanzdaten (Buchungen, Konten, Kategorien, Belege …). Nutzer, Rollen und Freischaltungen bleiben erhalten.',
-      'Deletes ALL financial data (transactions, accounts, categories, receipts …). Users, roles and allow-list are kept.');
+    'Löscht ALLE Finanzdaten (Buchungen, Konten, Kategorien, Belege …). Nutzer, Rollen und Freischaltungen bleiben erhalten.',
+    'Deletes ALL financial data (transactions, accounts, categories, receipts …). Users, roles and allow-list are kept.',
+  );
   String get factoryResetTitle =>
       _t('Auf Werkseinstellungen zurücksetzen', 'Reset to factory settings');
   String get factoryResetSub => _t(
-      'Löscht ALLES inkl. aller Login-Konten und Freischaltungen. Danach ist die Datenbank im Neuzustand – die nächste Registrierung wird neuer Besitzer. Nur für den Besitzer.',
-      'Deletes EVERYTHING including all login accounts and allow-list. Afterwards the database is brand new – the next registration becomes the new owner. Owner only.');
+    'Löscht ALLES inkl. aller Login-Konten und Freischaltungen. Danach ist die Datenbank im Neuzustand – die nächste Registrierung wird neuer Besitzer. Nur für den Besitzer.',
+    'Deletes EVERYTHING including all login accounts and allow-list. Afterwards the database is brand new – the next registration becomes the new owner. Owner only.',
+  );
   String get wipeWord => _t('LEEREN', 'WIPE');
   String get wipeConfirmTitle => _t('Datenbank leeren?', 'Wipe database?');
   String wipeConfirmMsg(String word) => _t(
-      'Alle Finanzdaten werden unwiderruflich gelöscht. Nutzer bleiben erhalten. Gib zur Bestätigung $word ein.',
-      'All financial data is irreversibly deleted. Users are kept. Type $word to confirm.');
+    'Alle Finanzdaten werden unwiderruflich gelöscht. Nutzer bleiben erhalten. Gib zur Bestätigung $word ein.',
+    'All financial data is irreversibly deleted. Users are kept. Type $word to confirm.',
+  );
   String get dbWiped => _t('Datenbank geleert', 'Database wiped');
   String get dbWipedBody => _t(
-      'Alle Daten wurden entfernt. Bitte lade die App neu (Strg+R) bzw. starte sie neu, damit alle Ansichten aktualisiert werden.',
-      'All data was removed. Please reload the app (Ctrl+R) or restart it so all views update.');
+    'Alle Daten wurden entfernt. Bitte lade die App neu (Strg+R) bzw. starte sie neu, damit alle Ansichten aktualisiert werden.',
+    'All data was removed. Please reload the app (Ctrl+R) or restart it so all views update.',
+  );
   String get factoryWord => _t('ZURÜCKSETZEN', 'RESET');
-  String get factoryConfirmTitle => _t(
-      'Auf Werkseinstellungen zurücksetzen?', 'Reset to factory settings?');
+  String get factoryConfirmTitle =>
+      _t('Auf Werkseinstellungen zurücksetzen?', 'Reset to factory settings?');
   String factoryConfirmMsg(String word) => _t(
-      'ALLES wird gelöscht: alle Daten, alle Nutzer und Freischaltungen. Du wirst danach abgemeldet. Dieser Schritt ist endgültig. Gib zur Bestätigung $word ein.',
-      'EVERYTHING is deleted: all data, all users and the allow-list. You will be signed out afterwards. This step is final. Type $word to confirm.');
-  String typeWordLabel(String word) =>
-      _t('„$word" eingeben', 'Type "$word"');
+    'ALLES wird gelöscht: alle Daten, alle Nutzer und Freischaltungen. Du wirst danach abgemeldet. Dieser Schritt ist endgültig. Gib zur Bestätigung $word ein.',
+    'EVERYTHING is deleted: all data, all users and the allow-list. You will be signed out afterwards. This step is final. Type $word to confirm.',
+  );
+  String typeWordLabel(String word) => _t('„$word" eingeben', 'Type "$word"');
   String get confirm => _t('Bestätigen', 'Confirm');
 
   // ---- Backup & Wiederherstellung ----
   String get backupSection => _t('Sicherung', 'Backup');
   String get backupDesc => _t(
-      'Exportiert alle Konten, Buchungen, Kategorien, Budgets, Daueraufträge, Sparziele und Vorlagen als JSON-Datei.',
-      'Exports all accounts, transactions, categories, budgets, standing orders, savings goals and templates as a JSON file.');
+    'Exportiert alle Konten, Buchungen, Kategorien, Budgets, Daueraufträge, Sparziele und Vorlagen als JSON-Datei.',
+    'Exports all accounts, transactions, categories, budgets, standing orders, savings goals and templates as a JSON file.',
+  );
   String get shareSave => _t('Teilen / Speichern', 'Share / save');
   String get copyAction => _t('Kopieren', 'Copy');
   String get restoreSection => _t('Wiederherstellung', 'Restore');
   String get restoreDesc => _t(
-      'Spielt ein Backup ein (z. B. in ein leeres Projekt). Vorhandene Einträge mit gleicher ID werden überschrieben; Besitzer werden dem aktuellen Konto zugeordnet.',
-      'Restores a backup (e.g. into an empty project). Existing entries with the same ID are overwritten; owners are reassigned to the current account.');
+    'Spielt ein Backup ein (z. B. in ein leeres Projekt). Vorhandene Einträge mit gleicher ID werden überschrieben; Besitzer werden dem aktuellen Konto zugeordnet.',
+    'Restores a backup (e.g. into an empty project). Existing entries with the same ID are overwritten; owners are reassigned to the current account.',
+  );
   String get importBackup => _t('Backup importieren', 'Import backup');
   String get pasteBackupJson =>
       _t('Backup-JSON hier einfügen …', 'Paste backup JSON here …');
@@ -916,8 +1058,9 @@ class AppLocalizations {
   String get backupCopied =>
       _t('Backup in Zwischenablage kopiert.', 'Backup copied to clipboard.');
   String recordsImported(int n) => _t(
-      '$n Datensätze importiert. Bitte App neu starten / Seite neu laden.',
-      '$n records imported. Please restart the app / reload the page.');
+    '$n Datensätze importiert. Bitte App neu starten / Seite neu laden.',
+    '$n records imported. Please restart the app / reload the page.',
+  );
   String importError(Object e) =>
       _t('Fehler beim Import: $e', 'Import error: $e');
 
@@ -927,14 +1070,17 @@ class AppLocalizations {
   String get archiveAdminEntry =>
       _t('Alte Jahre archivieren', 'Archive old years');
   String get archiveAdminEntrySub => _t(
-      'Lagert alte Jahre verschlüsselt nach GitHub aus und gibt Speicher frei.',
-      'Moves old years to GitHub (encrypted) and frees up storage.');
+    'Lagert alte Jahre verschlüsselt nach GitHub aus und gibt Speicher frei.',
+    'Moves old years to GitHub (encrypted) and frees up storage.',
+  );
   String get archiveIntro => _t(
-      'Alte Jahre werden verschlüsselt nach GitHub ausgelagert und danach aus der Datenbank gelöscht. Sie bleiben hier einsehbar, aber schreibgeschützt.',
-      'Old years are exported to GitHub (encrypted) and then deleted from the database. They stay viewable here, but read-only.');
+    'Alte Jahre werden verschlüsselt nach GitHub ausgelagert und danach aus der Datenbank gelöscht. Sie bleiben hier einsehbar, aber schreibgeschützt.',
+    'Old years are exported to GitHub (encrypted) and then deleted from the database. They stay viewable here, but read-only.',
+  );
   String get archiveWarning => _t(
-      'Achtung: Archivierte Jahre lassen sich danach NICHT mehr bearbeiten und fließen NICHT mehr in Statistiken, Budgets oder Auswertungen ein. Nutze das nur, wenn der Speicher fast voll ist.',
-      'Warning: archived years can NO LONGER be edited and are NO LONGER included in statistics, budgets or reports. Only use this when storage is nearly full.');
+    'Achtung: Archivierte Jahre lassen sich danach NICHT mehr bearbeiten und fließen NICHT mehr in Statistiken, Budgets oder Auswertungen ein. Nutze das nur, wenn der Speicher fast voll ist.',
+    'Warning: archived years can NO LONGER be edited and are NO LONGER included in statistics, budgets or reports. Only use this when storage is nearly full.',
+  );
   String get archiveSelectYears =>
       _t('Jahre zum Archivieren wählen', 'Select years to archive');
   String get archiveNoYears =>
@@ -942,12 +1088,15 @@ class AppLocalizations {
   String archiveTxCount(int n) => _t('$n Buchungen', '$n transactions');
   String get archiveAction => _t('Archivieren', 'Archive');
   String get archiveSelectAtLeastOne => _t(
-      'Bitte mindestens ein Jahr wählen.', 'Please select at least one year.');
+    'Bitte mindestens ein Jahr wählen.',
+    'Please select at least one year.',
+  );
   String get archiveConfirmTitle =>
       _t('Ausgewählte Jahre archivieren?', 'Archive selected years?');
   String archiveConfirmBody(String years) => _t(
-      'Folgende Jahre werden ausgelagert und aus der Datenbank gelöscht: $years.\n\nDanach sind sie nur noch schreibgeschützt einsehbar und zählen nicht mehr zu Statistik/Budgets.',
-      'The following years will be exported and deleted from the database: $years.\n\nAfterwards they are only viewable read-only and no longer count toward statistics/budgets.');
+    'Folgende Jahre werden ausgelagert und aus der Datenbank gelöscht: $years.\n\nDanach sind sie nur noch schreibgeschützt einsehbar und zählen nicht mehr zu Statistik/Budgets.',
+    'The following years will be exported and deleted from the database: $years.\n\nAfterwards they are only viewable read-only and no longer count toward statistics/budgets.',
+  );
   String get archivedSection => _t('Archivierte Jahre', 'Archived years');
   String get archiveNoneArchived =>
       _t('Noch keine Jahre archiviert.', 'No years archived yet.');
@@ -957,22 +1106,27 @@ class AppLocalizations {
   String archiveRestoreConfirmTitle(int year) =>
       _t('Jahr $year zurückholen?', 'Restore year $year?');
   String get archiveRestoreConfirmBody => _t(
-      'Die Buchungen dieses Jahres werden wieder in die Datenbank geschrieben und sind danach wieder bearbeitbar. Der Speicher wird dadurch wieder belegt.',
-      "This year's transactions are written back to the database and become editable again. Storage will be used again.");
+    'Die Buchungen dieses Jahres werden wieder in die Datenbank geschrieben und sind danach wieder bearbeitbar. Der Speicher wird dadurch wieder belegt.',
+    "This year's transactions are written back to the database and become editable again. Storage will be used again.",
+  );
   String get archiveStepRead => _t('Lese Daten …', 'Reading data …');
   String get archiveStepReceipts => _t('Lade Belege …', 'Loading receipts …');
   String get archiveStepUpload => _t(
-      'Lade verschlüsselt nach GitHub …', 'Uploading to GitHub (encrypted) …');
+    'Lade verschlüsselt nach GitHub …',
+    'Uploading to GitHub (encrypted) …',
+  );
   String get archiveStepMark => _t('Speichere Marker …', 'Saving marker …');
-  String get archiveStepPurge => _t('Gebe Speicher frei …', 'Freeing storage …');
+  String get archiveStepPurge =>
+      _t('Gebe Speicher frei …', 'Freeing storage …');
   String archiveDone(int year) =>
       _t('Jahr $year archiviert.', 'Year $year archived.');
   String archiveRestoreDone(int year) =>
       _t('Jahr $year zurückgeholt.', 'Year $year restored.');
   String archiveYearViewTitle(int year) => _t('Archiv $year', 'Archive $year');
   String get archiveReadOnlyNote => _t(
-      'Schreibgeschützt – dieses Jahr ist archiviert.',
-      'Read-only – this year is archived.');
+    'Schreibgeschützt – dieses Jahr ist archiviert.',
+    'Read-only – this year is archived.',
+  );
   String get archiveEmptyYear =>
       _t('Keine Buchungen in diesem Jahr.', 'No transactions in this year.');
   String archiveError(Object e) => _t('Archiv-Fehler: $e', 'Archive error: $e');
@@ -981,16 +1135,19 @@ class AppLocalizations {
   String get archiveSetupTitle =>
       _t('Archiv-Repo verbinden', 'Connect archive repo');
   String get archiveSetupIntro => _t(
-      'Lege fest, in welches private GitHub-Repo archivierte Jahre verschlüsselt ausgelagert werden. Token und Schlüssel werden serverseitig in Supabase gespeichert – nie im (öffentlichen) Client.',
-      'Choose the private GitHub repo where archived years are exported (encrypted). Token and key are stored server-side in Supabase – never in the (public) client.');
-  String get archiveRepoLabel => _t('Repo (owner/name oder URL)',
-      'Repo (owner/name or URL)');
+    'Lege fest, in welches private GitHub-Repo archivierte Jahre verschlüsselt ausgelagert werden. Token und Schlüssel werden serverseitig in Supabase gespeichert – nie im (öffentlichen) Client.',
+    'Choose the private GitHub repo where archived years are exported (encrypted). Token and key are stored server-side in Supabase – never in the (public) client.',
+  );
+  String get archiveRepoLabel =>
+      _t('Repo (owner/name oder URL)', 'Repo (owner/name or URL)');
   String get archiveTokenLabel => _t(
-      'GitHub-Token (fine-grained, Contents: Read and write)',
-      'GitHub token (fine-grained, Contents: Read and write)');
+    'GitHub-Token (fine-grained, Contents: Read and write)',
+    'GitHub token (fine-grained, Contents: Read and write)',
+  );
   String get archiveTokenKeepHint => _t(
-      'Leer lassen, um das gespeicherte Token zu behalten.',
-      'Leave empty to keep the stored token.');
+    'Leer lassen, um das gespeicherte Token zu behalten.',
+    'Leave empty to keep the stored token.',
+  );
   String get archiveConnect => _t('Verbinden', 'Connect');
   String get archiveSave => _t('Speichern', 'Save');
   String archiveConnectedTo(String repo) =>
@@ -1000,25 +1157,29 @@ class AppLocalizations {
   String get archiveDisconnectConfirmTitle =>
       _t('Verbindung trennen?', 'Disconnect?');
   String get archiveDisconnectConfirmBody => _t(
-      'Repo, Token und Schlüssel werden aus Supabase entfernt. Bereits archivierte Dateien bleiben im GitHub-Repo, sind danach aber erst nach erneutem Verbinden (mit demselben Schlüssel) lesbar.',
-      'Repo, token and key are removed from Supabase. Already archived files stay in the GitHub repo, but become readable again only after reconnecting (with the same key).');
+    'Repo, Token und Schlüssel werden aus Supabase entfernt. Bereits archivierte Dateien bleiben im GitHub-Repo, sind danach aber erst nach erneutem Verbinden (mit demselben Schlüssel) lesbar.',
+    'Repo, token and key are removed from Supabase. Already archived files stay in the GitHub repo, but become readable again only after reconnecting (with the same key).',
+  );
   String get archiveNotConfigured =>
       _t('Kein Archiv-Repo verbunden.', 'No archive repo connected.');
   String get archiveSetupNeededAdmin => _t(
-      'Verbinde zuerst ein privates GitHub-Repo, um Jahre zu archivieren.',
-      'Connect a private GitHub repo first to archive years.');
+    'Verbinde zuerst ein privates GitHub-Repo, um Jahre zu archivieren.',
+    'Connect a private GitHub repo first to archive years.',
+  );
   String get archiveSetupNeededUser => _t(
-      'Es ist noch kein Archiv-Repo eingerichtet. Bitte einen Administrator darum bitten.',
-      'No archive repo has been set up yet. Please ask an administrator.');
-  String get archiveRepoTokenRequired => _t(
-      'Bitte Repo und Token angeben.', 'Please provide repo and token.');
+    'Es ist noch kein Archiv-Repo eingerichtet. Bitte einen Administrator darum bitten.',
+    'No archive repo has been set up yet. Please ask an administrator.',
+  );
+  String get archiveRepoTokenRequired =>
+      _t('Bitte Repo und Token angeben.', 'Please provide repo and token.');
   String get archiveConfigSaved =>
       _t('Archiv-Repo gespeichert.', 'Archive repo saved.');
   String get archiveKeyBackupTitle =>
       _t('Schlüssel sichern (wichtig!)', 'Back up your key (important!)');
   String get archiveKeyBackupBody => _t(
-      'Dieser Verschlüsselungs-Schlüssel wurde erzeugt und serverseitig gespeichert. Bewahre eine Kopie sicher auf: Geht die Datenbank verloren, sind die archivierten Daten OHNE diesen Schlüssel nicht wiederherstellbar.',
-      'This encryption key was generated and stored server-side. Keep a copy somewhere safe: if the database is lost, the archived data CANNOT be recovered without this key.');
+    'Dieser Verschlüsselungs-Schlüssel wurde erzeugt und serverseitig gespeichert. Bewahre eine Kopie sicher auf: Geht die Datenbank verloren, sind die archivierten Daten OHNE diesen Schlüssel nicht wiederherstellbar.',
+    'This encryption key was generated and stored server-side. Keep a copy somewhere safe: if the database is lost, the archived data CANNOT be recovered without this key.',
+  );
 }
 
 class _AppLocalizationsDelegate

@@ -101,9 +101,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     if (cents == null || cents <= 0 || _accountId == null) return;
     if (_type == TransactionType.transfer && _transferTargetId == null) {
       final l = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.chooseTargetAccount)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.chooseTargetAccount)));
       return;
     }
     setState(() => _saving = true);
@@ -144,8 +144,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     } catch (e) {
       if (mounted) {
         final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
         setState(() => _saving = false);
       }
     }
@@ -160,11 +161,13 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
         content: Text(l.deleteRecurringBody),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l.cancel)),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.delete)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.delete),
+          ),
         ],
       ),
     );
@@ -179,21 +182,20 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
     final isTransfer = _type == TransactionType.transfer;
-    final accounts = (ref.watch(accountsProvider).asData?.value ??
-            const <Account>[])
-        .where((a) => !a.archived)
-        .toList();
+    final accounts =
+        (ref.watch(accountsProvider).asData?.value ?? const <Account>[])
+            .where((a) => !a.archived)
+            .toList();
     _accountId ??= accounts.isNotEmpty ? accounts.first.id : null;
 
-    final categories = (ref.watch(categoriesProvider).asData?.value ??
-            const <Category>[])
-        .where((c) => c.active && c.matches(_type))
-        .toList();
+    final categories =
+        (ref.watch(categoriesProvider).asData?.value ?? const <Category>[])
+            .where((c) => c.active && c.matches(_type))
+            .toList();
     if (_categoryId != null && !categories.any((c) => c.id == _categoryId)) {
       _categoryId = null;
     }
-    final targets =
-        accounts.where((a) => a.id != _accountId).toList();
+    final targets = accounts.where((a) => a.id != _accountId).toList();
     if (_transferTargetId != null &&
         !targets.any((a) => a.id == _transferTargetId)) {
       _transferTargetId = null;
@@ -228,14 +230,23 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     SegmentedButton<TransactionType>(
                       segments: [
                         ButtonSegment(
-                            value: TransactionType.expense,
-                            label: Text(l.transactionType(TransactionType.expense))),
+                          value: TransactionType.expense,
+                          label: Text(
+                            l.transactionType(TransactionType.expense),
+                          ),
+                        ),
                         ButtonSegment(
-                            value: TransactionType.income,
-                            label: Text(l.transactionType(TransactionType.income))),
+                          value: TransactionType.income,
+                          label: Text(
+                            l.transactionType(TransactionType.income),
+                          ),
+                        ),
                         ButtonSegment(
-                            value: TransactionType.transfer,
-                            label: Text(l.transactionType(TransactionType.transfer))),
+                          value: TransactionType.transfer,
+                          label: Text(
+                            l.transactionType(TransactionType.transfer),
+                          ),
+                        ),
                       ],
                       selected: {_type},
                       onSelectionChanged: (s) =>
@@ -246,7 +257,9 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                       initialValue: _accountId,
                       decoration: InputDecoration(
                         labelText: l.accountLabel,
-                        prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+                        prefixIcon: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                        ),
                       ),
                       items: [
                         for (final a in accounts)
@@ -258,7 +271,8 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     TextFormField(
                       controller: _amount,
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
                         labelText: l.amountCalcShort,
                         prefixIcon: const Icon(Icons.euro),
@@ -266,8 +280,10 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                           tooltip: l.calculator,
                           icon: const Icon(Icons.calculate_outlined),
                           onPressed: () async {
-                            final r = await showCalculatorSheet(context,
-                                initial: _amount.text);
+                            final r = await showCalculatorSheet(
+                              context,
+                              initial: _amount.text,
+                            );
                             if (r != null) setState(() => _amount.text = r);
                           },
                         ),
@@ -290,13 +306,16 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                         ),
                         items: [
                           DropdownMenuItem<String?>(
-                              value: null, child: Text(l.chooseDash)),
+                            value: null,
+                            child: Text(l.chooseDash),
+                          ),
                           for (final a in targets)
                             DropdownMenuItem<String?>(
-                                value: a.id, child: Text(a.name)),
+                              value: a.id,
+                              child: Text(a.name),
+                            ),
                         ],
-                        onChanged: (v) =>
-                            setState(() => _transferTargetId = v),
+                        onChanged: (v) => setState(() => _transferTargetId = v),
                       )
                     else
                       DropdownButtonFormField<String?>(
@@ -307,10 +326,14 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                         ),
                         items: [
                           DropdownMenuItem<String?>(
-                              value: null, child: Text(l.noCategoryOption)),
+                            value: null,
+                            child: Text(l.noCategoryOption),
+                          ),
                           for (final c in categories)
                             DropdownMenuItem<String?>(
-                                value: c.id, child: Text(c.name)),
+                              value: c.id,
+                              child: Text(c.name),
+                            ),
                         ],
                         onChanged: (v) => setState(() => _categoryId = v),
                       ),
@@ -342,10 +365,12 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                             items: [
                               for (final u in IntervalUnit.values)
                                 DropdownMenuItem(
-                                    value: u, child: Text(l.intervalUnitLabel(u))),
+                                  value: u,
+                                  child: Text(l.intervalUnitLabel(u)),
+                                ),
                             ],
-                            onChanged: (v) => setState(
-                                () => _unit = v ?? IntervalUnit.month),
+                            onChanged: (v) =>
+                                setState(() => _unit = v ?? IntervalUnit.month),
                           ),
                         ),
                       ],
@@ -364,7 +389,8 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                       leading: const Icon(Icons.event_busy),
                       title: Text(l.endDateOptional),
                       subtitle: Text(
-                          _endDate == null ? l.noEnd : df.format(_endDate!)),
+                        _endDate == null ? l.noEnd : df.format(_endDate!),
+                      ),
                       trailing: _endDate == null
                           ? const Icon(Icons.edit_calendar)
                           : IconButton(
@@ -391,8 +417,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.check),
                       label: Text(l.save),

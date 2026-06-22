@@ -21,8 +21,10 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # Zusätzliche Regeln über flutter_lints hinaus (Finalisierung):
+    avoid_print: true # keine print()-Aufrufe im Produktivcode
+    unawaited_futures: true # vergessene awaits bei async DB-/Repo-Calls erkennen
+    prefer_final_locals: true # lokale Variablen final, wenn nie neu zugewiesen
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

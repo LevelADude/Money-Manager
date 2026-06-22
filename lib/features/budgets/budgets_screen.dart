@@ -57,18 +57,24 @@ class BudgetsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cats = (ref.watch(categoriesProvider).asData?.value ??
-            const <Category>[])
-        .where((c) => c.kind == CategoryKind.expense && c.active)
-        .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final cats =
+        (ref.watch(categoriesProvider).asData?.value ?? const <Category>[])
+            .where((c) => c.kind == CategoryKind.expense && c.active)
+            .toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
     final budgets = ref.watch(budgetsByCategoryProvider);
     final spent = ref.watch(monthlySpentByCategoryProvider);
 
-    final totalBudget =
-        budgets.values.fold<int>(0, (s, b) => s + b.amountCents);
-    final totalSpent =
-        budgets.keys.fold<int>(0, (s, id) => s + (spent[id] ?? 0));
+    final totalBudget = budgets.values.fold<int>(
+      0,
+      (s, b) => s + b.amountCents,
+    );
+    final totalSpent = budgets.keys.fold<int>(
+      0,
+      (s, id) => s + (spent[id] ?? 0),
+    );
 
     final now = DateTime.now();
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
@@ -90,12 +96,13 @@ class BudgetsScreen extends ConsumerWidget {
               category: cat,
               budget: budgets[cat.id],
               spentCents: spent[cat.id] ?? 0,
-              onEdit: () => _edit(context, ref, cat, budgets[cat.id]?.amountCents),
+              onEdit: () =>
+                  _edit(context, ref, cat, budgets[cat.id]?.amountCents),
               onRemove: budgets[cat.id] == null
                   ? null
                   : () => ref
-                      .read(budgetRepositoryProvider)
-                      .deleteBudget(budgets[cat.id]!.id),
+                        .read(budgetRepositoryProvider)
+                        .deleteBudget(budgets[cat.id]!.id),
             ),
         ],
       ),
@@ -136,13 +143,16 @@ class _OverallBudgetCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(l.thisMonthWithBudget,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    l.thisMonthWithBudget,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 if (hasBudget)
-                  Text('$pct %',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: color)),
+                  Text(
+                    '$pct %',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                  ),
               ],
             ),
             const SizedBox(height: 8),
@@ -163,10 +173,14 @@ class _OverallBudgetCard extends StatelessWidget {
                 child: Text(
                   over
                       ? l.budgetExceededBy(formatCents(-remaining))
-                      : l.budgetRemainingLine(formatCents(remaining), daysLeft,
-                          formatCents(perDay)),
+                      : l.budgetRemainingLine(
+                          formatCents(remaining),
+                          daysLeft,
+                          formatCents(perDay),
+                        ),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: over ? Colors.red.shade700 : null),
+                    color: over ? Colors.red.shade700 : null,
+                  ),
                 ),
               ),
           ],
@@ -218,8 +232,10 @@ class _BudgetTile extends StatelessWidget {
                 Icon(iconForToken(category.icon)),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(category.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    category.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 if (hasBudget) ...[
                   IconButton(
@@ -233,10 +249,7 @@ class _BudgetTile extends StatelessWidget {
                     onPressed: onRemove,
                   ),
                 ] else
-                  TextButton(
-                    onPressed: onEdit,
-                    child: Text(l.setBudgetAction),
-                  ),
+                  TextButton(onPressed: onEdit, child: Text(l.setBudgetAction)),
               ],
             ),
             if (hasBudget) ...[
@@ -255,7 +268,8 @@ class _BudgetTile extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                      '${l.amountOf(formatCents(spentCents), formatCents(amount))} · $pct %'),
+                    '${l.amountOf(formatCents(spentCents), formatCents(amount))} · $pct %',
+                  ),
                   Text(
                     over
                         ? l.overBy(formatCents(spentCents - amount))

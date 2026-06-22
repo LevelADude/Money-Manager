@@ -13,10 +13,15 @@ class ExchangeRatesScreen extends ConsumerWidget {
   const ExchangeRatesScreen({super.key});
 
   Future<void> _editRate(
-      BuildContext context, WidgetRef ref, String code, double current) async {
+    BuildContext context,
+    WidgetRef ref,
+    String code,
+    double current,
+  ) async {
     final l = AppLocalizations.of(context);
     final ctrl = TextEditingController(
-        text: current == 0 ? '' : current.toString().replaceAll('.', ','));
+      text: current == 0 ? '' : current.toString().replaceAll('.', ','),
+    );
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -31,11 +36,13 @@ class ExchangeRatesScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(l.cancel)),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.cancel),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.save)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.save),
+          ),
         ],
       ),
     );
@@ -85,12 +92,13 @@ class ExchangeRatesScreen extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.currency_exchange),
                 title: Text('1 $code (${currencySymbol(code)})'),
-                subtitle: Text(rates[code] == null
-                    ? l.noRateSet
-                    : '= ${rates[code].toString().replaceAll('.', ',')} $base'),
+                subtitle: Text(
+                  rates[code] == null
+                      ? l.noRateSet
+                      : '= ${rates[code].toString().replaceAll('.', ',')} $base',
+                ),
                 trailing: const Icon(Icons.edit_outlined),
-                onTap: () =>
-                    _editRate(context, ref, code, rates[code] ?? 0),
+                onTap: () => _editRate(context, ref, code, rates[code] ?? 0),
               ),
           const Divider(height: 24),
           Wrap(

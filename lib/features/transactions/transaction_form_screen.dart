@@ -29,11 +29,7 @@ import 'transaction_providers.dart';
 /// Buchung erfassen ODER bearbeiten. Das Konto wird hier gewählt; kommt man von
 /// einem Konto, ist es vorausgewählt.
 class TransactionFormScreen extends ConsumerStatefulWidget {
-  const TransactionFormScreen({
-    super.key,
-    this.accountId,
-    this.transactionId,
-  });
+  const TransactionFormScreen({super.key, this.accountId, this.transactionId});
 
   /// Vorausgewähltes Quellkonto (z. B. aus der Konto-Detailansicht).
   final String? accountId;
@@ -73,7 +69,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   void initState() {
     super.initState();
     _accountId = widget.accountId;
-    _splitsPrefilled = widget.transactionId == null; // nur beim Bearbeiten laden
+    _splitsPrefilled =
+        widget.transactionId == null; // nur beim Bearbeiten laden
   }
 
   @override
@@ -105,8 +102,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _receiptPath = t.receiptPath;
         _tags = List.of(t.tags);
         if (_receiptPath != null) {
-          _receiptUrlFuture =
-              ref.read(receiptStorageProvider).signedUrl(_receiptPath!);
+          _receiptUrlFuture = ref
+              .read(receiptStorageProvider)
+              .signedUrl(_receiptPath!);
         }
         _prefilled = true;
         break;
@@ -119,23 +117,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (_splitsPrefilled) return;
     final data = ref.read(allSplitsProvider).asData;
     if (data == null) return; // noch nicht geladen → später erneut
-    final mine =
-        data.value.where((s) => s.transactionId == widget.transactionId);
+    final mine = data.value.where(
+      (s) => s.transactionId == widget.transactionId,
+    );
     if (mine.isNotEmpty) {
       _splitMode = true;
       for (final s in mine) {
-        _splitRows.add(_SplitRow(
-          categoryId: s.categoryId,
-          amount: centsToInput(s.amountCents),
-        ));
+        _splitRows.add(
+          _SplitRow(
+            categoryId: s.categoryId,
+            amount: centsToInput(s.amountCents),
+          ),
+        );
       }
     }
     _splitsPrefilled = true;
   }
 
   void _addSplitRow({String? categoryId, String amount = ''}) {
-    setState(() => _splitRows
-        .add(_SplitRow(categoryId: categoryId, amount: amount)));
+    setState(
+      () => _splitRows.add(_SplitRow(categoryId: categoryId, amount: amount)),
+    );
   }
 
   void _removeSplitRow(int i) {
@@ -169,8 +171,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (suggestion != null) setState(() => _categoryId = suggestion);
   }
 
-  String get _backTarget =>
-      widget.accountId != null ? '/account/${widget.accountId}' : '/transactions';
+  String get _backTarget => widget.accountId != null
+      ? '/account/${widget.accountId}'
+      : '/transactions';
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -191,15 +194,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (cents == null || cents <= 0) return;
     final l = AppLocalizations.of(context);
     if (_accountId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.chooseAccount)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.chooseAccount)));
       return;
     }
     if (_type == TransactionType.transfer && _transferTargetId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.chooseTargetAccount)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.chooseTargetAccount)));
       return;
     }
     // Aufteilungen vorbereiten/prüfen (nur bei Ausgabe/Einnahme).
@@ -220,10 +223,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       } else {
         final sum = splitData.fold<int>(0, (s, e) => s + e.amountCents);
         if (sum != cents) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                l.splitSumMismatch(formatCents(sum), formatCents(cents))),
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                l.splitSumMismatch(formatCents(sum), formatCents(cents)),
+              ),
+            ),
+          );
           return;
         }
       }
@@ -274,8 +280,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       if (mounted) context.go(_backTarget);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
         setState(() => _saving = false);
       }
     }
@@ -316,7 +323,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final l = AppLocalizations.of(context);
     final repo = ref.read(transactionRepositoryProvider);
     final names =
-        ref.read(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.read(profileNamesProvider).asData?.value ??
+        const <String, String>{};
     final df = DateFormat('dd.MM.yyyy HH:mm');
     await showModalBottomSheet<void>(
       context: context,
@@ -326,7 +334,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         builder: (ctx, snap) {
           if (!snap.hasData) {
             return const SizedBox(
-                height: 160, child: Center(child: CircularProgressIndicator()));
+              height: 160,
+              child: Center(child: CircularProgressIndicator()),
+            );
           }
           final items = snap.data!;
           return SafeArea(
@@ -334,8 +344,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               shrinkWrap: true,
               children: [
                 ListTile(
-                  title: Text(l.history,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    l.history,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 if (items.isEmpty)
                   Padding(
@@ -354,7 +366,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     }),
                     title: Text(l.auditAction(e.action)),
                     subtitle: Text(
-                        '${names[e.actor] ?? l.unknownPerson} · ${df.format(e.at.toLocal())}'),
+                      '${names[e.actor] ?? l.unknownPerson} · ${df.format(e.at.toLocal())}',
+                    ),
                   ),
               ],
             ),
@@ -389,7 +402,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       ),
     );
     if (name == null || name.isEmpty) return;
-    await ref.read(templateRepositoryProvider).add(
+    await ref
+        .read(templateRepositoryProvider)
+        .add(
           name: name,
           accountId: _accountId,
           type: _type,
@@ -400,9 +415,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           tags: _tags,
         );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.templateSaved)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.templateSaved)));
     }
   }
 
@@ -418,10 +433,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             child: ListView(
               shrinkWrap: true,
               children: [
-                ListTile(
-                  title: Text(l.chooseTemplate),
-                  dense: true,
-                ),
+                ListTile(title: Text(l.chooseTemplate), dense: true),
                 if (templates.isEmpty)
                   Padding(
                     padding: const EdgeInsets.all(16),
@@ -468,9 +480,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final l = AppLocalizations.of(context);
     final cents = parseToCents(_amount.text);
     if (cents == null || cents <= 0 || _accountId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.enterValidValuesFirst)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.enterValidValuesFirst)));
       return;
     }
     final splitActive = _splitMode && _type != TransactionType.transfer;
@@ -505,16 +517,17 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       ref.invalidate(allTransactionsProvider);
       ref.invalidate(allSplitsProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.transactionDuplicated)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.transactionDuplicated)));
         context.go('/transactions/$newId');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
@@ -522,7 +535,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   Future<ImageSource?> _chooseSource() {
     final l = AppLocalizations.of(context);
     // Kamera auf Handy UND im Web/PWA (Browser-Kamera). Nur Desktop kann nicht.
-    final canCamera = kIsWeb ||
+    final canCamera =
+        kIsWeb ||
         defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS;
     return showModalBottomSheet<ImageSource>(
@@ -579,7 +593,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       if (mounted) {
         setState(() => _receiptBusy = false);
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context).receiptError(e))));
+          SnackBar(content: Text(AppLocalizations.of(context).receiptError(e))),
+        );
       }
     }
   }
@@ -610,9 +625,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     });
     if (scan.merchant != null) _applyAutoCategory(scan.merchant!);
     if (filled.isNotEmpty && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(l.receiptRecognized(filled.join(', '))),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.receiptRecognized(filled.join(', ')))),
+      );
     }
   }
 
@@ -644,8 +659,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child:
-                Text(l.receipt, style: Theme.of(context).textTheme.labelLarge),
+            child: Text(
+              l.receipt,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
           ),
           const SizedBox(height: 6),
           ClipRRect(
@@ -727,16 +744,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 Expanded(
                   flex: 3,
                   child: DropdownButtonFormField<String?>(
-                    initialValue: categories
-                            .any((c) => c.id == _splitRows[i].categoryId)
+                    initialValue:
+                        categories.any((c) => c.id == _splitRows[i].categoryId)
                         ? _splitRows[i].categoryId
                         : null,
                     isExpanded: true,
                     decoration: InputDecoration(
-                        labelText: l.category, isDense: true),
+                      labelText: l.category,
+                      isDense: true,
+                    ),
                     items: [
                       DropdownMenuItem<String?>(
-                          value: null, child: Text(l.none)),
+                        value: null,
+                        child: Text(l.none),
+                      ),
                       for (final c in categories)
                         DropdownMenuItem<String?>(
                           value: c.id,
@@ -745,8 +766,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                               Icon(iconForToken(c.icon), size: 18),
                               const SizedBox(width: 6),
                               Flexible(
-                                child: Text(c.name,
-                                    overflow: TextOverflow.ellipsis),
+                                child: Text(
+                                  c.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
@@ -762,10 +785,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   child: TextField(
                     controller: _splitRows[i].amountCtrl,
                     keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true),
+                      decimal: true,
+                    ),
                     textAlign: TextAlign.right,
                     decoration: InputDecoration(
-                        labelText: l.amount, isDense: true, prefixText: '€ '),
+                      labelText: l.amount,
+                      isDense: true,
+                      prefixText: '€ ',
+                    ),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
@@ -798,8 +825,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         Text(
           balanced
               ? l.distributedBalanced(formatCents(sum))
-              : l.distributedOf(formatCents(sum), formatCents(total),
-                  formatCents(rest)),
+              : l.distributedOf(
+                  formatCents(sum),
+                  formatCents(total),
+                  formatCents(rest),
+                ),
           style: TextStyle(
             color: balanced
                 ? Colors.green.shade700
@@ -821,19 +851,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final df = DateFormat('dd.MM.yyyy');
     final isTransfer = _type == TransactionType.transfer;
 
-    final accounts = (ref.watch(accountsProvider).asData?.value ??
-            const <Account>[])
-        .where((a) => !a.archived)
-        .toList();
+    final accounts =
+        (ref.watch(accountsProvider).asData?.value ?? const <Account>[])
+            .where((a) => !a.archived)
+            .toList();
     _accountId ??= accounts.isNotEmpty ? accounts.first.id : null;
     if (_accountId != null && !accounts.any((a) => a.id == _accountId)) {
       _accountId = accounts.isNotEmpty ? accounts.first.id : null;
     }
 
-    final categories = (ref.watch(categoriesProvider).asData?.value ??
-            const <Category>[])
-        .where((c) => c.active && c.matches(_type))
-        .toList();
+    final categories =
+        (ref.watch(categoriesProvider).asData?.value ?? const <Category>[])
+            .where((c) => c.active && c.matches(_type))
+            .toList();
     if (_categoryId != null && !categories.any((c) => c.id == _categoryId)) {
       _categoryId = null;
     }
@@ -899,23 +929,29 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       segments: [
                         ButtonSegment(
                           value: TransactionType.expense,
-                          label: Text(l.transactionType(TransactionType.expense)),
+                          label: Text(
+                            l.transactionType(TransactionType.expense),
+                          ),
                           icon: const Icon(Icons.north_east),
                         ),
                         ButtonSegment(
                           value: TransactionType.income,
-                          label: Text(l.transactionType(TransactionType.income)),
+                          label: Text(
+                            l.transactionType(TransactionType.income),
+                          ),
                           icon: const Icon(Icons.south_west),
                         ),
                         ButtonSegment(
                           value: TransactionType.transfer,
-                          label:
-                              Text(l.transactionType(TransactionType.transfer)),
+                          label: Text(
+                            l.transactionType(TransactionType.transfer),
+                          ),
                           icon: const Icon(Icons.swap_horiz),
                         ),
                       ],
                       selected: {_type},
-                      onSelectionChanged: (s) => setState(() => _type = s.first),
+                      onSelectionChanged: (s) =>
+                          setState(() => _type = s.first),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
@@ -923,7 +959,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       decoration: InputDecoration(
                         labelText: l.accountLabel,
                         prefixIcon: const Icon(
-                            Icons.account_balance_wallet_outlined),
+                          Icons.account_balance_wallet_outlined,
+                        ),
                       ),
                       items: [
                         for (final a in accounts)
@@ -936,7 +973,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       controller: _amount,
                       autofocus: !widget.isEditing,
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                        decimal: true,
+                      ),
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
                         labelText: l.amountHintLabel,
@@ -945,8 +983,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           tooltip: l.calculator,
                           icon: const Icon(Icons.calculate_outlined),
                           onPressed: () async {
-                            final r = await showCalculatorSheet(context,
-                                initial: _amount.text);
+                            final r = await showCalculatorSheet(
+                              context,
+                              initial: _amount.text,
+                            );
                             if (r != null) setState(() => _amount.text = r);
                           },
                         ),
@@ -959,28 +999,29 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         return null;
                       },
                     ),
-                    Builder(builder: (context) {
-                      final t = _amount.text;
-                      final hasOp = t.contains('+') ||
-                          t.contains('*') ||
-                          t.contains('/') ||
-                          t.lastIndexOf('-') > 0;
-                      final cents = hasOp ? parseToCents(t) : null;
-                      if (cents == null) return const SizedBox.shrink();
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 6, left: 12),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            '= ${formatCents(cents)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
+                    Builder(
+                      builder: (context) {
+                        final t = _amount.text;
+                        final hasOp =
+                            t.contains('+') ||
+                            t.contains('*') ||
+                            t.contains('/') ||
+                            t.lastIndexOf('-') > 0;
+                        final cents = hasOp ? parseToCents(t) : null;
+                        if (cents == null) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 6, left: 12),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '= ${formatCents(cents)}',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 16),
                     if (isTransfer)
                       DropdownButtonFormField<String?>(
@@ -996,10 +1037,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           ),
                           for (final a in targets)
                             DropdownMenuItem<String?>(
-                                value: a.id, child: Text(a.name)),
+                              value: a.id,
+                              child: Text(a.name),
+                            ),
                         ],
-                        onChanged: (v) =>
-                            setState(() => _transferTargetId = v),
+                        onChanged: (v) => setState(() => _transferTargetId = v),
                       )
                     else ...[
                       SwitchListTile(
@@ -1009,10 +1051,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           _splitMode = v;
                           if (v && _splitRows.isEmpty) {
                             final cents = parseToCents(_amount.text) ?? 0;
-                            _splitRows.add(_SplitRow(
-                              categoryId: _categoryId,
-                              amount: cents > 0 ? centsToInput(cents) : '',
-                            ));
+                            _splitRows.add(
+                              _SplitRow(
+                                categoryId: _categoryId,
+                                amount: cents > 0 ? centsToInput(cents) : '',
+                              ),
+                            );
                           }
                         }),
                         title: Text(l.splitMultiple),
@@ -1040,8 +1084,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     Icon(iconForToken(c.icon), size: 20),
                                     const SizedBox(width: 8),
                                     Flexible(
-                                      child: Text(c.name,
-                                          overflow: TextOverflow.ellipsis),
+                                      child: Text(
+                                        c.name,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1064,18 +1110,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       onSelected: _onTitleSelected,
                       fieldViewBuilder:
                           (context, controller, focusNode, onSubmit) {
-                        _titleCtrl = controller;
-                        return TextFormField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          textCapitalization: TextCapitalization.sentences,
-                          onChanged: _applyAutoCategory,
-                          decoration: InputDecoration(
-                            labelText: l.titleHintLabel,
-                            prefixIcon: const Icon(Icons.storefront_outlined),
-                          ),
-                        );
-                      },
+                            _titleCtrl = controller;
+                            return TextFormField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              textCapitalization: TextCapitalization.sentences,
+                              onChanged: _applyAutoCategory,
+                              decoration: InputDecoration(
+                                labelText: l.titleHintLabel,
+                                prefixIcon: const Icon(
+                                  Icons.storefront_outlined,
+                                ),
+                              ),
+                            );
+                          },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -1115,8 +1163,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.check),
                       label: Text(l.save),
@@ -1138,7 +1185,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 /// Eine Zeile im Split-Editor (Kategorie + Betrag).
 class _SplitRow {
   _SplitRow({this.categoryId, String amount = ''})
-      : amountCtrl = TextEditingController(text: amount);
+    : amountCtrl = TextEditingController(text: amount);
 
   String? categoryId;
   final TextEditingController amountCtrl;

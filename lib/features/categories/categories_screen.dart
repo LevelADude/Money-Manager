@@ -32,11 +32,13 @@ class CategoriesScreen extends ConsumerWidget {
               SegmentedButton<CategoryKind>(
                 segments: [
                   ButtonSegment(
-                      value: CategoryKind.expense,
-                      label: Text(l.expenseSingular)),
+                    value: CategoryKind.expense,
+                    label: Text(l.expenseSingular),
+                  ),
                   ButtonSegment(
-                      value: CategoryKind.income,
-                      label: Text(l.incomeSingular)),
+                    value: CategoryKind.income,
+                    label: Text(l.incomeSingular),
+                  ),
                 ],
                 selected: {kind},
                 onSelectionChanged: (s) => setState(() => kind = s.first),
@@ -49,10 +51,10 @@ class CategoriesScreen extends ConsumerWidget {
               child: Text(l.cancel),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(
-                ctx,
-                (name: controller.text.trim(), kind: kind),
-              ),
+              onPressed: () => Navigator.pop(ctx, (
+                name: controller.text.trim(),
+                kind: kind,
+              )),
               child: Text(l.create),
             ),
           ],
@@ -81,10 +83,12 @@ class CategoriesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (items) {
-          final expense =
-              items.where((c) => c.kind == CategoryKind.expense).toList();
-          final income =
-              items.where((c) => c.kind == CategoryKind.income).toList();
+          final expense = items
+              .where((c) => c.kind == CategoryKind.expense)
+              .toList();
+          final income = items
+              .where((c) => c.kind == CategoryKind.income)
+              .toList();
           return ListView(
             children: [
               _SectionHeader(l.expenses),
@@ -108,11 +112,12 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(title,
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(fontWeight: FontWeight.bold)),
+      child: Text(
+        title,
+        style: Theme.of(
+          context,
+        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+      ),
     );
   }
 }
@@ -185,11 +190,7 @@ class _ReorderableCatsState extends ConsumerState<_ReorderableCats> {
 }
 
 class _CategoryTile extends ConsumerWidget {
-  const _CategoryTile({
-    super.key,
-    required this.category,
-    required this.index,
-  });
+  const _CategoryTile({super.key, required this.category, required this.index});
 
   final Category category;
   final int index;
@@ -213,8 +214,9 @@ class _CategoryTile extends ConsumerWidget {
           IconButton(
             tooltip: l.delete,
             icon: const Icon(Icons.delete_outline),
-            onPressed: () =>
-                ref.read(categoryRepositoryProvider).deleteCategory(category.id),
+            onPressed: () => ref
+                .read(categoryRepositoryProvider)
+                .deleteCategory(category.id),
           ),
           ReorderableDragStartListener(
             index: index,

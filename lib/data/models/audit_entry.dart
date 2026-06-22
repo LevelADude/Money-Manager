@@ -17,22 +17,22 @@ class AuditEntry {
   final Map<String, dynamic>? data;
 
   String get actionLabel => switch (action) {
-        'insert' => 'Angelegt',
-        'update' => 'Geändert',
-        'delete' => 'Gelöscht',
-        'restore' => 'Wiederhergestellt',
-        'purge' => 'Endgültig gelöscht',
-        _ => action,
-      };
+    'insert' => 'Angelegt',
+    'update' => 'Geändert',
+    'delete' => 'Gelöscht',
+    'restore' => 'Wiederhergestellt',
+    'purge' => 'Endgültig gelöscht',
+    _ => action,
+  };
 
   factory AuditEntry.fromJson(Map<String, dynamic> json) => AuditEntry(
-        id: (json['id'] as num).toInt(),
-        rowId: json['row_id'] as String?,
-        action: (json['action'] as String?) ?? 'update',
-        actor: json['actor'] as String?,
-        at: DateTime.parse(json['at'] as String),
-        data: json['data'] is Map
-            ? Map<String, dynamic>.from(json['data'] as Map)
-            : null,
-      );
+    id: (json['id'] as num).toInt(),
+    rowId: json['row_id'] as String?,
+    action: (json['action'] as String?) ?? 'update',
+    actor: json['actor'] as String?,
+    at: DateTime.parse(json['at'] as String),
+    data: json['data'] is Map
+        ? Map<String, dynamic>.from(json['data'] as Map)
+        : null,
+  );
 }

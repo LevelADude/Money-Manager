@@ -20,10 +20,12 @@ class SettleScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts =
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
-    final txs = ref.watch(allTransactionsProvider).asData?.value ??
+    final txs =
+        ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final names =
-        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.watch(profileNamesProvider).asData?.value ??
+        const <String, String>{};
     final l = AppLocalizations.of(context);
 
     String nameOf(String id) =>
@@ -90,20 +92,24 @@ class SettleScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(l.sharedExpensesMonth,
-                            style: Theme.of(context).textTheme.labelLarge),
+                        Text(
+                          l.sharedExpensesMonth,
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
                         const SizedBox(height: 4),
-                        MoneyText(total,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.bold)),
+                        MoneyText(
+                          total,
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(l.fairSharePerPerson,
-                                style: Theme.of(context).textTheme.bodySmall),
+                            Text(
+                              l.fairSharePerPerson,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                             MoneyText(share),
                           ],
                         ),
@@ -112,11 +118,12 @@ class SettleScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(l.balancesPerPerson,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  l.balancesPerPerson,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
                 for (final m in members)
                   ListTile(
                     dense: true,
@@ -135,11 +142,12 @@ class SettleScreen extends ConsumerWidget {
                     ),
                   ),
                 const Divider(height: 24),
-                Text(l.settleSuggestion,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  l.settleSuggestion,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 4),
                 if (plan.isEmpty)
                   Padding(
@@ -153,9 +161,10 @@ class SettleScreen extends ConsumerWidget {
                       child: ListTile(
                         leading: const Icon(Icons.arrow_forward),
                         title: Text('${nameOf(p.from)} → ${nameOf(p.to)}'),
-                        trailing: MoneyText(p.amount,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+                        trailing: MoneyText(
+                          p.amount,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                 const SizedBox(height: 12),

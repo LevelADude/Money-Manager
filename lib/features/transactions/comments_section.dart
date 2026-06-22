@@ -31,9 +31,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
     if (body.isEmpty) return;
     setState(() => _sending = true);
     try {
-      await ref
-          .read(commentRepositoryProvider)
-          .add(widget.transactionId, body);
+      await ref.read(commentRepositoryProvider).add(widget.transactionId, body);
       _input.clear();
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -44,7 +42,8 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
   Widget build(BuildContext context) {
     final async = ref.watch(commentsProvider(widget.transactionId));
     final names =
-        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.watch(profileNamesProvider).asData?.value ??
+        const <String, String>{};
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy HH:mm');
 
@@ -53,8 +52,10 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
       children: [
         Align(
           alignment: Alignment.centerLeft,
-          child: Text(l.comments,
-              style: Theme.of(context).textTheme.labelLarge),
+          child: Text(
+            l.comments,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
         ),
         const SizedBox(height: 4),
         async.when(
@@ -67,8 +68,10 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
             if (comments.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(l.noComments,
-                    style: Theme.of(context).textTheme.bodySmall),
+                child: Text(
+                  l.noComments,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               );
             }
             return Column(
@@ -86,7 +89,8 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
                     ),
                     title: Text(c.body),
                     subtitle: Text(
-                        '${names[c.author] ?? l.unknownPerson} · ${df.format(c.createdAt.toLocal())}'),
+                      '${names[c.author] ?? l.unknownPerson} · ${df.format(c.createdAt.toLocal())}',
+                    ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline, size: 18),
                       onPressed: () =>
@@ -119,7 +123,8 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
                   ? const SizedBox(
                       height: 18,
                       width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2))
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.send),
               onPressed: _sending ? null : _send,
             ),

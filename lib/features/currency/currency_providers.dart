@@ -8,8 +8,20 @@ import '../accounts/account_providers.dart';
 import '../settings/settings_providers.dart';
 
 const supportedCurrencies = <String>[
-  'EUR', 'USD', 'GBP', 'CHF', 'JPY', 'PLN', 'SEK', 'NOK', 'DKK', 'CZK',
-  'TRY', 'CAD', 'AUD', 'USDT',
+  'EUR',
+  'USD',
+  'GBP',
+  'CHF',
+  'JPY',
+  'PLN',
+  'SEK',
+  'NOK',
+  'DKK',
+  'CZK',
+  'TRY',
+  'CAD',
+  'AUD',
+  'USDT',
 ];
 
 /// Vom Nutzer hinzugefügte eigene Währungscodes (lokal gespeichert).
@@ -33,7 +45,8 @@ class CustomCurrenciesNotifier extends Notifier<List<String>> {
 
 final customCurrenciesProvider =
     NotifierProvider<CustomCurrenciesNotifier, List<String>>(
-        CustomCurrenciesNotifier.new);
+      CustomCurrenciesNotifier.new,
+    );
 
 /// Alle wählbaren Währungen: Standard + eigene + in Konten benutzte.
 final allCurrenciesProvider = Provider<List<String>>((ref) {
@@ -76,7 +89,8 @@ class ExchangeRatesNotifier extends Notifier<Map<String, double>> {
 
 final exchangeRatesProvider =
     NotifierProvider<ExchangeRatesNotifier, Map<String, double>>(
-        ExchangeRatesNotifier.new);
+      ExchangeRatesNotifier.new,
+    );
 
 /// Funktion: rechnet Cent einer Währung in die Hauptwährung um.
 final converterProvider = Provider<int Function(int cents, String code)>((ref) {
@@ -84,7 +98,8 @@ final converterProvider = Provider<int Function(int cents, String code)>((ref) {
   final rates = ref.watch(exchangeRatesProvider);
   return (cents, code) {
     if (code == base) return cents;
-    final r = rates[code] ?? 1.0; // unbekannt -> 1:1 (Nutzer sollte Kurs setzen)
+    final r =
+        rates[code] ?? 1.0; // unbekannt -> 1:1 (Nutzer sollte Kurs setzen)
     return (cents * r).round();
   };
 });

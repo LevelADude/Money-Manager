@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/app_transaction.dart';
+import '../../shared/balances.dart';
+import '../archive/archive_providers.dart';
 import '../currency/currency_providers.dart';
 import '../settings/settings_providers.dart';
 import '../transactions/person_filter.dart';
@@ -53,7 +55,9 @@ final monthlyTotalsProvider = Provider<List<MonthTotals>>((ref) {
   final curOf = ref.watch(accountCurrencyProvider);
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
   final now = DateTime.now();
-  final months = [for (var i = 11; i >= 0; i--) DateTime(now.year, now.month - i, 1)];
+  final months = [
+    for (var i = 11; i >= 0; i--) DateTime(now.year, now.month - i, 1),
+  ];
   final income = {for (final m in months) _key(m): 0};
   final expense = {for (final m in months) _key(m): 0};
 
@@ -82,11 +86,13 @@ final monthlyTotalsProvider = Provider<List<MonthTotals>>((ref) {
 String _key(DateTime m) => '${m.year}-${m.month}';
 
 /// Gesamtvermögen zum Monatsende der letzten 12 Monate (Vermögensverlauf).
-final netWorthHistoryProvider =
-    Provider<List<({DateTime month, int cents})>>((ref) {
+final netWorthHistoryProvider = Provider<List<({DateTime month, int cents})>>((
+  ref,
+) {
   final accounts = ref.watch(personFilteredAccountsProvider);
   final txs = ref.watch(personFilteredTransactionsProvider);
   final convert = ref.watch(converterProvider);
+  final carryover = ref.watch(archivedCarryoverProvider);
   final now = DateTime.now();
   final result = <({DateTime month, int cents})>[];
   for (var i = 11; i >= 0; i--) {
@@ -94,11 +100,10 @@ final netWorthHistoryProvider =
     var total = 0;
     for (final a in accounts) {
       if (!a.includeInNetWorth || a.archived) continue;
-      var b = a.openingBalanceCents;
-      for (final t in txs) {
-        if (!t.occurredOn.isAfter(monthEnd)) b += t.signedCentsFor(a.id);
-      }
-      total += convert(b, a.currency);
+      total += convert(
+        accountBalanceAsOf(a, txs, carryover, monthEnd),
+        a.currency,
+      );
     }
     result.add((month: monthEnd, cents: total));
   }
@@ -106,12 +111,18 @@ final netWorthHistoryProvider =
 });
 
 /// Zeitfenster (start inкl., end exkl.) des aktuellen bzw. vorherigen Zeitraums.
-({DateTime start, DateTime end})? rangeFor(StatsPeriod p, DateTime now,
-    {required bool previous}) {
+({DateTime start, DateTime end})? rangeFor(
+  StatsPeriod p,
+  DateTime now, {
+  required bool previous,
+}) {
   switch (p) {
     case StatsPeriod.thisDay:
-      final base = DateTime(now.year, now.month, now.day)
-          .add(Duration(days: previous ? -1 : 0));
+      final base = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).add(Duration(days: previous ? -1 : 0));
       return (start: base, end: base.add(const Duration(days: 1)));
     case StatsPeriod.thisWeek:
       final today = DateTime(now.year, now.month, now.day);
@@ -226,8 +237,7 @@ List<AppTransaction> categoryDrilldown(
       return splits.any((s) => s.categoryId == categoryId);
     }
     return t.categoryId == categoryId;
-  }).toList()
-    ..sort((a, b) => b.amountCents.compareTo(a.amountCents));
+  }).toList()..sort((a, b) => b.amountCents.compareTo(a.amountCents));
   return result;
 }
 
@@ -237,11 +247,15 @@ final topExpensesProvider = Provider<List<AppTransaction>>((ref) {
   final anchor = ref.watch(statsAnchorProvider);
   final range = rangeFor(p, anchor, previous: false);
   final txs = ref.watch(personFilteredTransactionsProvider);
-  final list = txs
-      .where((t) =>
-          t.type == TransactionType.expense && _inRange(range, t.occurredOn))
-      .toList()
-    ..sort((a, b) => b.amountCents.compareTo(a.amountCents));
+  final list =
+      txs
+          .where(
+            (t) =>
+                t.type == TransactionType.expense &&
+                _inRange(range, t.occurredOn),
+          )
+          .toList()
+        ..sort((a, b) => b.amountCents.compareTo(a.amountCents));
   return list.take(5).toList();
 });
 
@@ -251,6 +265,7 @@ final statsProvider = Provider<StatsSummary>((ref) {
   final range = rangeFor(period, anchor, previous: false);
   final txs = ref.watch(personFilteredTransactionsProvider);
   final accounts = ref.watch(personFilteredAccountsProvider);
+  final carryover = ref.watch(archivedCarryoverProvider);
   final splitsByTx = ref.watch(splitsByTransactionProvider);
   final convert = ref.watch(converterProvider);
   final curOf = ref.watch(accountCurrencyProvider);
@@ -298,11 +313,7 @@ final statsProvider = Provider<StatsSummary>((ref) {
   var debt = 0;
   for (final a in accounts) {
     if (a.archived) continue;
-    var bal = a.openingBalanceCents;
-    for (final t in txs) {
-      bal += t.signedCentsFor(a.id);
-    }
-    final baseBal = convert(bal, a.currency);
+    final baseBal = convert(accountBalanceCents(a, txs, carryover), a.currency);
     if (a.includeInNetWorth) netWorth += baseBal;
     if (baseBal < 0) debt += -baseBal;
   }

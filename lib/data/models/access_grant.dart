@@ -9,9 +9,9 @@ String grantLevelToDb(GrantLevel l) =>
 
 extension GrantLevelLabel on GrantLevel {
   String get label => switch (this) {
-        GrantLevel.view => 'Ansehen',
-        GrantLevel.manage => 'Verwalten',
-      };
+    GrantLevel.view => 'Ansehen',
+    GrantLevel.manage => 'Verwalten',
+  };
 }
 
 /// Eine Freigabe: [ownerId] erlaubt [granteeId] Zugriff (ansehen/verwalten) auf
@@ -30,9 +30,9 @@ class AccessGrant {
   final GrantLevel level;
 
   factory AccessGrant.fromJson(Map<String, dynamic> j) => AccessGrant(
-        id: j['id'] as String,
-        ownerId: j['owner_id'] as String,
-        granteeId: j['grantee_id'] as String,
-        level: grantLevelFromDb(j['level'] as String?),
-      );
+    id: j['id'] as String,
+    ownerId: j['owner_id'] as String,
+    granteeId: j['grantee_id'] as String,
+    level: grantLevelFromDb(j['level'] as String?),
+  );
 }

@@ -35,16 +35,18 @@ class SubscriptionsScreen extends ConsumerWidget {
                       leading: const Icon(Icons.autorenew),
                       title: Text(c.title),
                       subtitle: Text(
-                          '${l.everyInterval(c.intervalCount, c.intervalUnit)} · '
-                          '${l.detectedTimes(c.occurrences)} · '
-                          '${l.fromDate(df.format(c.nextDue))}'),
+                        '${l.everyInterval(c.intervalCount, c.intervalUnit)} · '
+                        '${l.detectedTimes(c.occurrences)} · '
+                        '${l.fromDate(df.format(c.nextDue))}',
+                      ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          MoneyText(c.amountCents,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          MoneyText(
+                            c.amountCents,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           TextButton(
                             onPressed: () async {
                               await ref
@@ -61,8 +63,7 @@ class SubscriptionsScreen extends ConsumerWidget {
                                   );
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(l.recurringCreated)),
+                                  SnackBar(content: Text(l.recurringCreated)),
                                 );
                               }
                             },

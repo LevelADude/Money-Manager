@@ -27,8 +27,9 @@ class MoneyText extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hide = ref.watch(settingsProvider.select((s) => s.hideAmounts));
-    final value =
-        currency == null ? formatCents(cents) : formatMoney(cents, currency!);
+    final value = currency == null
+        ? formatCents(cents)
+        : formatMoney(cents, currency!);
     final text = hide ? '••••' : '$prefix$value';
     return Text(text, style: style, textAlign: textAlign);
   }

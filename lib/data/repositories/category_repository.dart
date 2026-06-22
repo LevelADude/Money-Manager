@@ -16,7 +16,9 @@ class CategoryRepository {
     final list = cats.toList()
       ..sort((a, b) {
         final c = a.sortOrder.compareTo(b.sortOrder);
-        return c != 0 ? c : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        return c != 0
+            ? c
+            : a.name.toLowerCase().compareTo(b.name.toLowerCase());
       });
     return list;
   }
@@ -24,9 +26,9 @@ class CategoryRepository {
   Stream<List<Category>> watchCategories() async* {
     final cached = _cache.readRows('categories');
     if (cached.isNotEmpty) {
-      yield _sorted(cached
-          .where((r) => r['deleted_at'] == null)
-          .map(Category.fromJson));
+      yield _sorted(
+        cached.where((r) => r['deleted_at'] == null).map(Category.fromJson),
+      );
     }
     try {
       yield* _client
@@ -34,12 +36,14 @@ class CategoryRepository {
           .stream(primaryKey: ['id'])
           .order('sort_order')
           .map((rows) {
-        final unique = dedupRowsById(rows);
-        _cache.writeRows('categories', unique);
-        return _sorted(unique
-            .where((r) => r['deleted_at'] == null)
-            .map(Category.fromJson));
-      });
+            final unique = dedupRowsById(rows);
+            _cache.writeRows('categories', unique);
+            return _sorted(
+              unique
+                  .where((r) => r['deleted_at'] == null)
+                  .map(Category.fromJson),
+            );
+          });
     } catch (_) {
       // Offline: beim Cache bleiben.
     }
@@ -51,7 +55,8 @@ class CategoryRepository {
       for (final o in orders)
         _client
             .from('categories')
-            .update({'sort_order': o.sortOrder}).eq('id', o.id),
+            .update({'sort_order': o.sortOrder})
+            .eq('id', o.id),
     ]);
   }
 
@@ -85,10 +90,10 @@ class CategoryRepository {
           .stream(primaryKey: ['id'])
           .order('keyword')
           .map((rows) {
-        final unique = dedupRowsById(rows);
-        _cache.writeRows('category_rules', unique);
-        return unique.map(CategoryRule.fromJson).toList();
-      });
+            final unique = dedupRowsById(rows);
+            _cache.writeRows('category_rules', unique);
+            return unique.map(CategoryRule.fromJson).toList();
+          });
     } catch (_) {
       // Offline: beim Cache bleiben.
     }

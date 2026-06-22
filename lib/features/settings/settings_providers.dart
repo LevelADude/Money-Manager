@@ -41,15 +41,14 @@ class AppSettings {
     bool? lockEnabled,
     String? baseCurrency,
     String? localeCode,
-  }) =>
-      AppSettings(
-        themeMode: themeMode ?? this.themeMode,
-        seedColor: seedColor ?? this.seedColor,
-        hideAmounts: hideAmounts ?? this.hideAmounts,
-        lockEnabled: lockEnabled ?? this.lockEnabled,
-        baseCurrency: baseCurrency ?? this.baseCurrency,
-        localeCode: localeCode ?? this.localeCode,
-      );
+  }) => AppSettings(
+    themeMode: themeMode ?? this.themeMode,
+    seedColor: seedColor ?? this.seedColor,
+    hideAmounts: hideAmounts ?? this.hideAmounts,
+    lockEnabled: lockEnabled ?? this.lockEnabled,
+    baseCurrency: baseCurrency ?? this.baseCurrency,
+    localeCode: localeCode ?? this.localeCode,
+  );
 }
 
 /// Auswählbare Akzentfarben.
@@ -82,7 +81,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
     gBaseCurrency = base; // globalen Formatter aktualisieren
     final loc = prefs.getString(_kLocale) ?? 'de';
     return AppSettings(
-      themeMode: ThemeMode.values[modeIdx.clamp(0, ThemeMode.values.length - 1)],
+      themeMode:
+          ThemeMode.values[modeIdx.clamp(0, ThemeMode.values.length - 1)],
       seedColor: seed,
       hideAmounts: prefs.getBool(_kHide) ?? false,
       lockEnabled: prefs.getString(_kPinHash) != null,
@@ -115,7 +115,8 @@ class SettingsNotifier extends Notifier<AppSettings> {
   Future<void> setPin(String pin) async {
     final prefs = ref.read(sharedPrefsProvider);
     final salt = base64Url.encode(
-        List<int>.generate(16, (_) => Random.secure().nextInt(256)));
+      List<int>.generate(16, (_) => Random.secure().nextInt(256)),
+    );
     await prefs.setString(_kPinSalt, salt);
     await prefs.setString(_kPinHash, _hash(pin, salt));
     state = state.copyWith(lockEnabled: true);
@@ -147,5 +148,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 }
 
-final settingsProvider =
-    NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(
+  SettingsNotifier.new,
+);

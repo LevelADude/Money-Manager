@@ -43,11 +43,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         // Tabelle existiert evtl. nicht – überspringen.
       }
     }
-    return const JsonEncoder.withIndent('  ').convert({
-      'app': 'money-manager',
-      'version': 1,
-      'tables': tables,
-    });
+    return const JsonEncoder.withIndent(
+      '  ',
+    ).convert({'app': 'money-manager', 'version': 1, 'tables': tables});
   }
 
   Future<void> _export() async {
@@ -63,9 +61,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         ShareParams(
           text: l.backupShareText,
           files: [
-            XFile.fromData(bytes,
-                mimeType: 'application/json',
-                name: 'money-manager-backup.json'),
+            XFile.fromData(
+              bytes,
+              mimeType: 'application/json',
+              name: 'money-manager-backup.json',
+            ),
           ],
         ),
       );
@@ -111,11 +111,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(l.cancel)),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.cancel),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.importAction)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.importAction),
+          ),
         ],
       ),
     );
@@ -186,8 +188,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             ],
           ),
           const Divider(height: 40),
-          Text(l.restoreSection,
-              style: Theme.of(context).textTheme.titleSmall),
+          Text(l.restoreSection, style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 4),
           Text(l.restoreDesc),
           const SizedBox(height: 12),
@@ -201,8 +202,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           if (_status.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(_status,
-                  style: Theme.of(context).textTheme.bodyMedium),
+              child: Text(
+                _status,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
         ],
       ),

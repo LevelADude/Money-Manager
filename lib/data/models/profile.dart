@@ -20,13 +20,13 @@ class Profile {
   final bool isOwner;
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
-        id: json['id'] as String,
-        displayName: (json['display_name'] as String?) ?? '',
-        isAdmin: (json['is_admin'] as bool?) ?? false,
-        createdAt: json['created_at'] == null
-            ? null
-            : DateTime.tryParse(json['created_at'] as String),
-        readOnly: (json['read_only'] as bool?) ?? false,
-        isOwner: (json['is_owner'] as bool?) ?? false,
-      );
+    id: json['id'] as String,
+    displayName: (json['display_name'] as String?) ?? '',
+    isAdmin: (json['is_admin'] as bool?) ?? false,
+    createdAt: json['created_at'] == null
+        ? null
+        : DateTime.tryParse(json['created_at'] as String),
+    readOnly: (json['read_only'] as bool?) ?? false,
+    isOwner: (json['is_owner'] as bool?) ?? false,
+  );
 }

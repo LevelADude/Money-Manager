@@ -112,8 +112,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.pdfError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.pdfError(e))));
       }
     }
   }
@@ -191,7 +192,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     // nach Tag gruppieren
     final byDay = <DateTime, List<AppTransaction>>{};
     for (final t in filtered) {
-      final d = DateTime(t.occurredOn.year, t.occurredOn.month, t.occurredOn.day);
+      final d = DateTime(
+        t.occurredOn.year,
+        t.occurredOn.month,
+        t.occurredOn.day,
+      );
       byDay.putIfAbsent(d, () => []).add(t);
     }
     final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
@@ -217,12 +222,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             onPressed: filtered.isEmpty
                 ? null
                 : () => _sharePeriodPdf(
-                      items: filtered,
-                      accountNames: accountNames,
-                      catNames: catNames,
-                      income: income,
-                      expense: expense,
-                    ),
+                    items: filtered,
+                    accountNames: accountNames,
+                    catNames: catNames,
+                    income: income,
+                    expense: expense,
+                  ),
           ),
         ],
       ),
@@ -240,9 +245,18 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             child: SegmentedButton<_PeriodView>(
               segments: [
                 ButtonSegment(value: _PeriodView.day, label: Text(l.periodDay)),
-                ButtonSegment(value: _PeriodView.week, label: Text(l.periodWeek)),
-                ButtonSegment(value: _PeriodView.month, label: Text(l.periodMonth)),
-                ButtonSegment(value: _PeriodView.year, label: Text(l.periodYear)),
+                ButtonSegment(
+                  value: _PeriodView.week,
+                  label: Text(l.periodWeek),
+                ),
+                ButtonSegment(
+                  value: _PeriodView.month,
+                  label: Text(l.periodMonth),
+                ),
+                ButtonSegment(
+                  value: _PeriodView.year,
+                  label: Text(l.periodYear),
+                ),
               ],
               selected: {_view},
               onSelectionChanged: (s) => setState(() => _view = s.first),
@@ -256,8 +270,10 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               ),
               Expanded(
                 child: Center(
-                  child: Text(_label(),
-                      style: Theme.of(context).textTheme.titleMedium),
+                  child: Text(
+                    _label(),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
               ),
               IconButton(
@@ -270,9 +286,17 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                _SumBox(label: l.income, cents: income, color: Colors.green.shade700),
+                _SumBox(
+                  label: l.income,
+                  cents: income,
+                  color: Colors.green.shade700,
+                ),
                 const SizedBox(width: 8),
-                _SumBox(label: l.expenses, cents: expense, color: Colors.red.shade700),
+                _SumBox(
+                  label: l.expenses,
+                  cents: expense,
+                  color: Colors.red.shade700,
+                ),
                 const SizedBox(width: 8),
                 _SumBox(
                   label: l.balance,
@@ -346,13 +370,10 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                               child: Text(
                                 l.dayHeader(day),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelLarge
+                                style: Theme.of(context).textTheme.labelLarge
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -382,7 +403,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 }
 
 class _SumBox extends StatelessWidget {
-  const _SumBox({required this.label, required this.cents, required this.color});
+  const _SumBox({
+    required this.label,
+    required this.cents,
+    required this.color,
+  });
 
   final String label;
   final int cents;
@@ -458,9 +483,11 @@ class _TxTile extends StatelessWidget {
             : (income ? Icons.south_west : Icons.north_east),
         color: color,
       ),
-      title: Text(tx.title.isEmpty
-          ? (categoryName ?? l.transactionType(tx.type))
-          : tx.title),
+      title: Text(
+        tx.title.isEmpty
+            ? (categoryName ?? l.transactionType(tx.type))
+            : tx.title,
+      ),
       subtitle: sub.isEmpty ? null : Text(sub),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -475,10 +502,12 @@ class _TxTile extends StatelessWidget {
               padding: EdgeInsets.only(right: 6),
               child: Icon(Icons.attach_file, size: 16),
             ),
-          MoneyText(tx.amountCents,
-              prefix: prefix,
-              currency: currency,
-              style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+          MoneyText(
+            tx.amountCents,
+            prefix: prefix,
+            currency: currency,
+            style: TextStyle(fontWeight: FontWeight.bold, color: color),
+          ),
         ],
       ),
     );

@@ -32,8 +32,7 @@ class _TagEditorState extends State<TagEditor> {
   void _add(String raw) {
     final tag = raw.trim();
     if (tag.isEmpty) return;
-    final exists =
-        widget.tags.any((t) => t.toLowerCase() == tag.toLowerCase());
+    final exists = widget.tags.any((t) => t.toLowerCase() == tag.toLowerCase());
     if (!exists) {
       widget.onChanged([...widget.tags, tag]);
     }
@@ -50,9 +49,11 @@ class _TagEditorState extends State<TagEditor> {
   Widget build(BuildContext context) {
     final input = _controller.text.trim().toLowerCase();
     final suggestions = widget.suggestions
-        .where((s) =>
-            !widget.tags.any((t) => t.toLowerCase() == s.toLowerCase()) &&
-            (input.isEmpty || s.toLowerCase().contains(input)))
+        .where(
+          (s) =>
+              !widget.tags.any((t) => t.toLowerCase() == s.toLowerCase()) &&
+              (input.isEmpty || s.toLowerCase().contains(input)),
+        )
         .take(8)
         .toList();
 
@@ -65,10 +66,7 @@ class _TagEditorState extends State<TagEditor> {
             runSpacing: 0,
             children: [
               for (final tag in widget.tags)
-                InputChip(
-                  label: Text(tag),
-                  onDeleted: () => _remove(tag),
-                ),
+                InputChip(label: Text(tag), onDeleted: () => _remove(tag)),
             ],
           ),
         TextField(

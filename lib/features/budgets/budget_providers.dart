@@ -29,7 +29,8 @@ final budgetsByCategoryProvider = Provider<Map<String, Budget>>((ref) {
 /// Ausgaben des laufenden Monats je Kategorie (Cent). Split-bewusst: bei
 /// aufgeteilten Buchungen zählen die einzelnen Split-Beträge je Kategorie.
 final monthlySpentByCategoryProvider = Provider<Map<String, int>>((ref) {
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+  final txs =
+      ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
   final splitsByTx = ref.watch(splitsByTransactionProvider);
   final convert = ref.watch(converterProvider);

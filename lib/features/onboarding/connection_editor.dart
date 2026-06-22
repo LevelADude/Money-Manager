@@ -39,9 +39,7 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
               controller: keyCtrl,
               minLines: 1,
               maxLines: 3,
-              decoration: InputDecoration(
-                labelText: l.anonKeyLabel,
-              ),
+              decoration: InputDecoration(labelText: l.anonKeyLabel),
             ),
           ],
         ),
@@ -52,14 +50,11 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
         if (config.isUsingOverride || !config.hasBakedDefault)
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'reset'),
-            child: Text(config.hasBakedDefault
-                ? l.resetToDefault
-                : l.disconnect),
+            child: Text(
+              config.hasBakedDefault ? l.resetToDefault : l.disconnect,
+            ),
           ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: Text(l.cancel),
-        ),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
         FilledButton(
           onPressed: () {
             if (urlCtrl.text.trim().isEmpty || keyCtrl.text.trim().isEmpty) {
@@ -87,10 +82,7 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
       title: Text(l.connectionChanged),
       content: Text(l.connectionChangedBody),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: Text(l.ok),
-        ),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.ok)),
       ],
     ),
   );

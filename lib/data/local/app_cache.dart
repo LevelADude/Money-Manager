@@ -18,7 +18,9 @@ List<Map<String, dynamic>> dedupRowsById(List<Map<String, dynamic>> rows) {
 
 /// Wird in `main()` per Override mit der echten Instanz versorgt.
 final sharedPrefsProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('sharedPrefsProvider muss in main() überschrieben werden');
+  throw UnimplementedError(
+    'sharedPrefsProvider muss in main() überschrieben werden',
+  );
 });
 
 final appCacheProvider = Provider<AppCache>((ref) {
@@ -62,7 +64,9 @@ class AppCache {
       removeWhereFromCache(table, (r) => r['id'] == id);
 
   void removeWhereFromCache(
-      String table, bool Function(Map<String, dynamic>) test) {
+    String table,
+    bool Function(Map<String, dynamic>) test,
+  ) {
     final rows = List<Map<String, dynamic>>.from(readRows(table));
     if (rows.isEmpty) return;
     rows.removeWhere(test);

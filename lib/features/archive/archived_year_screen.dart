@@ -35,8 +35,10 @@ class ArchivedYearScreen extends ConsumerWidget {
                 const Icon(Icons.lock_outline, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(l.archiveReadOnlyNote,
-                      style: theme.textTheme.bodySmall),
+                  child: Text(
+                    l.archiveReadOnlyNote,
+                    style: theme.textTheme.bodySmall,
+                  ),
                 ),
               ],
             ),
@@ -77,8 +79,10 @@ class ArchivedYearScreen extends ConsumerWidget {
       subtitle: Text(df.format(t.occurredOn)),
       trailing: Text(
         '$sign${formatCents(t.amountCents)}',
-        style: theme.textTheme.bodyMedium
-            ?.copyWith(color: color, fontWeight: FontWeight.w600),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

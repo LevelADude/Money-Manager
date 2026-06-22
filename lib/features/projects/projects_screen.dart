@@ -13,7 +13,8 @@ class ProjectsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final txs = ref.watch(allTransactionsProvider).asData?.value ??
+    final txs =
+        ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final tags = ref.watch(allTagsProvider);
     final l = AppLocalizations.of(context);
@@ -49,11 +50,14 @@ class ProjectsScreen extends ConsumerWidget {
                     leading: const Icon(Icons.sell_outlined),
                     title: Text(tag),
                     subtitle: Text(l.txCount(stats[tag]!.count)),
-                    trailing: MoneyText(stats[tag]!.expense,
-                        prefix: '-',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () =>
-                        context.go('/more/projects/${Uri.encodeComponent(tag)}'),
+                    trailing: MoneyText(
+                      stats[tag]!.expense,
+                      prefix: '-',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    onTap: () => context.go(
+                      '/more/projects/${Uri.encodeComponent(tag)}',
+                    ),
                   ),
               ],
             ),

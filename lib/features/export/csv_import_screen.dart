@@ -63,8 +63,11 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     // dd.MM.yyyy
     final de = RegExp(r'^(\d{1,2})\.(\d{1,2})\.(\d{4})$').firstMatch(s);
     if (de != null) {
-      return DateTime(int.parse(de.group(3)!), int.parse(de.group(2)!),
-          int.parse(de.group(1)!));
+      return DateTime(
+        int.parse(de.group(3)!),
+        int.parse(de.group(2)!),
+        int.parse(de.group(1)!),
+      );
     }
     // yyyy-MM-dd
     return DateTime.tryParse(s);
@@ -72,7 +75,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
 
   TransactionType _parseType(String s) {
     final t = s.trim().toLowerCase();
-    if (t.startsWith('einnahme') || t == 'income') return TransactionType.income;
+    if (t.startsWith('einnahme') || t == 'income') {
+      return TransactionType.income;
+    }
     if (t.startsWith('übertrag') ||
         t.startsWith('uebertrag') ||
         t == 'transfer') {
@@ -106,8 +111,10 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
         return;
       }
       final delim = lines.first.contains(';') ? ';' : ',';
-      final header =
-          _splitLine(lines.first, delim).map((h) => h.trim().toLowerCase()).toList();
+      final header = _splitLine(
+        lines.first,
+        delim,
+      ).map((h) => h.trim().toLowerCase()).toList();
       int col(String name) => header.indexWhere((h) => h.contains(name));
       final iDate = col('datum');
       final iType = col('typ');
@@ -136,7 +143,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           skipped++;
           continue;
         }
-        final type = iType < 0 ? TransactionType.expense : _parseType(at(iType));
+        final type = iType < 0
+            ? TransactionType.expense
+            : _parseType(at(iType));
         String? targetId;
         if (type == TransactionType.transfer) {
           targetId = accByName[at(iTarget).toLowerCase()];
@@ -202,8 +211,10 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           if (_status.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 12),
-              child: Text(_status,
-                  style: Theme.of(context).textTheme.bodyMedium),
+              child: Text(
+                _status,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
         ],
       ),

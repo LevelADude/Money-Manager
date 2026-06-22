@@ -26,13 +26,13 @@ class TransactionRepository {
           .stream(primaryKey: ['id'])
           .order('occurred_on')
           .map((rows) {
-        final unique = dedupRowsById(rows);
-        _cache.writeRows('transactions', unique);
-        return unique
-            .where((r) => r['deleted_at'] == null)
-            .map(AppTransaction.fromJson)
-            .toList();
-      });
+            final unique = dedupRowsById(rows);
+            _cache.writeRows('transactions', unique);
+            return unique
+                .where((r) => r['deleted_at'] == null)
+                .map(AppTransaction.fromJson)
+                .toList();
+          });
     } catch (_) {
       // Offline: beim Cache bleiben.
     }
@@ -80,18 +80,20 @@ class TransactionRepository {
   }) async {
     final row = await _client
         .from('transactions')
-        .insert(_payload(
-          accountId: accountId,
-          type: type,
-          amountCents: amountCents,
-          occurredOn: occurredOn,
-          title: title,
-          note: note,
-          categoryId: categoryId,
-          transferAccountId: transferAccountId,
-          receiptPath: receiptPath,
-          tags: tags,
-        ))
+        .insert(
+          _payload(
+            accountId: accountId,
+            type: type,
+            amountCents: amountCents,
+            occurredOn: occurredOn,
+            title: title,
+            note: note,
+            categoryId: categoryId,
+            transferAccountId: transferAccountId,
+            receiptPath: receiptPath,
+            tags: tags,
+          ),
+        )
         .select('id')
         .single();
     return row['id'] as String;
@@ -112,18 +114,20 @@ class TransactionRepository {
   }) {
     return _client
         .from('transactions')
-        .update(_payload(
-          accountId: accountId,
-          type: type,
-          amountCents: amountCents,
-          occurredOn: occurredOn,
-          title: title,
-          note: note,
-          categoryId: categoryId,
-          transferAccountId: transferAccountId,
-          receiptPath: receiptPath,
-          tags: tags,
-        ))
+        .update(
+          _payload(
+            accountId: accountId,
+            type: type,
+            amountCents: amountCents,
+            occurredOn: occurredOn,
+            title: title,
+            note: note,
+            categoryId: categoryId,
+            transferAccountId: transferAccountId,
+            receiptPath: receiptPath,
+            tags: tags,
+          ),
+        )
         .eq('id', id);
   }
 
@@ -138,7 +142,7 @@ class TransactionRepository {
 
   /// Gelöschte (Tombstone-)Buchungen für den Papierkorb, neueste zuerst.
   Future<List<({AppTransaction tx, DateTime deletedAt})>>
-      deletedTransactions() async {
+  deletedTransactions() async {
     final rows = await _client
         .from('transactions')
         .select()
@@ -156,7 +160,10 @@ class TransactionRepository {
 
   /// Stellt eine gelöschte Buchung wieder her.
   Future<void> restoreTransaction(String id) async {
-    await _client.from('transactions').update({'deleted_at': null}).eq('id', id);
+    await _client
+        .from('transactions')
+        .update({'deleted_at': null})
+        .eq('id', id);
   }
 
   /// Entfernt eine Buchung endgültig (inkl. Splits via FK-Cascade).
@@ -185,7 +192,7 @@ class TransactionRepository {
         .limit(100);
     return [
       for (final r in rows as List)
-        AuditEntry.fromJson(r as Map<String, dynamic>)
+        AuditEntry.fromJson(r as Map<String, dynamic>),
     ];
   }
 
@@ -198,7 +205,7 @@ class TransactionRepository {
         .limit(limit);
     return [
       for (final r in rows as List)
-        AuditEntry.fromJson(r as Map<String, dynamic>)
+        AuditEntry.fromJson(r as Map<String, dynamic>),
     ];
   }
 

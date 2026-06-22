@@ -40,10 +40,7 @@ class RecurringScreen extends ConsumerWidget {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  l.noRecurring,
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(l.noRecurring, textAlign: TextAlign.center),
               ),
             );
           }
@@ -57,10 +54,11 @@ class RecurringScreen extends ConsumerWidget {
               final title = r.title.isNotEmpty
                   ? r.title
                   : (r.categoryId != null
-                      ? (catNames[r.categoryId] ?? l.transactionType(r.type))
-                      : l.transactionType(r.type));
+                        ? (catNames[r.categoryId] ?? l.transactionType(r.type))
+                        : l.transactionType(r.type));
               final acc = accountNames[r.accountId] ?? '';
-              final sub = '$acc · ${l.everyInterval(r.intervalCount, r.intervalUnit)}'
+              final sub =
+                  '$acc · ${l.everyInterval(r.intervalCount, r.intervalUnit)}'
                   ' · ${l.nextDuePrefix(df.format(r.nextDue))}'
                   '${r.active ? '' : ' · ${l.paused}'}';
               return ListTile(
@@ -76,8 +74,8 @@ class RecurringScreen extends ConsumerWidget {
                     color: transfer
                         ? null
                         : (income
-                            ? Colors.green.shade700
-                            : Colors.red.shade700),
+                              ? Colors.green.shade700
+                              : Colors.red.shade700),
                   ),
                 ),
                 title: Text(title),
@@ -85,8 +83,10 @@ class RecurringScreen extends ConsumerWidget {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(formatCents(r.amountCents),
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      formatCents(r.amountCents),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Switch(
                       value: r.active,
                       onChanged: (v) => ref

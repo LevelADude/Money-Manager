@@ -18,9 +18,9 @@ class SplitRepository {
       yield cached.map(TransactionSplit.fromJson).toList();
     }
     try {
-      yield* _client
-          .from('transaction_splits')
-          .stream(primaryKey: ['id']).map((rows) {
+      yield* _client.from('transaction_splits').stream(primaryKey: ['id']).map((
+        rows,
+      ) {
         final unique = dedupRowsById(rows);
         _cache.writeRows('transaction_splits', unique);
         return unique.map(TransactionSplit.fromJson).toList();
@@ -41,7 +41,9 @@ class SplitRepository {
         .delete()
         .eq('transaction_id', transactionId);
     _cache.removeWhereFromCache(
-        'transaction_splits', (r) => r['transaction_id'] == transactionId);
+      'transaction_splits',
+      (r) => r['transaction_id'] == transactionId,
+    );
     if (splits.isEmpty) return;
     await _client.from('transaction_splits').insert([
       for (final s in splits)
@@ -60,6 +62,8 @@ class SplitRepository {
         .delete()
         .eq('transaction_id', transactionId);
     _cache.removeWhereFromCache(
-        'transaction_splits', (r) => r['transaction_id'] == transactionId);
+      'transaction_splits',
+      (r) => r['transaction_id'] == transactionId,
+    );
   }
 }

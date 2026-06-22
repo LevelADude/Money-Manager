@@ -18,7 +18,8 @@ final allProfilesProvider = FutureProvider<List<Profile>>((ref) {
 });
 
 /// Aktuelle Speichernutzung (DB + Datei-Speicher) in Bytes.
-final storageStatsProvider =
-    FutureProvider<({int dbBytes, int storageBytes})>((ref) {
+final storageStatsProvider = FutureProvider<({int dbBytes, int storageBytes})>((
+  ref,
+) {
   return ref.watch(adminRepositoryProvider).fetchStorageStats();
 });

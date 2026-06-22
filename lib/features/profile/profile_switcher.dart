@@ -19,7 +19,8 @@ class ProfileSwitcher extends ConsumerWidget {
     final myId = ref.watch(currentUserIdProvider);
     final options = ref.watch(ownerOptionsProvider);
     final names =
-        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.watch(profileNamesProvider).asData?.value ??
+        const <String, String>{};
     final selected = ref.watch(personFilterProvider);
     final l = AppLocalizations.of(context);
 
@@ -36,12 +37,17 @@ class ProfileSwitcher extends ConsumerWidget {
       }
       final label = selected == myId ? myName : nameOf(selected);
       final initial = label.isNotEmpty ? label[0].toUpperCase() : '?';
-      return Text(initial,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold));
+      return Text(
+        initial,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+      );
     }
 
     // Andere Personen, auf die ich Zugriff habe (eigene Konten ausgenommen).
-    final otherOwners = [for (final o in options) if (o.id != myId) o];
+    final otherOwners = [
+      for (final o in options)
+        if (o.id != myId) o,
+    ];
     final hasOthers = otherOwners.isNotEmpty;
 
     return PopupMenuButton<String?>(

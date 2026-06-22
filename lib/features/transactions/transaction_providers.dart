@@ -47,14 +47,15 @@ final allSplitsProvider = StreamProvider<List<TransactionSplit>>((ref) {
 /// Aufteilungen gruppiert nach Buchungs-ID.
 final splitsByTransactionProvider =
     Provider<Map<String, List<TransactionSplit>>>((ref) {
-  final splits = ref.watch(allSplitsProvider).asData?.value ??
-      const <TransactionSplit>[];
-  final map = <String, List<TransactionSplit>>{};
-  for (final s in splits) {
-    map.putIfAbsent(s.transactionId, () => []).add(s);
-  }
-  return map;
-});
+      final splits =
+          ref.watch(allSplitsProvider).asData?.value ??
+          const <TransactionSplit>[];
+      final map = <String, List<TransactionSplit>>{};
+      for (final s in splits) {
+        map.putIfAbsent(s.transactionId, () => []).add(s);
+      }
+      return map;
+    });
 
 final receiptStorageProvider = Provider<ReceiptStorage>((ref) {
   return ReceiptStorage(ref.watch(supabaseClientProvider));
@@ -70,19 +71,26 @@ final allTransactionsProvider = StreamProvider<List<AppTransaction>>((ref) {
 /// neueste zuerst.
 final accountTransactionsProvider =
     Provider.family<List<AppTransaction>, String>((ref, accountId) {
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
-      const <AppTransaction>[];
-  final list = txs
-      .where((t) => t.accountId == accountId || t.transferAccountId == accountId)
-      .toList()
-    ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
-  return list;
-});
+      final txs =
+          ref.watch(allTransactionsProvider).asData?.value ??
+          const <AppTransaction>[];
+      final list =
+          txs
+              .where(
+                (t) =>
+                    t.accountId == accountId ||
+                    t.transferAccountId == accountId,
+              )
+              .toList()
+            ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
+      return list;
+    });
 
 /// Zuletzt verwendete Titel (neueste zuerst, eindeutig) — aus den bereits
 /// geladenen Buchungen abgeleitet (kein zusätzlicher Netzwerk-Traffic).
 final titleSuggestionsProvider = Provider<List<String>>((ref) {
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+  final txs =
+      ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
   final ordered = [...txs]
     ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
@@ -102,8 +110,8 @@ final commentRepositoryProvider = Provider<CommentRepository>((ref) {
 /// Kommentare einer Buchung (Live-Stream).
 final commentsProvider =
     StreamProvider.family<List<TransactionComment>, String>((ref, txId) {
-  return ref.watch(commentRepositoryProvider).watchForTransaction(txId);
-});
+      return ref.watch(commentRepositoryProvider).watchForTransaction(txId);
+    });
 
 /// Aktivitäts-Feed: jüngste Änderungen über alle Buchungen.
 final recentActivityProvider = FutureProvider<List<AuditEntry>>((ref) {
@@ -112,16 +120,19 @@ final recentActivityProvider = FutureProvider<List<AuditEntry>>((ref) {
 
 /// Papierkorb: gelöschte Buchungen (räumt zugleich Tombstones > 30 Tage auf).
 final deletedTransactionsProvider =
-    FutureProvider<List<({AppTransaction tx, DateTime deletedAt})>>((ref) async {
-  final repo = ref.watch(transactionRepositoryProvider);
-  await repo.purgeOlderThan(const Duration(days: 30));
-  return repo.deletedTransactions();
-});
+    FutureProvider<List<({AppTransaction tx, DateTime deletedAt})>>((
+      ref,
+    ) async {
+      final repo = ref.watch(transactionRepositoryProvider);
+      await repo.purgeOlderThan(const Duration(days: 30));
+      return repo.deletedTransactions();
+    });
 
 /// Alle bisher vergebenen Tags (alphabetisch, eindeutig) – für Vorschläge
 /// im Formular und den Tag-Filter in „Buchungen".
 final allTagsProvider = Provider<List<String>>((ref) {
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+  final txs =
+      ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
   final seen = <String, String>{}; // kleingeschrieben -> Originalschreibweise
   for (final t in txs) {
@@ -138,7 +149,8 @@ final allTagsProvider = Provider<List<String>>((ref) {
 /// Map: Titel (kleingeschrieben) -> zuletzt dafür verwendete Kategorie-ID.
 /// Für den Kategorie-Vorschlag, wenn ein bekannter Titel gewählt wird.
 final titleCategoryProvider = Provider<Map<String, String>>((ref) {
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+  final txs =
+      ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
   final ordered = [...txs]
     ..sort((a, b) => a.occurredOn.compareTo(b.occurredOn)); // alt -> neu

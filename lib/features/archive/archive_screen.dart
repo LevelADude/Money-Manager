@@ -34,7 +34,8 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isAdmin = ref.watch(isAdminProvider).asData?.value ?? false;
-    final txs = ref.watch(allTransactionsProvider).asData?.value ??
+    final txs =
+        ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final archivedSet = ref.watch(archivedYearSetProvider);
     final archivedAsync = ref.watch(archivedYearsProvider);
@@ -66,18 +67,23 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l.archiveNotConfigured,
-                        style: theme.textTheme.titleSmall),
+                    Text(
+                      l.archiveNotConfigured,
+                      style: theme.textTheme.titleSmall,
+                    ),
                     const SizedBox(height: 8),
-                    Text(isAdmin
-                        ? l.archiveSetupNeededAdmin
-                        : l.archiveSetupNeededUser),
+                    Text(
+                      isAdmin
+                          ? l.archiveSetupNeededAdmin
+                          : l.archiveSetupNeededUser,
+                    ),
                     if (isAdmin) ...[
                       const SizedBox(height: 12),
                       FilledButton.icon(
                         onPressed: () => Navigator.of(context).push(
                           MaterialPageRoute(
-                              builder: (_) => const ArchiveSetupScreen()),
+                            builder: (_) => const ArchiveSetupScreen(),
+                          ),
                         ),
                         icon: const Icon(Icons.link),
                         label: Text(l.archiveSetupTitle),
@@ -112,8 +118,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
               title: Text(l.archiveConnectedTo(config!.repo!)),
               trailing: TextButton(
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (_) => const ArchiveSetupScreen()),
+                  MaterialPageRoute(builder: (_) => const ArchiveSetupScreen()),
                 ),
                 child: Text(l.archiveChange),
               ),
@@ -134,12 +139,12 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                   onChanged: _busy
                       ? null
                       : (v) => setState(() {
-                            if (v == true) {
-                              _selected.add(y);
-                            } else {
-                              _selected.remove(y);
-                            }
-                          }),
+                          if (v == true) {
+                            _selected.add(y);
+                          } else {
+                            _selected.remove(y);
+                          }
+                        }),
                   title: Text('$y'),
                   subtitle: Text(l.archiveTxCount(counts[y]!)),
                 ),
@@ -197,14 +202,17 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.warning_amber_rounded,
-              color: theme.colorScheme.onErrorContainer),
+          Icon(
+            Icons.warning_amber_rounded,
+            color: theme.colorScheme.onErrorContainer,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               l.archiveWarning,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onErrorContainer),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onErrorContainer,
+              ),
             ),
           ),
         ],
@@ -212,8 +220,12 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     );
   }
 
-  Widget _archivedTile(BuildContext context, ArchivedYear y, DateFormat df,
-      {required bool isAdmin}) {
+  Widget _archivedTile(
+    BuildContext context,
+    ArchivedYear y,
+    DateFormat df, {
+    required bool isAdmin,
+  }) {
     final l = AppLocalizations.of(context);
     final parts = <String>[
       l.archiveTxCount(y.txCount),
@@ -230,9 +242,11 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           TextButton(
             onPressed: _busy
                 ? null
-                : () => Navigator.of(context).push(MaterialPageRoute(
+                : () => Navigator.of(context).push(
+                    MaterialPageRoute(
                       builder: (_) => ArchivedYearScreen(year: y.year),
-                    )),
+                    ),
+                  ),
             child: Text(l.archiveView),
           ),
           if (isAdmin)
@@ -251,8 +265,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   Future<void> _runArchive() async {
     final l = AppLocalizations.of(context);
     if (_selected.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l.archiveSelectAtLeastOne)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.archiveSelectAtLeastOne)));
       return;
     }
     final years = _selected.toList()..sort();
@@ -262,16 +277,21 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     );
     if (!ok) return;
 
-    final accounts = ref.read(accountsProvider).asData?.value ?? const <Account>[];
+    final accounts =
+        ref.read(accountsProvider).asData?.value ?? const <Account>[];
     setState(() => _busy = true);
     try {
       for (final y in years) {
-        await ref.read(archiveRepositoryProvider).archiveYear(
+        await ref
+            .read(archiveRepositoryProvider)
+            .archiveYear(
               year: y,
               accounts: accounts,
               exportedAtIso: DateTime.now().toUtc().toIso8601String(),
               onProgress: (step) {
-                if (mounted) setState(() => _status = '$y · ${_stepLabel(step)}');
+                if (mounted) {
+                  setState(() => _status = '$y · ${_stepLabel(step)}');
+                }
               },
             );
       }
@@ -280,16 +300,21 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
         _selected.clear();
         _status = '';
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(years.length == 1
-            ? l.archiveDone(years.first)
-            : '${l.archivedSection}: ${years.join(', ')}'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            years.length == 1
+                ? l.archiveDone(years.first)
+                : '${l.archivedSection}: ${years.join(', ')}',
+          ),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         setState(() => _status = '');
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.archiveError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.archiveError(e))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -311,13 +336,15 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     try {
       await ref.read(archiveRepositoryProvider).deArchiveYear(year);
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.archiveRestoreDone(year))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.archiveRestoreDone(year))));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.archiveError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.archiveError(e))));
       }
     } finally {
       if (mounted) {
@@ -329,7 +356,11 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     }
   }
 
-  Future<bool> _confirm(String title, String body, {String? confirmLabel}) async {
+  Future<bool> _confirm(
+    String title,
+    String body, {
+    String? confirmLabel,
+  }) async {
     final l = AppLocalizations.of(context);
     final r = await showDialog<bool>(
       context: context,
@@ -364,13 +395,12 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   }
 
   Widget _sectionTitle(BuildContext context, String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-        child: Text(
-          text,
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    child: Text(
+      text,
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+    ),
+  );
 }

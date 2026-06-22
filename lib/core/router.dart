@@ -46,8 +46,9 @@ import 'main_scaffold.dart';
 /// go_router mit persistenter Menüleiste (StatefulShellRoute) + Auth-Redirect.
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = ValueNotifier<AuthState?>(null);
-  final sub = Supabase.instance.client.auth.onAuthStateChange
-      .listen((state) => authNotifier.value = state);
+  final sub = Supabase.instance.client.auth.onAuthStateChange.listen(
+    (state) => authNotifier.value = state,
+  );
   ref.onDispose(() {
     sub.cancel();
     authNotifier.dispose();
@@ -71,8 +72,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/login', builder: (c, s) => const LoginScreen()),
       GoRoute(
-          path: '/reset-password',
-          builder: (c, s) => const ResetPasswordScreen()),
+        path: '/reset-password',
+        builder: (c, s) => const ResetPasswordScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => MainScaffold(shell: shell),
         branches: [
@@ -99,12 +101,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                       GoRoute(
                         path: 'edit',
                         builder: (c, s) => AccountFormScreen(
-                            accountId: s.pathParameters['id']),
+                          accountId: s.pathParameters['id'],
+                        ),
                       ),
                       GoRoute(
                         path: 'tx/new',
                         builder: (c, s) => TransactionFormScreen(
-                            accountId: s.pathParameters['id']),
+                          accountId: s.pathParameters['id'],
+                        ),
                       ),
                       GoRoute(
                         path: 'tx/:txId',
@@ -133,7 +137,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: ':txId',
                     builder: (c, s) => TransactionFormScreen(
-                        transactionId: s.pathParameters['txId']),
+                      transactionId: s.pathParameters['txId'],
+                    ),
                   ),
                 ],
               ),
@@ -190,7 +195,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                       GoRoute(
                         path: ':tag',
                         builder: (c, s) => ProjectDetailScreen(
-                            tag: Uri.decodeComponent(s.pathParameters['tag']!)),
+                          tag: Uri.decodeComponent(s.pathParameters['tag']!),
+                        ),
                       ),
                     ],
                   ),
@@ -220,8 +226,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                       ),
                       GoRoute(
                         path: ':id/edit',
-                        builder: (c, s) => RecurringFormScreen(
-                            ruleId: s.pathParameters['id']),
+                        builder: (c, s) =>
+                            RecurringFormScreen(ruleId: s.pathParameters['id']),
                       ),
                     ],
                   ),

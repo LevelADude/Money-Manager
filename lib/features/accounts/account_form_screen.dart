@@ -55,8 +55,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         _type = a.type;
         _currency = a.currency;
         _opening.text = centsToInput(a.openingBalanceCents);
-        _creditLimit.text =
-            a.creditLimitCents == null ? '' : centsToInput(a.creditLimitCents!);
+        _creditLimit.text = a.creditLimitCents == null
+            ? ''
+            : centsToInput(a.creditLimitCents!);
         _includeInNetWorth = a.includeInNetWorth;
         _ownerId = a.ownerId;
         _prefilled = true;
@@ -71,8 +72,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
     final openingCents = parseToCents(_opening.text) ?? 0;
-    final creditCents =
-        _creditLimit.text.trim().isEmpty ? null : parseToCents(_creditLimit.text);
+    final creditCents = _creditLimit.text.trim().isEmpty
+        ? null
+        : parseToCents(_creditLimit.text);
     setState(() => _saving = true);
     final repo = ref.read(accountRepositoryProvider);
     final myId = ref.read(currentUserIdProvider);
@@ -112,7 +114,8 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context).errorWith(e))));
+          SnackBar(content: Text(AppLocalizations.of(context).errorWith(e))),
+        );
         setState(() => _saving = false);
       }
     }
@@ -126,17 +129,21 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     // Nur der Besitzer eines Kontos darf es teilen (neu: ich bin Besitzer).
     final isOwner = !widget.isEditing || _ownerId == myId;
     // Vorhandene Mitglieder beim Bearbeiten einmalig vorbelegen.
-    if (widget.isEditing && !_membersInit &&
+    if (widget.isEditing &&
+        !_membersInit &&
         ref.watch(accountMembersProvider).hasValue) {
       _shareWith = {...?ref.read(membersByAccountProvider)[widget.accountId]};
       _membersInit = true;
     }
     final profileNames =
-        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.watch(profileNamesProvider).asData?.value ??
+        const <String, String>{};
     final others = profileNames.keys.where((id) => id != myId).toList()
-      ..sort((a, b) => (profileNames[a] ?? '')
-          .toLowerCase()
-          .compareTo((profileNames[b] ?? '').toLowerCase()));
+      ..sort(
+        (a, b) => (profileNames[a] ?? '').toLowerCase().compareTo(
+          (profileNames[b] ?? '').toLowerCase(),
+        ),
+      );
     final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -173,48 +180,54 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                 onChanged: (v) => setState(() => _type = v ?? AccountType.bank),
               ),
               const SizedBox(height: 16),
-              Consumer(builder: (context, ref, _) {
-                final all = ref.watch(allCurrenciesProvider);
-                final value = all.contains(_currency) ? _currency : 'EUR';
-                return Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: value,
-                        decoration: InputDecoration(
-                          labelText: l.currency,
-                          prefixIcon: const Icon(Icons.currency_exchange),
-                        ),
-                        items: [
-                          for (final c in all)
-                            DropdownMenuItem(
+              Consumer(
+                builder: (context, ref, _) {
+                  final all = ref.watch(allCurrenciesProvider);
+                  final value = all.contains(_currency) ? _currency : 'EUR';
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: value,
+                          decoration: InputDecoration(
+                            labelText: l.currency,
+                            prefixIcon: const Icon(Icons.currency_exchange),
+                          ),
+                          items: [
+                            for (final c in all)
+                              DropdownMenuItem(
                                 value: c,
-                                child: Text('$c (${currencySymbol(c)})')),
-                        ],
-                        onChanged: (v) => setState(() => _currency = v ?? 'EUR'),
+                                child: Text('$c (${currencySymbol(c)})'),
+                              ),
+                          ],
+                          onChanged: (v) =>
+                              setState(() => _currency = v ?? 'EUR'),
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      tooltip: l.addCurrency,
-                      icon: const Icon(Icons.add),
-                      onPressed: () async {
-                        final code = await showAddCurrencyDialog(context);
-                        if (code != null) {
-                          await ref
-                              .read(customCurrenciesProvider.notifier)
-                              .add(code);
-                          setState(() => _currency = code);
-                        }
-                      },
-                    ),
-                  ],
-                );
-              }),
+                      IconButton(
+                        tooltip: l.addCurrency,
+                        icon: const Icon(Icons.add),
+                        onPressed: () async {
+                          final code = await showAddCurrencyDialog(context);
+                          if (code != null) {
+                            await ref
+                                .read(customCurrenciesProvider.notifier)
+                                .add(code);
+                            setState(() => _currency = code);
+                          }
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _opening,
                 keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true, signed: true),
+                  decimal: true,
+                  signed: true,
+                ),
                 decoration: InputDecoration(
                   labelText: l.openingBalance,
                   helperText: isLiability
@@ -227,8 +240,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _creditLimit,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: InputDecoration(
                     labelText: l.creditLimitOptional,
                     prefixIcon: const Icon(Icons.speed_outlined),
@@ -246,11 +260,12 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                 const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(l.shareWithTitle,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    l.shareWithTitle,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -264,9 +279,11 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                   children: [
                     for (final id in others)
                       FilterChip(
-                        label: Text(profileNames[id]!.isNotEmpty
-                            ? profileNames[id]!
-                            : l.unknownPerson),
+                        label: Text(
+                          profileNames[id]!.isNotEmpty
+                              ? profileNames[id]!
+                              : l.unknownPerson,
+                        ),
                         selected: _shareWith.contains(id),
                         onSelected: (sel) => setState(() {
                           if (sel) {

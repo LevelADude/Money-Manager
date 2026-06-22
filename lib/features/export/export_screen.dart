@@ -29,14 +29,16 @@ class ExportScreen extends ConsumerWidget {
   }
 
   String _buildCsv(WidgetRef ref) {
-    final txs = ref.watch(allTransactionsProvider).asData?.value ??
+    final txs =
+        ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final accounts =
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final memberNames =
-        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.watch(profileNamesProvider).asData?.value ??
+        const <String, String>{};
     final df = DateFormat('dd.MM.yyyy');
 
     final sorted = [...txs]
@@ -44,10 +46,12 @@ class ExportScreen extends ConsumerWidget {
 
     final sb = StringBuffer();
     sb.writeln(
-        'Datum;Typ;Betrag;Konto;Zielkonto;Kategorie;Titel;Notiz;Erfasst von');
+      'Datum;Typ;Betrag;Konto;Zielkonto;Kategorie;Titel;Notiz;Erfasst von',
+    );
     for (final t in sorted) {
-      final amount =
-          (t.amountCents / 100).toStringAsFixed(2).replaceAll('.', ',');
+      final amount = (t.amountCents / 100)
+          .toStringAsFixed(2)
+          .replaceAll('.', ',');
       final row = [
         df.format(t.occurredOn),
         t.type.label,
@@ -68,7 +72,8 @@ class ExportScreen extends ConsumerWidget {
 
   Future<void> _exportPdf(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
-    final txs = ref.read(allTransactionsProvider).asData?.value ??
+    final txs =
+        ref.read(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final accounts =
         ref.read(accountsProvider).asData?.value ?? const <Account>[];
@@ -103,8 +108,7 @@ class ExportScreen extends ConsumerWidget {
     try {
       await shareTransactionsPdf(
         heading: l.pdfHeading,
-        periodLabel:
-            l.pdfStatusLabel(rows.length, df.format(DateTime.now())),
+        periodLabel: l.pdfStatusLabel(rows.length, df.format(DateTime.now())),
         rows: rows,
         incomeText: formatCents(income),
         expenseText: formatCents(expense),
@@ -113,8 +117,9 @@ class ExportScreen extends ConsumerWidget {
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.pdfError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.pdfError(e))));
       }
     }
   }
@@ -134,8 +139,10 @@ class ExportScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l.exportSubtitle(txCount),
-                style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              l.exportSubtitle(txCount),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -158,9 +165,7 @@ class ExportScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: txCount == 0
-                        ? null
-                        : () => _share(context, csv),
+                    onPressed: txCount == 0 ? null : () => _share(context, csv),
                     icon: const Icon(Icons.ios_share),
                     label: Text(l.shareCsv),
                   ),
@@ -174,8 +179,10 @@ class ExportScreen extends ConsumerWidget {
               label: Text(l.sharePdf),
             ),
             const SizedBox(height: 16),
-            Text(l.previewFirstLines,
-                style: Theme.of(context).textTheme.labelMedium),
+            Text(
+              l.previewFirstLines,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
             const SizedBox(height: 4),
             Expanded(
               child: Container(
@@ -188,7 +195,10 @@ class ExportScreen extends ConsumerWidget {
                 child: SingleChildScrollView(
                   child: SelectableText(
                     previewLines.isEmpty ? l.noData : previewLines,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),
@@ -217,9 +227,9 @@ class ExportScreen extends ConsumerWidget {
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.shareFailed(e))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.shareFailed(e))));
       }
     }
   }

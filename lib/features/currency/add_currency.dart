@@ -22,8 +22,7 @@ Future<String?> showAddCurrencyDialog(BuildContext context) async {
         ),
       ),
       actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
         FilledButton(
           onPressed: () => Navigator.pop(ctx, ctrl.text.trim().toUpperCase()),
           child: Text(l.add),
