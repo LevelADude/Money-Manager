@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'config/app_config.dart';
+import 'config/db_connection_file.dart';
 import 'data/local/app_cache.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -16,23 +17,33 @@ Future<void> main() async {
   // DateFormat(..., 'de')-Aufrufe eine LocaleDataException).
   await initializeDateFormatting('de', null);
   final prefs = await SharedPreferences.getInstance();
-  runApp(_Bootstrap(prefs: prefs));
+  // Fest ins Repo eingecheckte Verbindung (assets/db_connection/connection.json)
+  // laden – bindet dieses Repo an seine Datenbank. Fehlt sie → Onboarding.
+  final fileConn = await DbConnectionFile.load();
+  runApp(_Bootstrap(prefs: prefs, fileConn: fileConn));
 }
 
 /// Startsequenz: prüft die (Laufzeit-)Konfiguration, initialisiert Supabase und
 /// zeigt sonst das Onboarding. So braucht eine fremde Instanz keine
 /// Build-Konfiguration – die Zugangsdaten kommen beim ersten Start.
 class _Bootstrap extends StatefulWidget {
-  const _Bootstrap({required this.prefs});
+  const _Bootstrap({required this.prefs, this.fileConn});
 
   final SharedPreferences prefs;
+
+  /// Verbindung aus der Repo-Datei (oder null, wenn nicht vorhanden/gültig).
+  final ({String url, String anonKey})? fileConn;
 
   @override
   State<_Bootstrap> createState() => _BootstrapState();
 }
 
 class _BootstrapState extends State<_Bootstrap> {
-  late final AppConfig _config = AppConfig(widget.prefs);
+  late final AppConfig _config = AppConfig(
+    widget.prefs,
+    fileUrl: widget.fileConn?.url,
+    fileKey: widget.fileConn?.anonKey,
+  );
   bool _initializing = true;
   bool _ready = false;
   String? _error;

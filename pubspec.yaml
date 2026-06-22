@@ -103,6 +103,10 @@ flutter:
   assets:
     # SQL-Komplettsetup, das im Onboarding zum Kopieren angeboten wird.
     - supabase/setup.sql
+    # Fest eingecheckte Datenbank-Verbindung (connection.json). Als ganzer Ordner
+    # eingebunden, damit das Loeschen von connection.json den Build NICHT bricht
+    # (README.txt haelt den Ordner am Leben). Fehlt connection.json -> Onboarding.
+    - assets/db_connection/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

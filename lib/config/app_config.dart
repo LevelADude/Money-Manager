@@ -7,16 +7,25 @@ import 'supabase_config.dart';
 ///
 /// Auflösungsreihenfolge (höchste zuerst):
 ///   1. Lokaler, manuell gesetzter Override (pro Gerät, „Verbindung ändern").
-///   2. Fest eingebauter Standard ([SupabaseConfig], per Repo/dart-define).
-///   3. Nichts gesetzt → Onboarding-Screen beim ersten Start.
+///   2. Fest eingecheckte Repo-Datei `assets/db_connection/connection.json`
+///      (bindet das Repo fest an eine Datenbank; siehe [DbConnectionFile]).
+///   3. Per dart-define eingebauter Standard ([SupabaseConfig], z. B. env.json
+///      lokal oder GitHub-Secrets im Web-Deploy).
+///   4. Nichts gesetzt → Onboarding-Screen beim ersten Start.
 ///
 /// Dadurch ist die Datenbank-URL pro Repo FEST vorgegeben (jedes Gerät verbindet
 /// sich automatisch, ohne Nachfrage) – kann aber bei Bedarf pro Gerät manuell
 /// geändert (Override) und jederzeit auf den Standard zurückgesetzt werden.
 class AppConfig {
-  AppConfig(this._prefs);
+  AppConfig(this._prefs, {String? fileUrl, String? fileKey})
+      : _fileUrl = (fileUrl != null && fileUrl.isNotEmpty) ? fileUrl : null,
+        _fileKey = (fileKey != null && fileKey.isNotEmpty) ? fileKey : null;
 
   final SharedPreferences _prefs;
+
+  /// Aus der Repo-Datei geladene Verbindung (zur Startzeit gesetzt), oder null.
+  final String? _fileUrl;
+  final String? _fileKey;
 
   static const _kUrl = 'cfg_supabase_url';
   static const _kKey = 'cfg_supabase_key';
@@ -31,14 +40,18 @@ class AppConfig {
     return (v != null && v.isNotEmpty) ? v : null;
   }
 
-  String get url => _overrideUrl ?? SupabaseConfig.url;
-  String get anonKey => _overrideKey ?? SupabaseConfig.anonKey;
+  /// Eingebauter Standard: Repo-Datei zuerst, sonst dart-define.
+  String get _bakedUrl => _fileUrl ?? SupabaseConfig.url;
+  String get _bakedKey => _fileKey ?? SupabaseConfig.anonKey;
+
+  String get url => _overrideUrl ?? _bakedUrl;
+  String get anonKey => _overrideKey ?? _bakedKey;
 
   bool get isConfigured => url.isNotEmpty && anonKey.isNotEmpty;
 
-  /// Gibt es eine fest eingebaute Standard-Verbindung (Repo/dart-define)?
+  /// Gibt es eine fest eingebaute Standard-Verbindung (Repo-Datei/dart-define)?
   bool get hasBakedDefault =>
-      SupabaseConfig.url.isNotEmpty && SupabaseConfig.anonKey.isNotEmpty;
+      _bakedUrl.isNotEmpty && _bakedKey.isNotEmpty;
 
   /// Wird gerade ein lokaler Override statt des Standards verwendet?
   bool get isUsingOverride => _overrideUrl != null || _overrideKey != null;
