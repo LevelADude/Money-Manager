@@ -4,6 +4,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/app_transaction.dart';
 import '../../data/models/savings_goal.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../transactions/transaction_providers.dart';
@@ -15,6 +16,7 @@ class SavingsScreen extends ConsumerWidget {
 
   Future<void> _editGoal(BuildContext context, WidgetRef ref,
       {SavingsGoal? goal}) async {
+    final l = AppLocalizations.of(context);
     final nameCtrl = TextEditingController(text: goal?.name ?? '');
     final targetCtrl = TextEditingController(
         text: (goal == null || goal.targetCents == 0)
@@ -26,30 +28,31 @@ class SavingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: Text(goal == null ? 'Neu' : 'Bearbeiten'),
+          title: Text(goal == null ? l.newItem : l.edit),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(labelText: l.name),
               ),
               TextField(
                 controller: targetCtrl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                    labelText: 'Zielbetrag (leer = offener Topf)',
-                    prefixIcon: Icon(Icons.euro)),
+                decoration: InputDecoration(
+                    labelText: l.targetAmountHint,
+                    prefixIcon: const Icon(Icons.euro)),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
                     child: Text(date == null
-                        ? 'Kein Zieldatum'
-                        : 'Ziel: ${DateFormat('dd.MM.yyyy').format(date!)}'),
+                        ? l.noTargetDate
+                        : l.targetDateLabel(
+                            DateFormat('dd.MM.yyyy').format(date!))),
                   ),
                   TextButton(
                     onPressed: () async {
@@ -61,7 +64,7 @@ class SavingsScreen extends ConsumerWidget {
                       );
                       if (picked != null) setState(() => date = picked);
                     },
-                    child: const Text('Datum'),
+                    child: Text(l.dateLabel),
                   ),
                 ],
               ),
@@ -69,11 +72,10 @@ class SavingsScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Abbrechen')),
+                onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
             FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Speichern')),
+                child: Text(l.save)),
           ],
         ),
       ),
@@ -92,22 +94,22 @@ class SavingsScreen extends ConsumerWidget {
 
   Future<void> _contribute(BuildContext context, WidgetRef ref, SavingsGoal g,
       {required bool deposit}) async {
+    final l = AppLocalizations.of(context);
     final ctrl = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(deposit ? 'Einzahlen' : 'Abheben'),
+        title: Text(deposit ? l.deposit : l.withdraw),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration:
-              const InputDecoration(labelText: 'Betrag', prefixIcon: Icon(Icons.euro)),
+              InputDecoration(labelText: l.amount, prefixIcon: const Icon(Icons.euro)),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Abbrechen')),
+              onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               child: const Text('OK')),
@@ -126,6 +128,7 @@ class SavingsScreen extends ConsumerWidget {
   /// Rundungs-Sparen: Summe der Aufrundungsdifferenzen (auf den nächsten Euro)
   /// aller Ausgaben dieses Monats in einen gewählten Topf/ein Sparziel einzahlen.
   Future<void> _roundupSweep(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
     final txs = ref.read(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
     final now = DateTime.now();
@@ -139,13 +142,13 @@ class SavingsScreen extends ConsumerWidget {
     }
     final goals = ref.read(savingsGoalsProvider).asData?.value ?? const [];
     if (roundup == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Kein Rundungsbetrag in diesem Monat.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.noRoundupThisMonth)));
       return;
     }
     if (goals.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Lege zuerst ein Sparziel oder einen Topf an.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.createGoalFirst)));
       return;
     }
     var chosen = goals.first.id;
@@ -153,16 +156,15 @@ class SavingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('Rundungs-Sparen'),
+          title: Text(l.roundupSaving),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Aufrundung der Ausgaben diesen Monat: '
-                  '${formatCents(roundup)}'),
+              Text(l.roundupThisMonth(formatCents(roundup))),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: chosen,
-                decoration: const InputDecoration(labelText: 'Einzahlen in'),
+                decoration: InputDecoration(labelText: l.depositInto),
                 items: [
                   for (final g in goals)
                     DropdownMenuItem(value: g.id, child: Text(g.name)),
@@ -173,11 +175,10 @@ class SavingsScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Abbrechen')),
+                onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
             FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Einzahlen')),
+                child: Text(l.deposit)),
           ],
         ),
       ),
@@ -189,20 +190,21 @@ class SavingsScreen extends ConsumerWidget {
           .addContribution(g.id, g.savedCents, roundup);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${formatCents(roundup)} in „${g.name}" eingezahlt')));
+            content: Text(l.depositedInto(formatCents(roundup), g.name))));
       }
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final goalsAsync = ref.watch(savingsGoalsProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sparziele & Töpfe'),
+        title: Text(l.moreGoals),
         actions: [
           IconButton(
-            tooltip: 'Rundungs-Sparen',
+            tooltip: l.roundupSaving,
             icon: const Icon(Icons.savings_outlined),
             onPressed: () => _roundupSweep(context, ref),
           ),
@@ -211,17 +213,17 @@ class SavingsScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _editGoal(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Neu'),
+        label: Text(l.newItem),
       ),
       body: goalsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Fehler: $e')),
+        error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (goals) {
           if (goals.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Noch keine Sparziele. Lege unten eines an.'),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.noGoals),
               ),
             );
           }
@@ -263,6 +265,7 @@ class _GoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isPot = goal.targetCents <= 0;
     final pct = (goal.fraction * 100).round();
     final color =
@@ -277,7 +280,7 @@ class _GoalCard extends StatelessWidget {
               .clamp(1, 1200);
       final perMonth = goal.remainingCents ~/ monthsLeft;
       hint = '${DateFormat('dd.MM.yyyy').format(goal.targetDate!)}'
-          ' · ${formatCents(perMonth)}/Monat nötig';
+          ' · ${l.perMonthNeeded(formatCents(perMonth))}';
     }
 
     return Card(
@@ -308,10 +311,10 @@ class _GoalCard extends StatelessWidget {
                         onDelete();
                     }
                   },
-                  itemBuilder: (ctx) => const [
-                    PopupMenuItem(value: 'edit', child: Text('Bearbeiten')),
-                    PopupMenuItem(value: 'withdraw', child: Text('Abheben')),
-                    PopupMenuItem(value: 'delete', child: Text('Löschen')),
+                  itemBuilder: (ctx) => [
+                    PopupMenuItem(value: 'edit', child: Text(l.edit)),
+                    PopupMenuItem(value: 'withdraw', child: Text(l.withdraw)),
+                    PopupMenuItem(value: 'delete', child: Text(l.delete)),
                   ],
                 ),
               ],
@@ -321,7 +324,7 @@ class _GoalCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Offener Topf',
+                  Text(l.openPot,
                       style: Theme.of(context).textTheme.bodySmall),
                   MoneyText(goal.savedCents,
                       style: const TextStyle(
@@ -334,7 +337,7 @@ class _GoalCard extends StatelessWidget {
                 child: FilledButton.tonalIcon(
                   onPressed: onDeposit,
                   icon: const Icon(Icons.add),
-                  label: const Text('Einzahlen'),
+                  label: Text(l.deposit),
                 ),
               ),
             ] else ...[
@@ -355,14 +358,14 @@ class _GoalCard extends StatelessWidget {
                 MoneyText(goal.savedCents,
                     style: const TextStyle(fontWeight: FontWeight.bold)),
                 MoneyText(goal.targetCents,
-                    prefix: 'von ',
+                    prefix: l.ofWithSpace,
                     style: TextStyle(color: Theme.of(context).hintColor)),
               ],
             ),
             if (goal.reached)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text('Ziel erreicht! 🎉',
+                child: Text(l.goalReached,
                     style: TextStyle(
                         color: Colors.green.shade700,
                         fontWeight: FontWeight.bold)),
@@ -380,7 +383,7 @@ class _GoalCard extends StatelessWidget {
                 child: FilledButton.tonalIcon(
                   onPressed: onDeposit,
                   icon: const Icon(Icons.add),
-                  label: const Text('Einzahlen'),
+                  label: Text(l.deposit),
                 ),
               ),
             ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/budget.dart';
 import '../../data/models/category.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/money.dart';
 import '../categories/category_providers.dart';
@@ -18,30 +19,31 @@ class BudgetsScreen extends ConsumerWidget {
     Category cat,
     int? currentCents,
   ) async {
+    final l = AppLocalizations.of(context);
     final controller = TextEditingController(
       text: currentCents == null ? '' : centsToInput(currentCents),
     );
     final cents = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Budget: ${cat.name}'),
+        title: Text(l.budgetDialogTitle(cat.name)),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'Monatsbudget',
-            prefixIcon: Icon(Icons.euro),
+          decoration: InputDecoration(
+            labelText: l.monthlyBudget,
+            prefixIcon: const Icon(Icons.euro),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Abbrechen'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, parseToCents(controller.text)),
-            child: const Text('Speichern'),
+            child: Text(l.save),
           ),
         ],
       ),
@@ -73,7 +75,7 @@ class BudgetsScreen extends ConsumerWidget {
     final daysLeft = daysInMonth - now.day + 1;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Budgets')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).moreBudgets)),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -114,6 +116,7 @@ class _OverallBudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final hasBudget = totalBudget > 0;
     final frac = hasBudget ? (totalSpent / totalBudget).clamp(0.0, 1.0) : 0.0;
     final pct = hasBudget ? (totalSpent / totalBudget * 100).round() : 0;
@@ -132,9 +135,9 @@ class _OverallBudgetCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Expanded(
-                  child: Text('Diesen Monat (mit Budget)',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: Text(l.thisMonthWithBudget,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
                 if (hasBudget)
                   Text('$pct %',
@@ -153,15 +156,15 @@ class _OverallBudgetCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text('${formatCents(totalSpent)} von ${formatCents(totalBudget)}'),
+            Text(l.amountOf(formatCents(totalSpent), formatCents(totalBudget))),
             if (hasBudget)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   over
-                      ? 'Budget um ${formatCents(-remaining)} überschritten'
-                      : 'Noch ${formatCents(remaining)} · $daysLeft Tage übrig'
-                          ' · ${formatCents(perDay)}/Tag',
+                      ? l.budgetExceededBy(formatCents(-remaining))
+                      : l.budgetRemainingLine(formatCents(remaining), daysLeft,
+                          formatCents(perDay)),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: over ? Colors.red.shade700 : null),
                 ),
@@ -190,6 +193,7 @@ class _BudgetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final hasBudget = budget != null;
     final amount = budget?.amountCents ?? 0;
     final over = hasBudget && spentCents > amount;
@@ -219,19 +223,19 @@ class _BudgetTile extends StatelessWidget {
                 ),
                 if (hasBudget) ...[
                   IconButton(
-                    tooltip: 'Bearbeiten',
+                    tooltip: l.edit,
                     icon: const Icon(Icons.edit_outlined),
                     onPressed: onEdit,
                   ),
                   IconButton(
-                    tooltip: 'Entfernen',
+                    tooltip: l.remove,
                     icon: const Icon(Icons.delete_outline),
                     onPressed: onRemove,
                   ),
                 ] else
                   TextButton(
                     onPressed: onEdit,
-                    child: const Text('Budget setzen'),
+                    child: Text(l.setBudgetAction),
                   ),
               ],
             ),
@@ -251,11 +255,11 @@ class _BudgetTile extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                      '${formatCents(spentCents)} von ${formatCents(amount)} · $pct %'),
+                      '${l.amountOf(formatCents(spentCents), formatCents(amount))} · $pct %'),
                   Text(
                     over
-                        ? '+${formatCents(spentCents - amount)} über'
-                        : 'noch ${formatCents(amount - spentCents)}',
+                        ? l.overBy(formatCents(spentCents - amount))
+                        : l.amountLeft(formatCents(amount - spentCents)),
                     style: TextStyle(
                       color: over
                           ? Colors.red.shade700
@@ -269,7 +273,7 @@ class _BudgetTile extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Kein Budget · diesen Monat ${formatCents(spentCents)}',
+                  l.noBudgetThisMonth(formatCents(spentCents)),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),

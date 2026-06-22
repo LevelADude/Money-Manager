@@ -402,6 +402,49 @@ class AppLocalizations {
   String get noTransactions =>
       _t('Noch keine Buchungen.', 'No transactions yet.');
   String byAuthor(String name) => _t('von $name', 'by $name');
+  String amountOf(String a, String b) => _t('$a von $b', '$a of $b');
+
+  // ---- Budgets ----
+  String budgetDialogTitle(String name) => 'Budget: $name';
+  String get monthlyBudget => _t('Monatsbudget', 'Monthly budget');
+  String get thisMonthWithBudget =>
+      _t('Diesen Monat (mit Budget)', 'This month (with budget)');
+  String get setBudgetAction => _t('Budget setzen', 'Set budget');
+  String budgetExceededBy(String x) =>
+      _t('Budget um $x überschritten', 'Budget exceeded by $x');
+  String budgetRemainingLine(String remaining, int days, String perDay) => _t(
+      'Noch $remaining · $days Tage übrig · $perDay/Tag',
+      'Remaining $remaining · $days days left · $perDay/day');
+  String overBy(String x) => _t('+$x über', '+$x over');
+  String amountLeft(String x) => _t('noch $x', '$x left');
+  String noBudgetThisMonth(String x) =>
+      _t('Kein Budget · diesen Monat $x', 'No budget · this month $x');
+
+  // ---- Sparziele ----
+  String get roundupSaving => _t('Rundungs-Sparen', 'Round-up saving');
+  String get newItem => _t('Neu', 'New');
+  String get targetAmountHint =>
+      _t('Zielbetrag (leer = offener Topf)', 'Target amount (empty = open jar)');
+  String get noTargetDate => _t('Kein Zieldatum', 'No target date');
+  String targetDateLabel(String date) => _t('Ziel: $date', 'Target: $date');
+  String get deposit => _t('Einzahlen', 'Deposit');
+  String get withdraw => _t('Abheben', 'Withdraw');
+  String get noRoundupThisMonth =>
+      _t('Kein Rundungsbetrag in diesem Monat.', 'No round-up amount this month.');
+  String get createGoalFirst => _t('Lege zuerst ein Sparziel oder einen Topf an.',
+      'Create a savings goal or jar first.');
+  String roundupThisMonth(String x) => _t(
+      'Aufrundung der Ausgaben diesen Monat: $x',
+      'Round-up of this month\'s expenses: $x');
+  String get depositInto => _t('Einzahlen in', 'Deposit into');
+  String depositedInto(String x, String name) =>
+      _t('$x in „$name" eingezahlt', '$x deposited into "$name"');
+  String get noGoals =>
+      _t('Noch keine Sparziele. Lege unten eines an.', 'No savings goals yet. Add one below.');
+  String get openPot => _t('Offener Topf', 'Open jar');
+  String perMonthNeeded(String x) => _t('$x/Monat nötig', '$x/month needed');
+  String get ofWithSpace => _t('von ', 'of ');
+  String get goalReached => _t('Ziel erreicht! 🎉', 'Goal reached! 🎉');
 }
 
 class _AppLocalizationsDelegate
