@@ -22,10 +22,17 @@ class ExportScreen extends ConsumerWidget {
   const ExportScreen({super.key});
 
   static String _field(String s) {
-    if (s.contains(';') || s.contains('"') || s.contains('\n')) {
-      return '"${s.replaceAll('"', '""')}"';
+    var v = s;
+    // Formel-Injection in Excel/Sheets entschärfen: beginnt ein Wert mit einem
+    // Formel-Zeichen, ein Leerzeichen voranstellen -> die App behandelt ihn als
+    // Text. Der eigene CSV-Import trimmt das Leerzeichen wieder weg (verlustfrei).
+    if (v.isNotEmpty && '=+-@\t\r'.contains(v[0])) {
+      v = ' $v';
     }
-    return s;
+    if (v.contains(';') || v.contains('"') || v.contains('\n')) {
+      return '"${v.replaceAll('"', '""')}"';
+    }
+    return v;
   }
 
   String _buildCsv(WidgetRef ref) {

@@ -45,8 +45,18 @@ DateTime _addMonths(DateTime d, int months) {
   final total = (d.month - 1) + months;
   final year = d.year + (total ~/ 12);
   final month = (total % 12) + 1;
-  final lastDay = DateTime(year, month + 1, 0).day; // letzter Tag des Monats
-  final day = d.day < lastDay ? d.day : lastDay;
+  final lastDay = DateTime(
+    year,
+    month + 1,
+    0,
+  ).day; // letzter Tag des Zielmonats
+  // War das Ausgangsdatum der letzte Tag seines Monats, bleibt es auch im
+  // Zielmonat der letzte Tag – sonst "wandert" eine Monatsende-Regel nach unten
+  // (31.01 → 28.02 → 28.03 …) statt korrekt 31.01 → 28.02 → 31.03.
+  final srcLastDay = DateTime(d.year, d.month + 1, 0).day;
+  final day = d.day >= srcLastDay
+      ? lastDay
+      : (d.day < lastDay ? d.day : lastDay);
   return DateTime(year, month, day);
 }
 

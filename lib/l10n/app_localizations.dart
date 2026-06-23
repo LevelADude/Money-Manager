@@ -948,6 +948,10 @@ class AppLocalizations {
   // ---- App-Sperre (PIN-Eingabe) ----
   String get enterPin => _t('PIN eingeben', 'Enter PIN');
   String get wrongPin => _t('Falsche PIN', 'Wrong PIN');
+  String pinLockedSeconds(int seconds) => _t(
+    'Zu viele Versuche – bitte $seconds s warten',
+    'Too many attempts – wait $seconds s',
+  );
 
   // ---- Profil-Wechsler ----
   String get meWord => _t('Ich', 'Me');

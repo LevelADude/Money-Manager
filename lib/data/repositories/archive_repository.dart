@@ -165,22 +165,23 @@ class ArchiveRepository {
     final githubPath = writeRes['path'] as String?;
     final byteSize = (writeRes['size'] as num?)?.toInt() ?? 0;
 
-    // Marker + Carry-over speichern (RLS: nur Admin).
-    onProgress?.call('mark');
-    await _client.from(_table).upsert({
-      'year': year,
-      'tx_count': txRows.length,
-      'byte_size': byteSize,
-      'carryover_by_account': carryover,
-      'github_path': githubPath,
-      'archived_at': DateTime.now().toUtc().toIso8601String(),
-    });
-
-    // Belege aus dem Storage entfernen (gibt den meisten Speicher frei) …
+    // Marker (+ Carry-over) schreiben UND die Jahresdaten endgültig löschen –
+    // atomar in EINER DB-Funktion. So gibt es nie einen Zwischenzustand
+    // "Carry-over schon aktiv, Buchungen noch da" (= kurzzeitige Doppelzählung).
     onProgress?.call('purge');
+    await _client.rpc(
+      'archive_commit_year',
+      params: {
+        'p_year': year,
+        'p_tx_count': txRows.length,
+        'p_byte_size': byteSize,
+        'p_carryover': carryover,
+        'p_github_path': githubPath,
+      },
+    );
+
+    // Belege erst NACH dem atomaren Commit aus dem Storage entfernen.
     await _receipts.deleteMany(receiptPaths);
-    // … und die Buchungen endgültig löschen (Splits/Kommentare via Cascade).
-    await _client.rpc('purge_year_data', params: {'p_year': year});
 
     // Lokalen Cache der gelöschten Buchungen bereinigen.
     for (final id in txIds) {

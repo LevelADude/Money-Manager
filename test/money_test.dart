@@ -69,4 +69,21 @@ void main() {
       expect(formatCents(-100).contains('1,00'), isTrue);
     });
   });
+
+  group('formatMoney Nachkommastellen je Währung', () {
+    test('JPY ohne Nachkommastellen', () {
+      final s = formatMoney(100000, 'JPY'); // 1000 Yen
+      expect(s.contains('¥'), isTrue);
+      expect(s.contains('1.000'), isTrue);
+      expect(s.contains(','), isFalse);
+    });
+    test('EUR mit zwei Nachkommastellen', () {
+      expect(formatMoney(1250, 'EUR').contains('12,50'), isTrue);
+    });
+    test('currencyDecimals', () {
+      expect(currencyDecimals('JPY'), 0);
+      expect(currencyDecimals('EUR'), 2);
+      expect(currencyDecimals('XYZ'), 2);
+    });
+  });
 }

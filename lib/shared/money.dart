@@ -27,10 +27,17 @@ const currencySymbols = <String, String>{
 
 String currencySymbol(String code) => currencySymbols[code] ?? code;
 
-/// Formatiert Cent in der angegebenen Währung.
+/// Währungen ohne Nachkommastellen (z. B. Yen). Standard sind 2 Stellen.
+const _currencyDecimals = <String, int>{'JPY': 0};
+
+/// Anzahl der Nachkommastellen für eine Währung (Standard 2).
+int currencyDecimals(String code) => _currencyDecimals[code] ?? 2;
+
+/// Formatiert Cent in der angegebenen Währung (Nachkommastellen je Währung).
 String formatMoney(int cents, String code) => NumberFormat.currency(
   locale: 'de_DE',
   symbol: currencySymbol(code),
+  decimalDigits: currencyDecimals(code),
 ).format(cents / 100);
 
 /// Formatiert in der Hauptwährung.

@@ -51,8 +51,16 @@ class SettleScreen extends ConsumerWidget {
       total += t.amountCents;
     }
 
-    final share = members.isEmpty ? 0 : total ~/ members.length;
-    final balance = {for (final m in members) m: spent[m]! - share};
+    // Fairer Anteil je Person. Der Ganzzahl-Rest (total % n Cent) wird auf die
+    // ersten Personen verteilt, damit die Summe aller Salden exakt 0 ergibt
+    // (sonst bliebe ein Rest-Cent im Ausgleichsvorschlag unverteilt).
+    final n = members.length;
+    final share = n == 0 ? 0 : total ~/ n;
+    final remainder = n == 0 ? 0 : total % n;
+    final fairShare = <String, int>{
+      for (var k = 0; k < n; k++) members[k]: share + (k < remainder ? 1 : 0),
+    };
+    final balance = {for (final m in members) m: spent[m]! - fairShare[m]!};
 
     // Minimaler Ausgleich (greedy).
     final plan = <({String from, String to, int amount})>[];

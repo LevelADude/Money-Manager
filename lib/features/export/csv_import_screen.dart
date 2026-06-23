@@ -7,7 +7,6 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
 import '../../l10n/app_localizations.dart';
-import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../transactions/transaction_providers.dart';
@@ -73,6 +72,28 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     return DateTime.tryParse(s);
   }
 
+  /// Parst einen Betrag aus CSV nach Cent. Akzeptiert deutsche (1.234,56) und
+  /// englische (1,234.56) Schreibweise sowie einfache Formen (1234,56 / 1234.56).
+  int? _parseAmount(String raw) {
+    var s = raw.trim().replaceAll(RegExp(r'[^\d.,-]'), '');
+    if (s.isEmpty) return null;
+    final hasDot = s.contains('.');
+    final hasComma = s.contains(',');
+    if (hasDot && hasComma) {
+      // Das zuletzt stehende Trennzeichen ist das Dezimaltrennzeichen.
+      if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+        s = s.replaceAll('.', '').replaceAll(',', '.'); // 1.234,56 -> 1234.56
+      } else {
+        s = s.replaceAll(',', ''); // 1,234.56 -> 1234.56
+      }
+    } else if (hasComma) {
+      s = s.replaceAll(',', '.'); // 1234,56 -> 1234.56
+    }
+    final v = double.tryParse(s);
+    if (v == null) return null;
+    return (v * 100).round();
+  }
+
   TransactionType _parseType(String s) {
     final t = s.trim().toLowerCase();
     if (t.startsWith('einnahme') || t == 'income') {
@@ -136,7 +157,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
         final f = _splitLine(line, delim);
         String at(int i) => (i >= 0 && i < f.length) ? f[i].trim() : '';
         final date = _parseDate(at(iDate));
-        final cents = parseToCents(at(iAmount));
+        final cents = _parseAmount(at(iAmount));
         // "Konto" kann beim Zielkonto stehen; nimm Zielkonto-Spalte separat.
         final accId = accByName[at(iAccount).toLowerCase()];
         if (date == null || cents == null || cents <= 0 || accId == null) {
