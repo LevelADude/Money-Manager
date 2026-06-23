@@ -26,22 +26,32 @@ extension IntervalUnitX on IntervalUnit {
   };
 }
 
-/// Nächstes Fälligkeitsdatum nach `count` Einheiten. Monats-/Jahresschritte
-/// klemmen den Tag auf das Monatsende (z. B. 31. → 28./30.).
-DateTime advanceDate(DateTime d, IntervalUnit unit, int count) {
+/// Nächstes Fälligkeitsdatum nach `count` Einheiten.
+///
+/// Für Monats-/Jahresschritte wird vom festen [anchorDay] (dem Soll-Tag der
+/// Regel, 1–31) ausgegangen und nur auf das Monatsende geklemmt. So driftet eine
+/// 31.-Regel nicht nach unten (31→28→31 statt 31→28→28) UND eine echte 28.-Regel
+/// wird nie auf das Monatsende befördert. Ohne [anchorDay] gilt der Tag von [d]
+/// als Anker (für Einmal-Vorschläge ohne gespeicherte Regel).
+DateTime advanceDate(
+  DateTime d,
+  IntervalUnit unit,
+  int count, {
+  int? anchorDay,
+}) {
   switch (unit) {
     case IntervalUnit.day:
       return DateTime(d.year, d.month, d.day + count);
     case IntervalUnit.week:
       return DateTime(d.year, d.month, d.day + 7 * count);
     case IntervalUnit.month:
-      return _addMonths(d, count);
+      return _addMonths(d, count, anchorDay ?? d.day);
     case IntervalUnit.year:
-      return _addMonths(d, 12 * count);
+      return _addMonths(d, 12 * count, anchorDay ?? d.day);
   }
 }
 
-DateTime _addMonths(DateTime d, int months) {
+DateTime _addMonths(DateTime d, int months, int anchorDay) {
   final total = (d.month - 1) + months;
   final year = d.year + (total ~/ 12);
   final month = (total % 12) + 1;
@@ -50,13 +60,7 @@ DateTime _addMonths(DateTime d, int months) {
     month + 1,
     0,
   ).day; // letzter Tag des Zielmonats
-  // War das Ausgangsdatum der letzte Tag seines Monats, bleibt es auch im
-  // Zielmonat der letzte Tag – sonst "wandert" eine Monatsende-Regel nach unten
-  // (31.01 → 28.02 → 28.03 …) statt korrekt 31.01 → 28.02 → 31.03.
-  final srcLastDay = DateTime(d.year, d.month + 1, 0).day;
-  final day = d.day >= srcLastDay
-      ? lastDay
-      : (d.day < lastDay ? d.day : lastDay);
+  final day = anchorDay < lastDay ? anchorDay : lastDay;
   return DateTime(year, month, day);
 }
 
@@ -76,6 +80,7 @@ class RecurringRule {
     required this.nextDue,
     required this.endDate,
     required this.active,
+    required this.anchorDay,
   });
 
   final String id;
@@ -91,6 +96,10 @@ class RecurringRule {
   final DateTime nextDue;
   final DateTime? endDate;
   final bool active;
+
+  /// Soll-Tag des Monats (1–31) für Monats-/Jahresregeln. Bleibt fest, damit das
+  /// Datum nicht über die Monate driftet. Siehe [advanceDate].
+  final int anchorDay;
 
   factory RecurringRule.fromJson(Map<String, dynamic> json) => RecurringRule(
     id: json['id'] as String,
@@ -110,5 +119,8 @@ class RecurringRule {
         ? null
         : DateTime.parse(json['end_date'] as String),
     active: (json['active'] as bool?) ?? true,
+    anchorDay:
+        (json['anchor_day'] as num?)?.toInt() ??
+        DateTime.parse(json['next_due'] as String).day,
   );
 }

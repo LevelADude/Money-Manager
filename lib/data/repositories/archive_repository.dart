@@ -180,12 +180,18 @@ class ArchiveRepository {
       },
     );
 
-    // Belege erst NACH dem atomaren Commit aus dem Storage entfernen.
-    await _receipts.deleteMany(receiptPaths);
-
-    // Lokalen Cache der gelöschten Buchungen bereinigen.
+    // Lokalen Cache der (bereits aus der DB gelöschten) Buchungen bereinigen.
     for (final id in txIds) {
       _cache.removeFromCache('transactions', id);
+    }
+
+    // Belege erst NACH dem atomaren Commit aus dem Storage entfernen. Ein Fehler
+    // hier ist unkritisch (die Belege liegen verschlüsselt im GitHub-Payload) und
+    // darf den bereits erfolgreichen Archiv-Commit nicht als Fehler melden.
+    try {
+      await _receipts.deleteMany(receiptPaths);
+    } catch (_) {
+      // Verwaiste Belegdateien bleiben ggf. liegen – per Wartung aufräumbar.
     }
 
     return ArchivedYear(

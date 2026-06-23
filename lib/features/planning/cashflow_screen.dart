@@ -53,7 +53,7 @@ class CashflowScreen extends ConsumerWidget {
       var d = r.nextDue;
       var guard = 0;
       while (d.isBefore(today) && guard < 1000) {
-        d = advanceDate(d, r.intervalUnit, count);
+        d = advanceDate(d, r.intervalUnit, count, anchorDay: r.anchorDay);
         guard++;
       }
       while (!d.isAfter(horizon) &&
@@ -71,7 +71,7 @@ class CashflowScreen extends ConsumerWidget {
             signed: signed,
           ));
         }
-        d = advanceDate(d, r.intervalUnit, count);
+        d = advanceDate(d, r.intervalUnit, count, anchorDay: r.anchorDay);
         guard++;
       }
     }

@@ -2,7 +2,7 @@
 -- Money-Manager - setup.sql  (Komplett-Einrichtung der Datenbank)
 -- =====================================================================
 -- Einmalig fuer ein FRISCHES Supabase-Projekt: gesamten Inhalt im SQL-Editor einfuegen, Run.
--- Enthaelt die Migrationen 0001 bis 0027.
+-- Enthaelt die Migrationen 0001 bis 0028.
 -- =====================================================================
 
 
@@ -1597,4 +1597,14 @@ end;
 $$;
 revoke all on function public.archive_commit_year(int, int, bigint, jsonb, text) from public;
 grant execute on function public.archive_commit_year(int, int, bigint, jsonb, text) to authenticated;
+
+
+-- ## Migration: 0028_recurring_anchor_day.sql
+
+-- 0028: Fester Anker-Tag (Soll-Tag 1–31) je Dauerauftrag gegen Monats-Drift.
+alter table public.recurring_rules
+  add column if not exists anchor_day smallint;
+update public.recurring_rules
+   set anchor_day = extract(day from next_due)::smallint
+ where anchor_day is null;
 

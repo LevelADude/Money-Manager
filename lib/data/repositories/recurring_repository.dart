@@ -65,6 +65,8 @@ class RecurringRepository {
       'interval_unit': intervalUnitToDb(intervalUnit),
       'interval_count': intervalCount,
       'next_due': _d(nextDue),
+      // Soll-Tag fest verankern, damit Monatsregeln nicht driften (s. advanceDate).
+      'anchor_day': nextDue.day,
       'end_date': endDate == null ? null : _d(endDate),
       'active': active,
     };
@@ -185,6 +187,7 @@ class RecurringRepository {
             current,
             rule.intervalUnit,
             rule.intervalCount,
+            anchorDay: rule.anchorDay,
           );
           final claimed = await _client
               .from('recurring_rules')
