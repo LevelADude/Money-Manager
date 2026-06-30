@@ -1,0 +1,24 @@
+# Supabase-Konfiguration – nur das fuer dieses Repo Noetige.
+#
+# Die Edge Functions pruefen JWT UND Rolle SELBST im Code
+# (admin.auth.getUser(jwt) + is_admin/is_owner). Deshalb muss die
+# Gateway-seitige JWT-Pruefung AUS sein – sonst lehnt das Gateway auf der
+# WEB-App den CORS-Preflight (OPTIONS ohne Authorization-Header) mit 401 ab,
+# und der Aufruf scheitert mit "Failed to fetch", obwohl die Funktion korrekt
+# deployt ist. Sicherheit bleibt gewahrt: die Funktion verweigert ohne gueltiges
+# Admin-/Besitzer-JWT weiterhin jede Aktion.
+#
+# Wirkt bei `supabase functions deploy`. Alternativ pro Deploy das Flag
+# `--no-verify-jwt` setzen bzw. im Dashboard (Edge Functions -> Verify JWT) aus.
+
+[functions.admin-wipe-data]
+verify_jwt = false
+
+[functions.admin-factory-reset]
+verify_jwt = false
+
+[functions.admin-delete-user]
+verify_jwt = false
+
+[functions.archive-proxy]
+verify_jwt = false

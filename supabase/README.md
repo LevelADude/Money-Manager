@@ -19,16 +19,43 @@ Die App braucht nur **Projekt-URL** + **anon (publishable) Key**.
 
 **Variante A – Dashboard (am einfachsten):**
 1. Im Projekt → **SQL Editor** → **New query**.
-2. Inhalt von [`migrations/0001_init.sql`](migrations/0001_init.sql) komplett einfügen.
-3. **Run**. Das Skript ist idempotent — erneutes Ausführen schadet nicht.
+2. Kompletten Inhalt von [`setup.sql`](setup.sql) einfügen.
+3. **Run**. Das Skript ist **idempotent und nicht-destruktiv** — beliebig oft
+   ausführbar (auch auf einer bestehenden DB), ohne vorhandene Daten zu löschen.
 
-**Variante B – Supabase CLI (für später/Versionierung):**
+**Variante B – Supabase CLI (für Versionierung):**
 ```bash
 npm i -g supabase
 supabase login
 supabase link --project-ref <DEINE_PROJECT_REF>
 supabase db push
 ```
+
+## 2b. Edge Functions deployen (für Archiv + Admin-„Gefahrenzone")
+
+Die Funktionen unter [`functions/`](functions/) laufen **serverseitig** (mit dem
+service_role-Key) und werden von der App aufgerufen:
+
+- `admin-wipe-data`, `admin-factory-reset`, `admin-delete-user` – Admin-/Besitzer-Aktionen
+- `archive-proxy` – verschlüsselte Jahres-Archivierung nach GitHub
+
+Sie sind **nicht** Teil von `setup.sql` und müssen separat deployt werden — sonst
+schlagen „Daten leeren / Werkseinstellungen / Archivieren" mit *„Failed to fetch"* fehl:
+
+```bash
+supabase functions deploy admin-wipe-data     --no-verify-jwt
+supabase functions deploy admin-factory-reset --no-verify-jwt
+supabase functions deploy admin-delete-user   --no-verify-jwt
+supabase functions deploy archive-proxy       --no-verify-jwt
+```
+
+> **Wichtig – `--no-verify-jwt`:** Die Funktionen prüfen JWT **und** Rolle selbst
+> im Code (`auth.getUser` + `is_admin`/`is_owner`). Die Gateway-JWT-Prüfung muss
+> AUS sein, sonst scheitert in der **Web-App** der CORS-Preflight (Browser sendet
+> `OPTIONS` ohne Token → 401 → *„Failed to fetch"*). Die `[functions.*]`-Einträge
+> in [`config.toml`](config.toml) setzen das bereits; alternativ pro Funktion im
+> Dashboard unter *Edge Functions → … → Details/Settings → „Verify JWT"* aus.
+> `SUPABASE_URL` und `SUPABASE_SERVICE_ROLE_KEY` stellt Supabase automatisch bereit.
 
 ## 3. Auth konfigurieren
 
@@ -53,12 +80,15 @@ Haupt-[`README.md`](../README.md) Abschnitt „Konfiguration".
 
 | Tabelle        | Zweck                                                        |
 |----------------|-------------------------------------------------------------|
-| `profiles`     | App-Profil pro Login (Name); 1:1 zu `auth.users`            |
-| `ledgers`      | Die getrennten Bücher, je `owner_id` einer Person           |
-| `categories`   | Einnahme-/Ausgabe-Kategorien je Buch                        |
-| `transactions` | Einzelne Buchungen (Datum, Betrag, Richtung, Notiz)         |
-| `ledger_balances` | View: Saldo + Buchungsanzahl je Buch                     |
+| `profiles`     | App-Profil pro Login (Name, `is_admin`/`is_owner`); 1:1 zu `auth.users` |
+| `accounts`     | Konten (Typ, Anfangssaldo, Währung, Vermögens-Flag)         |
+| `categories`   | Einnahme-/Ausgabe-Kategorien (gruppenweit)                  |
+| `transactions` | Buchungen (Betrag in **Cent**, Typ expense/income/transfer) |
+| `budgets`, `recurring_rules`, `savings_goals`, `transaction_splits`, `transaction_comments`, `category_rules`, `transaction_templates` | Budgets, Daueraufträge, Sparziele, Aufteilungen, Kommentare, Auto-Regeln, Vorlagen |
+| `access_grants`, `account_members` | Pro-Person-Freigaben + geteilte Konten        |
+| `archived_years`, `archive_config` | Jahres-Archivierung (Marker/Carry-over + Repo-Config) |
 
-**Berechtigungen (RLS):** Jedes angemeldete Mitglied darf **alle** Bücher und
-Buchungen lesen *und* bearbeiten. Wer etwas angelegt hat, steht in `owner_id`
-bzw. `created_by`. Strenger machen = nur die Policies in `0001_init.sql` ändern.
+**Berechtigungen (RLS):** Konten/Buchungen (inkl. Splits, Kommentare,
+Daueraufträge, Audit) sind nur für **Besitzer + Freigaben/Mitglieder** sichtbar
+und änderbar (ab Migration `0018`/`0019`). Kategorien/Budgets/Sparziele bleiben
+gruppenweit. Belege liegen pro Eigentümer (`0026`). Details: [`setup.sql`](setup.sql).
