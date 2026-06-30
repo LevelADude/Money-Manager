@@ -66,8 +66,13 @@ class _LineChartPainter extends CustomPainter {
     // Null-Linie.
     if (minV < 0 && maxV > 0) {
       final zy = y(0);
-      canvas.drawLine(Offset(0, zy), Offset(size.width, zy),
-          Paint()..color = gridColor..strokeWidth = 1);
+      canvas.drawLine(
+        Offset(0, zy),
+        Offset(size.width, zy),
+        Paint()
+          ..color = gridColor
+          ..strokeWidth = 1,
+      );
     }
 
     final line = Path()..moveTo(x(0), y(values.first));
@@ -93,7 +98,10 @@ class _LineChartPainter extends CustomPainter {
 
     // Letzter Punkt.
     canvas.drawCircle(
-        Offset(x(values.length - 1), y(values.last)), 3.5, Paint()..color = lineColor);
+      Offset(x(values.length - 1), y(values.last)),
+      3.5,
+      Paint()..color = lineColor,
+    );
 
     // Labels (erste, mittlere, letzte – um Überlappung zu vermeiden).
     if (labels.isNotEmpty && labels.length == values.length) {
@@ -101,8 +109,9 @@ class _LineChartPainter extends CustomPainter {
       for (final i in idxs) {
         final tp = TextPainter(
           text: TextSpan(
-              text: labels[i],
-              style: TextStyle(color: labelColor, fontSize: 9)),
+            text: labels[i],
+            style: TextStyle(color: labelColor, fontSize: 9),
+          ),
           textDirection: TextDirection.ltr,
         )..layout();
         var dx = x(i) - tp.width / 2;

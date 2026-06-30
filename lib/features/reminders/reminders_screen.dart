@@ -11,10 +11,10 @@ class RemindersScreen extends ConsumerWidget {
   const RemindersScreen({super.key});
 
   Color _color(BuildContext context, ReminderLevel level) => switch (level) {
-        ReminderLevel.alert => Colors.red.shade700,
-        ReminderLevel.warning => Colors.orange.shade800,
-        ReminderLevel.info => Theme.of(context).colorScheme.primary,
-      };
+    ReminderLevel.alert => Colors.red.shade700,
+    ReminderLevel.warning => Colors.orange.shade800,
+    ReminderLevel.info => Theme.of(context).colorScheme.primary,
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,7 +37,8 @@ class RemindersScreen extends ConsumerWidget {
               ),
               title: Text(l.streakDays(streak.days)),
               subtitle: Text(
-                  streak.bookedToday ? l.bookedToday : l.notBookedToday),
+                streak.bookedToday ? l.bookedToday : l.notBookedToday,
+              ),
               trailing: streak.bookedToday
                   ? null
                   : FilledButton.tonal(
@@ -59,8 +60,9 @@ class RemindersScreen extends ConsumerWidget {
                   leading: Icon(r.icon, color: _color(context, r.level)),
                   title: Text(r.title),
                   subtitle: Text(r.subtitle),
-                  trailing:
-                      r.route == null ? null : const Icon(Icons.chevron_right),
+                  trailing: r.route == null
+                      ? null
+                      : const Icon(Icons.chevron_right),
                   onTap: r.route == null ? null : () => context.go(r.route!),
                 ),
               ),

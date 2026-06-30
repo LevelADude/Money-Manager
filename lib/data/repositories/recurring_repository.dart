@@ -27,13 +27,13 @@ class RecurringRepository {
           .stream(primaryKey: ['id'])
           .order('next_due')
           .map((rows) {
-        final unique = dedupRowsById(rows);
-        _cache.writeRows('recurring_rules', unique);
-        return unique
-            .where((r) => r['deleted_at'] == null)
-            .map(RecurringRule.fromJson)
-            .toList();
-      });
+            final unique = dedupRowsById(rows);
+            _cache.writeRows('recurring_rules', unique);
+            return unique
+                .where((r) => r['deleted_at'] == null)
+                .map(RecurringRule.fromJson)
+                .toList();
+          });
     } catch (_) {
       // Offline: beim Cache bleiben.
     }
@@ -65,6 +65,8 @@ class RecurringRepository {
       'interval_unit': intervalUnitToDb(intervalUnit),
       'interval_count': intervalCount,
       'next_due': _d(nextDue),
+      // Soll-Tag fest verankern, damit Monatsregeln nicht driften (s. advanceDate).
+      'anchor_day': nextDue.day,
       'end_date': endDate == null ? null : _d(endDate),
       'active': active,
     };
@@ -83,20 +85,24 @@ class RecurringRepository {
     required DateTime nextDue,
     DateTime? endDate,
   }) {
-    return _client.from('recurring_rules').insert(_payload(
-          accountId: accountId,
-          type: type,
-          amountCents: amountCents,
-          categoryId: categoryId,
-          transferAccountId: transferAccountId,
-          title: title,
-          note: note,
-          intervalUnit: intervalUnit,
-          intervalCount: intervalCount,
-          nextDue: nextDue,
-          endDate: endDate,
-          active: true,
-        ));
+    return _client
+        .from('recurring_rules')
+        .insert(
+          _payload(
+            accountId: accountId,
+            type: type,
+            amountCents: amountCents,
+            categoryId: categoryId,
+            transferAccountId: transferAccountId,
+            title: title,
+            note: note,
+            intervalUnit: intervalUnit,
+            intervalCount: intervalCount,
+            nextDue: nextDue,
+            endDate: endDate,
+            active: true,
+          ),
+        );
   }
 
   Future<void> updateRule({
@@ -116,27 +122,30 @@ class RecurringRepository {
   }) {
     return _client
         .from('recurring_rules')
-        .update(_payload(
-          accountId: accountId,
-          type: type,
-          amountCents: amountCents,
-          categoryId: categoryId,
-          transferAccountId: transferAccountId,
-          title: title,
-          note: note,
-          intervalUnit: intervalUnit,
-          intervalCount: intervalCount,
-          nextDue: nextDue,
-          endDate: endDate,
-          active: active,
-        ))
+        .update(
+          _payload(
+            accountId: accountId,
+            type: type,
+            amountCents: amountCents,
+            categoryId: categoryId,
+            transferAccountId: transferAccountId,
+            title: title,
+            note: note,
+            intervalUnit: intervalUnit,
+            intervalCount: intervalCount,
+            nextDue: nextDue,
+            endDate: endDate,
+            active: active,
+          ),
+        )
         .eq('id', id);
   }
 
   Future<void> setActive({required String id, required bool active}) {
     return _client
         .from('recurring_rules')
-        .update({'active': active}).eq('id', id);
+        .update({'active': active})
+        .eq('id', id);
   }
 
   Future<void> deleteRule(String id) {
@@ -170,11 +179,16 @@ class RecurringRepository {
           if (rule.endDate != null && current.isAfter(rule.endDate!)) {
             await _client
                 .from('recurring_rules')
-                .update({'active': false}).eq('id', rule.id);
+                .update({'active': false})
+                .eq('id', rule.id);
             break;
           }
-          final newDue =
-              advanceDate(current, rule.intervalUnit, rule.intervalCount);
+          final newDue = advanceDate(
+            current,
+            rule.intervalUnit,
+            rule.intervalCount,
+            anchorDay: rule.anchorDay,
+          );
           final claimed = await _client
               .from('recurring_rules')
               .update({'next_due': _d(newDue)})
@@ -183,19 +197,33 @@ class RecurringRepository {
               .isFilter('deleted_at', null)
               .select();
           if ((claimed as List).isEmpty) break; // anderes Gerät war schneller
-          await _client.from('transactions').insert({
-            'account_id': rule.accountId,
-            'type': transactionTypeToDb(rule.type),
-            'amount_cents': rule.amountCents,
-            'occurred_on': _d(current),
-            'category_id':
-                rule.type == TransactionType.transfer ? null : rule.categoryId,
-            'transfer_account_id': rule.type == TransactionType.transfer
-                ? rule.transferAccountId
-                : null,
-            'title': rule.title,
-            'note': rule.note,
-          });
+          try {
+            await _client.from('transactions').insert({
+              'account_id': rule.accountId,
+              'type': transactionTypeToDb(rule.type),
+              'amount_cents': rule.amountCents,
+              'occurred_on': _d(current),
+              'category_id': rule.type == TransactionType.transfer
+                  ? null
+                  : rule.categoryId,
+              'transfer_account_id': rule.type == TransactionType.transfer
+                  ? rule.transferAccountId
+                  : null,
+              'title': rule.title,
+              'note': rule.note,
+            });
+          } catch (_) {
+            // Insert fehlgeschlagen, obwohl die Periode schon beansprucht wurde.
+            // Anspruch zurückrollen (next_due wieder auf current), damit die
+            // Buchung beim nächsten Lauf erneut versucht wird statt still
+            // verloren zu gehen. Dann diese Regel abbrechen.
+            await _client
+                .from('recurring_rules')
+                .update({'next_due': _d(current)})
+                .eq('id', rule.id)
+                .eq('next_due', _d(newDue));
+            break;
+          }
           created++;
           current = newDue;
         }

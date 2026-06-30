@@ -13,18 +13,19 @@ class ActivityScreen extends ConsumerWidget {
   const ActivityScreen({super.key});
 
   IconData _icon(String action) => switch (action) {
-        'insert' => Icons.add_circle_outline,
-        'delete' => Icons.delete_outline,
-        'restore' => Icons.restore,
-        'purge' => Icons.delete_forever,
-        _ => Icons.edit_outlined,
-      };
+    'insert' => Icons.add_circle_outline,
+    'delete' => Icons.delete_outline,
+    'restore' => Icons.restore,
+    'purge' => Icons.delete_forever,
+    _ => Icons.edit_outlined,
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(recentActivityProvider);
     final names =
-        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.watch(profileNamesProvider).asData?.value ??
+        const <String, String>{};
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy HH:mm');
 
@@ -34,16 +35,20 @@ class ActivityScreen extends ConsumerWidget {
         onRefresh: () async => ref.invalidate(recentActivityProvider),
         child: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ListView(children: [
-            const SizedBox(height: 80),
-            Center(child: Text(l.errorWith(e))),
-          ]),
+          error: (e, _) => ListView(
+            children: [
+              const SizedBox(height: 80),
+              Center(child: Text(l.errorWith(e))),
+            ],
+          ),
           data: (items) {
             if (items.isEmpty) {
-              return ListView(children: [
-                const SizedBox(height: 80),
-                Center(child: Text(l.noActivity)),
-              ]);
+              return ListView(
+                children: [
+                  const SizedBox(height: 80),
+                  Center(child: Text(l.noActivity)),
+                ],
+              );
             }
             return ListView.separated(
               itemCount: items.length,
@@ -55,14 +60,18 @@ class ActivityScreen extends ConsumerWidget {
                 final who = names[e.actor] ?? l.unknownPerson;
                 return ListTile(
                   leading: Icon(_icon(e.action)),
-                  title: Text(title == null || title.isEmpty
-                      ? '${l.auditAction(e.action)}: ${l.transactionNoun}'
-                      : '${l.auditAction(e.action)}: $title'),
+                  title: Text(
+                    title == null || title.isEmpty
+                        ? '${l.auditAction(e.action)}: ${l.transactionNoun}'
+                        : '${l.auditAction(e.action)}: $title',
+                  ),
                   subtitle: Text('$who · ${df.format(e.at.toLocal())}'),
                   trailing: amount == null
                       ? null
-                      : Text(formatCents(amount),
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      : Text(
+                          formatCents(amount),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                   onTap: e.action == 'purge' || e.rowId == null
                       ? null
                       : () => context.go('/transactions/${e.rowId}'),

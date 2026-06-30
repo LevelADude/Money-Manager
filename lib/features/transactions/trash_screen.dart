@@ -41,13 +41,15 @@ class TrashScreen extends ConsumerWidget {
               final tx = items[i].tx;
               final title = tx.title.isEmpty
                   ? (tx.categoryId == null
-                      ? l.transactionType(tx.type)
-                      : (catNames[tx.categoryId] ?? l.transactionType(tx.type)))
+                        ? l.transactionType(tx.type)
+                        : (catNames[tx.categoryId] ??
+                              l.transactionType(tx.type)))
                   : tx.title;
               return ListTile(
                 title: Text(title),
                 subtitle: Text(
-                    l.deletedOn(df.format(items[i].deletedAt.toLocal()))),
+                  l.deletedOn(df.format(items[i].deletedAt.toLocal())),
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

@@ -52,10 +52,7 @@ class InsightsScreen extends ConsumerWidget {
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(
-                        l.insightsEmpty,
-                        textAlign: TextAlign.center,
-                      ),
+                      child: Text(l.insightsEmpty, textAlign: TextAlign.center),
                     ),
                   )
                 : ListView(
@@ -74,18 +71,24 @@ class InsightsScreen extends ConsumerWidget {
                         }(),
                       const SizedBox(height: 8),
                       Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
                         child: Row(
                           children: [
-                            Icon(Icons.lock_outline,
-                                size: 16, color: theme.hintColor),
+                            Icon(
+                              Icons.lock_outline,
+                              size: 16,
+                              color: theme.hintColor,
+                            ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 l.insightsLocalNote,
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(color: theme.hintColor),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.hintColor,
+                                ),
                               ),
                             ),
                           ],
@@ -112,10 +115,10 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).hintColor,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
+          color: Theme.of(context).hintColor,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -145,12 +148,15 @@ class _InsightCard extends StatelessWidget {
               backgroundColor: color.withValues(alpha: 0.15),
               child: Icon(insight.icon, color: color),
             ),
-            title: Text(insight.title,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              insight.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(insight.detail),
             isThreeLine: insight.detail.length > 60,
-            trailing:
-                route == null ? null : const Icon(Icons.chevron_right, size: 20),
+            trailing: route == null
+                ? null
+                : const Icon(Icons.chevron_right, size: 20),
             onTap: route == null ? null : () => context.go(route),
           ),
           if (spark != null && spark.length >= 2)

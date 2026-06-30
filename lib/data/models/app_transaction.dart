@@ -3,23 +3,23 @@
 enum TransactionType { expense, income, transfer }
 
 TransactionType transactionTypeFromDb(String s) => switch (s) {
-      'income' => TransactionType.income,
-      'transfer' => TransactionType.transfer,
-      _ => TransactionType.expense,
-    };
+  'income' => TransactionType.income,
+  'transfer' => TransactionType.transfer,
+  _ => TransactionType.expense,
+};
 
 String transactionTypeToDb(TransactionType t) => switch (t) {
-      TransactionType.income => 'income',
-      TransactionType.transfer => 'transfer',
-      TransactionType.expense => 'expense',
-    };
+  TransactionType.income => 'income',
+  TransactionType.transfer => 'transfer',
+  TransactionType.expense => 'expense',
+};
 
 extension TransactionTypeX on TransactionType {
   String get label => switch (this) {
-        TransactionType.income => 'Einnahme',
-        TransactionType.transfer => 'Übertrag',
-        TransactionType.expense => 'Ausgabe',
-      };
+    TransactionType.income => 'Einnahme',
+    TransactionType.transfer => 'Übertrag',
+    TransactionType.expense => 'Ausgabe',
+  };
 }
 
 /// Eine Buchung, siehe Tabelle `transactions`. Beträge in Cent.
@@ -70,19 +70,19 @@ class AppTransaction {
   }
 
   factory AppTransaction.fromJson(Map<String, dynamic> json) => AppTransaction(
-        id: json['id'] as String,
-        accountId: json['account_id'] as String,
-        type: transactionTypeFromDb((json['type'] as String?) ?? 'expense'),
-        amountCents: (json['amount_cents'] as num?)?.toInt() ?? 0,
-        occurredOn: DateTime.parse(json['occurred_on'] as String),
-        categoryId: json['category_id'] as String?,
-        transferAccountId: json['transfer_account_id'] as String?,
-        title: (json['title'] as String?) ?? '',
-        note: (json['note'] as String?) ?? '',
-        createdBy: json['created_by'] as String?,
-        receiptPath: json['receipt_path'] as String?,
-        tags: _parseTags(json['tags']),
-      );
+    id: json['id'] as String,
+    accountId: json['account_id'] as String,
+    type: transactionTypeFromDb((json['type'] as String?) ?? 'expense'),
+    amountCents: (json['amount_cents'] as num?)?.toInt() ?? 0,
+    occurredOn: DateTime.parse(json['occurred_on'] as String),
+    categoryId: json['category_id'] as String?,
+    transferAccountId: json['transfer_account_id'] as String?,
+    title: (json['title'] as String?) ?? '',
+    note: (json['note'] as String?) ?? '',
+    createdBy: json['created_by'] as String?,
+    receiptPath: json['receipt_path'] as String?,
+    tags: _parseTags(json['tags']),
+  );
 
   static List<String> _parseTags(dynamic raw) {
     if (raw is List) {

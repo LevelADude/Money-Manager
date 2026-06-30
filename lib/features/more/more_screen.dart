@@ -18,11 +18,11 @@ class MoreScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context);
 
     Widget tile(IconData icon, String title, String route) => ListTile(
-          leading: Icon(icon),
-          title: Text(title),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => context.go(route),
-        );
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.go(route),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.navMore)),
@@ -30,7 +30,11 @@ class MoreScreen extends ConsumerWidget {
         children: [
           tile(Icons.search, l.moreSearch, '/more/search'),
           tile(Icons.insights_outlined, l.moreInsights, '/more/insights'),
-          tile(Icons.notifications_outlined, l.moreReminders, '/more/reminders'),
+          tile(
+            Icons.notifications_outlined,
+            l.moreReminders,
+            '/more/reminders',
+          ),
           tile(Icons.history, l.moreActivity, '/more/activity'),
           tile(Icons.savings_outlined, l.moreBudgets, '/more/budgets'),
           tile(Icons.calculate_outlined, l.morePlanning, '/more/planning'),
@@ -54,7 +58,11 @@ class MoreScreen extends ConsumerWidget {
           tile(Icons.account_circle_outlined, l.moreProfile, '/more/profile'),
           tile(Icons.people_alt_outlined, l.moreSharing, '/more/sharing'),
           if (isAdmin)
-            tile(Icons.admin_panel_settings_outlined, l.moreAdmin, '/more/admin'),
+            tile(
+              Icons.admin_panel_settings_outlined,
+              l.moreAdmin,
+              '/more/admin',
+            ),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.all(16),

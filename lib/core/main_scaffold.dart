@@ -43,8 +43,10 @@ class _MainScaffoldState extends ConsumerState<MainScaffold>
   }
 
   void _goBranch(int index) {
-    widget.shell
-        .goBranch(index, initialLocation: index == widget.shell.currentIndex);
+    widget.shell.goBranch(
+      index,
+      initialLocation: index == widget.shell.currentIndex,
+    );
   }
 
   @override
@@ -55,17 +57,17 @@ class _MainScaffoldState extends ConsumerState<MainScaffold>
       (
         icon: Icons.account_balance_wallet_outlined,
         active: Icons.account_balance_wallet,
-        label: l.navAccounts
+        label: l.navAccounts,
       ),
       (
         icon: Icons.receipt_long_outlined,
         active: Icons.receipt_long,
-        label: l.navTransactions
+        label: l.navTransactions,
       ),
       (
         icon: Icons.bar_chart_outlined,
         active: Icons.bar_chart,
-        label: l.navStatistics
+        label: l.navStatistics,
       ),
       (icon: Icons.menu, active: Icons.menu, label: l.navMore),
     ];

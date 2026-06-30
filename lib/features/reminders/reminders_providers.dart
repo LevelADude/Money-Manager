@@ -37,23 +37,26 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
   final out = <Reminder>[];
 
   // Fällige / bald fällige Daueraufträge.
-  final rules = ref.watch(recurringRulesProvider).asData?.value ??
+  final rules =
+      ref.watch(recurringRulesProvider).asData?.value ??
       const <RecurringRule>[];
   for (final r in rules.where((r) => r.active)) {
     final due = DateTime(r.nextDue.year, r.nextDue.month, r.nextDue.day);
     final diff = due.difference(today).inDays;
     if (diff <= 3) {
-      out.add(Reminder(
-        icon: Icons.repeat,
-        title: r.title.isEmpty ? 'Dauerauftrag' : r.title,
-        subtitle: diff < 0
-            ? 'überfällig seit ${-diff} Tag(en)'
-            : diff == 0
-                ? 'heute fällig'
-                : 'fällig in $diff Tag(en)',
-        level: diff < 0 ? ReminderLevel.alert : ReminderLevel.info,
-        route: '/more/recurring',
-      ));
+      out.add(
+        Reminder(
+          icon: Icons.repeat,
+          title: r.title.isEmpty ? 'Dauerauftrag' : r.title,
+          subtitle: diff < 0
+              ? 'überfällig seit ${-diff} Tag(en)'
+              : diff == 0
+              ? 'heute fällig'
+              : 'fällig in $diff Tag(en)',
+          level: diff < 0 ? ReminderLevel.alert : ReminderLevel.info,
+          route: '/more/recurring',
+        ),
+      );
     }
   }
 
@@ -66,15 +69,19 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
     final s = spent[catId] ?? 0;
     final pct = s / b.amountCents;
     if (pct >= 0.9) {
-      out.add(Reminder(
-        icon: Icons.savings_outlined,
-        title: 'Budget: ${catNames[catId] ?? 'Kategorie'}',
-        subtitle: s > b.amountCents
-            ? 'überschritten (${formatCents(s)} / ${formatCents(b.amountCents)})'
-            : 'fast aufgebraucht (${(pct * 100).round()} %)',
-        level: s > b.amountCents ? ReminderLevel.alert : ReminderLevel.warning,
-        route: '/more/budgets',
-      ));
+      out.add(
+        Reminder(
+          icon: Icons.savings_outlined,
+          title: 'Budget: ${catNames[catId] ?? 'Kategorie'}',
+          subtitle: s > b.amountCents
+              ? 'überschritten (${formatCents(s)} / ${formatCents(b.amountCents)})'
+              : 'fast aufgebraucht (${(pct * 100).round()} %)',
+          level: s > b.amountCents
+              ? ReminderLevel.alert
+              : ReminderLevel.warning,
+          route: '/more/budgets',
+        ),
+      );
     }
   });
 
@@ -83,18 +90,24 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
       ref.watch(savingsGoalsProvider).asData?.value ?? const <SavingsGoal>[];
   for (final g in goals) {
     if (g.reached || g.targetDate == null || g.targetCents <= 0) continue;
-    final td = DateTime(g.targetDate!.year, g.targetDate!.month, g.targetDate!.day);
+    final td = DateTime(
+      g.targetDate!.year,
+      g.targetDate!.month,
+      g.targetDate!.day,
+    );
     final daysLeft = td.difference(today).inDays;
     if (daysLeft <= 14) {
-      out.add(Reminder(
-        icon: Icons.flag_outlined,
-        title: 'Sparziel: ${g.name}',
-        subtitle: daysLeft < 0
-            ? 'Zieltermin überschritten · noch ${formatCents(g.remainingCents)}'
-            : 'noch $daysLeft Tag(e) · ${formatCents(g.remainingCents)} fehlen',
-        level: daysLeft < 0 ? ReminderLevel.alert : ReminderLevel.warning,
-        route: '/more/goals',
-      ));
+      out.add(
+        Reminder(
+          icon: Icons.flag_outlined,
+          title: 'Sparziel: ${g.name}',
+          subtitle: daysLeft < 0
+              ? 'Zieltermin überschritten · noch ${formatCents(g.remainingCents)}'
+              : 'noch $daysLeft Tag(e) · ${formatCents(g.remainingCents)} fehlen',
+          level: daysLeft < 0 ? ReminderLevel.alert : ReminderLevel.warning,
+          route: '/more/goals',
+        ),
+      );
     }
   }
 
@@ -105,7 +118,8 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
 
 /// Erfassungs-Streak: aufeinanderfolgende Tage mit mindestens einer Buchung.
 final streakProvider = Provider<({int days, bool bookedToday})>((ref) {
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+  final txs =
+      ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
   final daySet = <DateTime>{
     for (final t in txs)

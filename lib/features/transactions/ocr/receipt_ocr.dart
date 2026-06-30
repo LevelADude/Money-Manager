@@ -8,5 +8,4 @@
 library;
 
 export 'receipt_scan.dart';
-export 'receipt_ocr_stub.dart'
-    if (dart.library.io) 'receipt_ocr_mlkit.dart';
+export 'receipt_ocr_stub.dart' if (dart.library.io) 'receipt_ocr_mlkit.dart';

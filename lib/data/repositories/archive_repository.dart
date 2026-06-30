@@ -30,7 +30,8 @@ class ArchiveRepository {
     final rows = await _client.rpc('get_archive_config_status');
     if (rows is List && rows.isNotEmpty) {
       return ArchiveConfigStatus.fromJson(
-          Map<String, dynamic>.from(rows.first as Map));
+        Map<String, dynamic>.from(rows.first as Map),
+      );
     }
     return ArchiveConfigStatus.empty;
   }
@@ -42,11 +43,14 @@ class ArchiveRepository {
     String? token,
     String? encKey,
   }) {
-    return _client.rpc('set_archive_config', params: {
-      'p_repo': normalizeRepo(repo),
-      'p_token': token ?? '',
-      'p_enc_key': encKey ?? '',
-    });
+    return _client.rpc(
+      'set_archive_config',
+      params: {
+        'p_repo': normalizeRepo(repo),
+        'p_token': token ?? '',
+        'p_enc_key': encKey ?? '',
+      },
+    );
   }
 
   Future<void> clearArchiveConfig() => _client.rpc('clear_archive_config');
@@ -62,7 +66,9 @@ class ArchiveRepository {
   static String normalizeRepo(String input) {
     var s = input.trim();
     s = s.replaceFirst(
-        RegExp(r'^https?://github\.com/', caseSensitive: false), '');
+      RegExp(r'^https?://github\.com/', caseSensitive: false),
+      '',
+    );
     s = s.replaceFirst(RegExp(r'^git@github\.com:', caseSensitive: false), '');
     s = s.replaceFirst(RegExp(r'\.git$', caseSensitive: false), '');
     s = s.replaceAll(RegExp(r'/+$'), '');
@@ -81,9 +87,9 @@ class ArchiveRepository {
           .stream(primaryKey: ['year'])
           .order('year')
           .map((rows) {
-        _cache.writeRows(_table, rows);
-        return rows.map(ArchivedYear.fromJson).toList();
-      });
+            _cache.writeRows(_table, rows);
+            return rows.map(ArchivedYear.fromJson).toList();
+          });
     } catch (_) {
       // offline: beim Cache bleiben.
     }
@@ -151,31 +157,41 @@ class ArchiveRepository {
       'comments': commentRows,
       'receipts': receipts,
     };
-    final writeRes =
-        await _invoke({'action': 'write', 'year': year, 'payload': payload});
+    final writeRes = await _invoke({
+      'action': 'write',
+      'year': year,
+      'payload': payload,
+    });
     final githubPath = writeRes['path'] as String?;
     final byteSize = (writeRes['size'] as num?)?.toInt() ?? 0;
 
-    // Marker + Carry-over speichern (RLS: nur Admin).
-    onProgress?.call('mark');
-    await _client.from(_table).upsert({
-      'year': year,
-      'tx_count': txRows.length,
-      'byte_size': byteSize,
-      'carryover_by_account': carryover,
-      'github_path': githubPath,
-      'archived_at': DateTime.now().toUtc().toIso8601String(),
-    });
-
-    // Belege aus dem Storage entfernen (gibt den meisten Speicher frei) …
+    // Marker (+ Carry-over) schreiben UND die Jahresdaten endgültig löschen –
+    // atomar in EINER DB-Funktion. So gibt es nie einen Zwischenzustand
+    // "Carry-over schon aktiv, Buchungen noch da" (= kurzzeitige Doppelzählung).
     onProgress?.call('purge');
-    await _receipts.deleteMany(receiptPaths);
-    // … und die Buchungen endgültig löschen (Splits/Kommentare via Cascade).
-    await _client.rpc('purge_year_data', params: {'p_year': year});
+    await _client.rpc(
+      'archive_commit_year',
+      params: {
+        'p_year': year,
+        'p_tx_count': txRows.length,
+        'p_byte_size': byteSize,
+        'p_carryover': carryover,
+        'p_github_path': githubPath,
+      },
+    );
 
-    // Lokalen Cache der gelöschten Buchungen bereinigen.
+    // Lokalen Cache der (bereits aus der DB gelöschten) Buchungen bereinigen.
     for (final id in txIds) {
       _cache.removeFromCache('transactions', id);
+    }
+
+    // Belege erst NACH dem atomaren Commit aus dem Storage entfernen. Ein Fehler
+    // hier ist unkritisch (die Belege liegen verschlüsselt im GitHub-Payload) und
+    // darf den bereits erfolgreichen Archiv-Commit nicht als Fehler melden.
+    try {
+      await _receipts.deleteMany(receiptPaths);
+    } catch (_) {
+      // Verwaiste Belegdateien bleiben ggf. liegen – per Wartung aufräumbar.
     }
 
     return ArchivedYear(
@@ -215,7 +231,9 @@ class ArchiveRepository {
     }
     for (final r in txRows) {
       final old = r['receipt_path'] as String?;
-      if (old != null && pathMap.containsKey(old)) r['receipt_path'] = pathMap[old];
+      if (old != null && pathMap.containsKey(old)) {
+        r['receipt_path'] = pathMap[old];
+      }
     }
 
     if (txRows.isNotEmpty) await _client.from('transactions').upsert(txRows);
@@ -243,7 +261,9 @@ class ArchiveRepository {
   }
 
   Future<List<Map<String, dynamic>>> _rawChildren(
-      String table, List<String> txIds) async {
+    String table,
+    List<String> txIds,
+  ) async {
     if (txIds.isEmpty) return const [];
     final out = <Map<String, dynamic>>[];
     const chunk = 200;
@@ -261,8 +281,9 @@ class ArchiveRepository {
   }
 
   List<Map<String, dynamic>> _rowsOf(dynamic raw) => [
-        for (final r in (raw as List? ?? const [])) Map<String, dynamic>.from(r as Map),
-      ];
+    for (final r in (raw as List? ?? const []))
+      Map<String, dynamic>.from(r as Map),
+  ];
 
   Future<Map<String, dynamic>> _invoke(Map<String, dynamic> body) async {
     final res = await _client.functions.invoke('archive-proxy', body: body);

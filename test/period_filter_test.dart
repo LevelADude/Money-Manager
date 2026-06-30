@@ -13,16 +13,20 @@ void main() {
     test('Jahr enthält dieses Jahr, nicht das letzte', () {
       expect(StatsPeriod.thisYear.contains(DateTime(now.year, 1, 1)), isTrue);
       expect(
-          StatsPeriod.thisYear.contains(DateTime(now.year - 1, 6, 15)), isFalse);
+        StatsPeriod.thisYear.contains(DateTime(now.year - 1, 6, 15)),
+        isFalse,
+      );
     });
 
     test('Monat enthält diesen Monat, nicht ein anderes Jahr', () {
       expect(
-          StatsPeriod.thisMonth.contains(DateTime(now.year, now.month, 1)),
-          isTrue);
+        StatsPeriod.thisMonth.contains(DateTime(now.year, now.month, 1)),
+        isTrue,
+      );
       expect(
-          StatsPeriod.thisMonth.contains(DateTime(now.year - 1, now.month, 1)),
-          isFalse);
+        StatsPeriod.thisMonth.contains(DateTime(now.year - 1, now.month, 1)),
+        isFalse,
+      );
     });
   });
 
@@ -51,10 +55,14 @@ void main() {
       expect(StatsPeriod.thisMonth.shifted(anchor, -1), DateTime(2026, 2, 1));
       expect(StatsPeriod.thisMonth.shifted(anchor, 1), DateTime(2026, 4, 1));
       // Über die Jahresgrenze hinweg.
-      expect(StatsPeriod.thisMonth.shifted(DateTime(2026, 1, 10), -1),
-          DateTime(2025, 12, 1));
-      expect(StatsPeriod.thisMonth.shifted(DateTime(2026, 12, 10), 1),
-          DateTime(2027, 1, 1));
+      expect(
+        StatsPeriod.thisMonth.shifted(DateTime(2026, 1, 10), -1),
+        DateTime(2025, 12, 1),
+      );
+      expect(
+        StatsPeriod.thisMonth.shifted(DateTime(2026, 12, 10), 1),
+        DateTime(2027, 1, 1),
+      );
     });
 
     test('Jahr: auf den 1. Januar des Vor-/Folgejahres', () {
@@ -70,9 +78,14 @@ void main() {
 
   group('StatsPeriodNav.labelFor (Anzeige des Zeitraums)', () {
     test('Monat zeigt deutschen Monatsnamen + Jahr', () {
-      expect(StatsPeriod.thisMonth.labelFor(DateTime(2026, 3, 15)), 'März 2026');
-      expect(StatsPeriod.thisMonth.labelFor(DateTime(2025, 12, 1)),
-          'Dezember 2025');
+      expect(
+        StatsPeriod.thisMonth.labelFor(DateTime(2026, 3, 15)),
+        'März 2026',
+      );
+      expect(
+        StatsPeriod.thisMonth.labelFor(DateTime(2025, 12, 1)),
+        'Dezember 2025',
+      );
     });
 
     test('Jahr zeigt die Jahreszahl', () {
@@ -85,8 +98,10 @@ void main() {
 
     test('Woche zeigt Mo–So-Spanne', () {
       // 15.03.2026 ist ein Sonntag -> Woche Mo 09.03. bis So 15.03.
-      expect(StatsPeriod.thisWeek.labelFor(DateTime(2026, 3, 15)),
-          '09.03. – 15.03.2026');
+      expect(
+        StatsPeriod.thisWeek.labelFor(DateTime(2026, 3, 15)),
+        '09.03. – 15.03.2026',
+      );
     });
 
     test('Gesamt zeigt "Gesamt"', () {

@@ -29,9 +29,11 @@ class PlanningScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
-    final txs = ref.watch(allTransactionsProvider).asData?.value ??
+    final txs =
+        ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
-    final rules = ref.watch(recurringRulesProvider).asData?.value ??
+    final rules =
+        ref.watch(recurringRulesProvider).asData?.value ??
         const <RecurringRule>[];
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
@@ -49,7 +51,9 @@ class PlanningScreen extends ConsumerWidget {
     final today = DateTime(now.year, now.month, now.day);
     final lastDay = DateTime(now.year, now.month + 1, 0);
     final fixedExpenses =
-        rules.where((r) => r.active && r.type == TransactionType.expense).toList()
+        rules
+            .where((r) => r.active && r.type == TransactionType.expense)
+            .toList()
           ..sort((a, b) => a.nextDue.compareTo(b.nextDue));
 
     var upcomingFix = 0;
@@ -59,8 +63,10 @@ class PlanningScreen extends ConsumerWidget {
       }
     }
     final available = incomeMonth - expenseMonth - upcomingFix;
-    final monthlyFixTotal =
-        fixedExpenses.fold<int>(0, (s, r) => s + _monthlyEquivalent(r));
+    final monthlyFixTotal = fixedExpenses.fold<int>(
+      0,
+      (s, r) => s + _monthlyEquivalent(r),
+    );
 
     // Hochrechnung: Ausgaben-Tempo bisher auf den ganzen Monat hochgerechnet.
     final daysElapsed = now.day;
@@ -93,17 +99,19 @@ class PlanningScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(l.availableUntilMonthEnd,
-                      style: Theme.of(context).textTheme.labelLarge),
+                  Text(
+                    l.availableUntilMonthEnd,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                   const SizedBox(height: 4),
                   MoneyText(
                     available,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: available >= 0
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: available >= 0
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
+                    ),
                   ),
                   const Divider(height: 24),
                   _line(context, l.incomeMonthLabel, incomeMonth),
@@ -124,11 +132,12 @@ class PlanningScreen extends ConsumerWidget {
                     children: [
                       const Icon(Icons.trending_up, size: 20),
                       const SizedBox(width: 8),
-                      Text(l.projectionMonthEnd,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        l.projectionMonthEnd,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -136,9 +145,10 @@ class PlanningScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(l.expectedExpenses),
-                      MoneyText(projectedExpense,
-                          style:
-                              const TextStyle(fontWeight: FontWeight.bold)),
+                      MoneyText(
+                        projectedExpense,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                   Text(
@@ -170,14 +180,17 @@ class PlanningScreen extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: Text(l.fixedCostsMonthly,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold)),
+                child: Text(
+                  l.fixedCostsMonthly,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
               ),
-              MoneyText(monthlyFixTotal,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              MoneyText(
+                monthlyFixTotal,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -196,10 +209,13 @@ class PlanningScreen extends ConsumerWidget {
                   leading: const Icon(Icons.repeat),
                   title: Text(r.title.isEmpty ? l.standingOrderNoun : r.title),
                   subtitle: Text(
-                      '${l.nextDuePrefix(df.format(r.nextDue))} · '
-                      '${l.everyInterval(r.intervalCount, r.intervalUnit)}'),
-                  trailing: MoneyText(r.amountCents,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                    '${l.nextDuePrefix(df.format(r.nextDue))} · '
+                    '${l.everyInterval(r.intervalCount, r.intervalUnit)}',
+                  ),
+                  trailing: MoneyText(
+                    r.amountCents,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
         ],
@@ -212,10 +228,7 @@ class PlanningScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          MoneyText(cents),
-        ],
+        children: [Text(label), MoneyText(cents)],
       ),
     );
   }

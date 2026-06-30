@@ -18,7 +18,9 @@ class SharingScreen extends ConsumerWidget {
       await repo.revoke(granteeId);
     } else {
       await repo.grant(
-          granteeId, choice == 'manage' ? GrantLevel.manage : GrantLevel.view);
+        granteeId,
+        choice == 'manage' ? GrantLevel.manage : GrantLevel.view,
+      );
     }
     ref.invalidate(accessGrantsProvider);
   }
@@ -27,7 +29,8 @@ class SharingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final myId = ref.watch(currentUserIdProvider);
     final names =
-        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.watch(profileNamesProvider).asData?.value ??
+        const <String, String>{};
     final iGave = ref.watch(grantsIGaveProvider);
     final iReceived = ref.watch(grantsIReceivedProvider);
     final l = AppLocalizations.of(context);
@@ -36,7 +39,9 @@ class SharingScreen extends ConsumerWidget {
         names[id]?.isNotEmpty == true ? names[id]! : l.unknownPerson;
 
     final others = names.keys.where((id) => id != myId).toList()
-      ..sort((a, b) => nameOf(a).toLowerCase().compareTo(nameOf(b).toLowerCase()));
+      ..sort(
+        (a, b) => nameOf(a).toLowerCase().compareTo(nameOf(b).toLowerCase()),
+      );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.sharingTitle)),
@@ -55,11 +60,12 @@ class SharingScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
-            child: Text(l.whoCanAccess,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            child: Text(
+              l.whoCanAccess,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
           ),
           if (others.isEmpty)
             Padding(
@@ -78,15 +84,20 @@ class SharingScreen extends ConsumerWidget {
                         children: [
                           CircleAvatar(
                             radius: 16,
-                            child: Text(nameOf(id).isNotEmpty
-                                ? nameOf(id)[0].toUpperCase()
-                                : '?'),
+                            child: Text(
+                              nameOf(id).isNotEmpty
+                                  ? nameOf(id)[0].toUpperCase()
+                                  : '?',
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: Text(nameOf(id),
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
+                            child: Text(
+                              nameOf(id),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -94,17 +105,25 @@ class SharingScreen extends ConsumerWidget {
                       SegmentedButton<String>(
                         showSelectedIcon: false,
                         segments: [
-                          ButtonSegment(value: 'none', label: Text(l.accessNone)),
-                          ButtonSegment(value: 'view', label: Text(l.accessView)),
                           ButtonSegment(
-                              value: 'manage', label: Text(l.accessManage)),
+                            value: 'none',
+                            label: Text(l.accessNone),
+                          ),
+                          ButtonSegment(
+                            value: 'view',
+                            label: Text(l.accessView),
+                          ),
+                          ButtonSegment(
+                            value: 'manage',
+                            label: Text(l.accessManage),
+                          ),
                         ],
                         selected: {
                           switch (iGave[id]) {
                             GrantLevel.manage => 'manage',
                             GrantLevel.view => 'view',
                             null => 'none',
-                          }
+                          },
                         },
                         onSelectionChanged: (s) => _set(ref, id, s.first),
                       ),
@@ -115,11 +134,12 @@ class SharingScreen extends ConsumerWidget {
           const Divider(height: 32),
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
-            child: Text(l.whoGrantedMe,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            child: Text(
+              l.whoGrantedMe,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
           ),
           if (iReceived.isEmpty)
             Padding(
@@ -131,9 +151,11 @@ class SharingScreen extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.visibility_outlined),
                 title: Text(nameOf(e.key)),
-                subtitle: Text(e.value == GrantLevel.manage
-                    ? l.youMayViewManage
-                    : l.youMayView),
+                subtitle: Text(
+                  e.value == GrantLevel.manage
+                      ? l.youMayViewManage
+                      : l.youMayView,
+                ),
               ),
         ],
       ),

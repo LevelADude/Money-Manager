@@ -11,8 +11,8 @@ class AccountMember {
   final String userId;
 
   factory AccountMember.fromJson(Map<String, dynamic> j) => AccountMember(
-        id: j['id'] as String,
-        accountId: j['account_id'] as String,
-        userId: j['user_id'] as String,
-      );
+    id: j['id'] as String,
+    accountId: j['account_id'] as String,
+    userId: j['user_id'] as String,
+  );
 }

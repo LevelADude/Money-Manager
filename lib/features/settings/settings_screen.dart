@@ -20,12 +20,11 @@ class SettingsScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context);
 
     Widget header(String text) => Text(
-          text,
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(fontWeight: FontWeight.bold),
-        );
+      text,
+      style: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.settingsTitle)),
@@ -37,11 +36,11 @@ class SettingsScreen extends ConsumerWidget {
           SegmentedButton<String>(
             segments: [
               ButtonSegment(
-                  value: 'de',
-                  label: Text(l.languageGerman),
-                  icon: const Icon(Icons.translate)),
-              ButtonSegment(
-                  value: 'en', label: Text(l.languageEnglish)),
+                value: 'de',
+                label: Text(l.languageGerman),
+                icon: const Icon(Icons.translate),
+              ),
+              ButtonSegment(value: 'en', label: Text(l.languageEnglish)),
             ],
             selected: {settings.localeCode},
             onSelectionChanged: (s) => notifier.setLocale(s.first),
@@ -52,17 +51,20 @@ class SettingsScreen extends ConsumerWidget {
           SegmentedButton<ThemeMode>(
             segments: [
               ButtonSegment(
-                  value: ThemeMode.system,
-                  label: Text(l.themeSystem),
-                  icon: const Icon(Icons.brightness_auto)),
+                value: ThemeMode.system,
+                label: Text(l.themeSystem),
+                icon: const Icon(Icons.brightness_auto),
+              ),
               ButtonSegment(
-                  value: ThemeMode.light,
-                  label: Text(l.themeLight),
-                  icon: const Icon(Icons.light_mode)),
+                value: ThemeMode.light,
+                label: Text(l.themeLight),
+                icon: const Icon(Icons.light_mode),
+              ),
               ButtonSegment(
-                  value: ThemeMode.dark,
-                  label: Text(l.themeDark),
-                  icon: const Icon(Icons.dark_mode)),
+                value: ThemeMode.dark,
+                label: Text(l.themeDark),
+                icon: const Icon(Icons.dark_mode),
+              ),
             ],
             selected: {settings.themeMode},
             onSelectionChanged: (s) => notifier.setThemeMode(s.first),
@@ -100,9 +102,11 @@ class SettingsScreen extends ConsumerWidget {
               Expanded(
                 child: DropdownButtonFormField<String>(
                   initialValue:
-                      ref.watch(allCurrenciesProvider).contains(settings.baseCurrency)
-                          ? settings.baseCurrency
-                          : 'EUR',
+                      ref
+                          .watch(allCurrenciesProvider)
+                          .contains(settings.baseCurrency)
+                      ? settings.baseCurrency
+                      : 'EUR',
                   decoration: InputDecoration(
                     labelText: l.mainCurrency,
                     prefixIcon: const Icon(Icons.payments_outlined),
@@ -111,7 +115,9 @@ class SettingsScreen extends ConsumerWidget {
                   items: [
                     for (final c in ref.watch(allCurrenciesProvider))
                       DropdownMenuItem(
-                          value: c, child: Text('$c (${currencySymbol(c)})')),
+                        value: c,
+                        child: Text('$c (${currencySymbol(c)})'),
+                      ),
                   ],
                   onChanged: (v) {
                     if (v != null) notifier.setBaseCurrency(v);
@@ -273,9 +279,7 @@ class _ColorSwatch extends StatelessWidget {
             width: 3,
           ),
         ),
-        child: selected
-            ? const Icon(Icons.check, color: Colors.white)
-            : null,
+        child: selected ? const Icon(Icons.check, color: Colors.white) : null,
       ),
     );
   }

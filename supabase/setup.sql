@@ -2,7 +2,7 @@
 -- Money-Manager - setup.sql  (Komplett-Einrichtung der Datenbank)
 -- =====================================================================
 -- Einmalig fuer ein FRISCHES Supabase-Projekt: gesamten Inhalt im SQL-Editor einfuegen, Run.
--- Enthaelt die Migrationen 0001 bis 0023.
+-- Enthaelt die Migrationen 0001 bis 0028.
 -- =====================================================================
 
 
@@ -1499,4 +1499,112 @@ end;
 $$;
 revoke all on function public.clear_archive_config() from public;
 grant execute on function public.clear_archive_config() to authenticated;
+
+
+-- ## Migration: 0026_receipts_privacy.sql
+
+-- 0026: Belege pro Eigentuemer absichern + ungenutzte View entfernen.
+-- Belegpfade haben die Form "<uid>/<zeitstempel>.<ext>". Zugriff: eigener
+-- Ordner ODER wer die verknuepfte Buchung sehen/verwalten darf (Freigabe/
+-- Mitglied, vgl. 0018/0019). Loescht zusaetzlich account_balances (unbenutzt).
+
+drop policy if exists receipts_select on storage.objects;
+create policy receipts_select on storage.objects for select to authenticated
+  using (
+    bucket_id = 'receipts' and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or exists (
+        select 1 from public.transactions t
+        where t.receipt_path = storage.objects.name
+          and public.can_view_account(t.account_id)
+      )
+    )
+  );
+
+drop policy if exists receipts_insert on storage.objects;
+create policy receipts_insert on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'receipts'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists receipts_update on storage.objects;
+create policy receipts_update on storage.objects for update to authenticated
+  using (
+    bucket_id = 'receipts'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'receipts'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists receipts_delete on storage.objects;
+create policy receipts_delete on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'receipts' and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or public.is_admin()
+      or exists (
+        select 1 from public.transactions t
+        where t.receipt_path = storage.objects.name
+          and public.can_manage_account(t.account_id)
+      )
+    )
+  );
+
+drop view if exists public.account_balances;
+
+
+-- ## Migration: 0027_archive_commit_atomic.sql
+
+-- 0027: Atomare Jahres-Archivierung (Marker + Carry-over schreiben UND
+-- Jahresdaten loeschen in EINER Transaktion -> keine kurzzeitige Doppelzaehlung).
+
+create or replace function public.archive_commit_year(
+  p_year        int,
+  p_tx_count    int,
+  p_byte_size   bigint,
+  p_carryover   jsonb,
+  p_github_path text
+)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Nur Admins duerfen archivieren.';
+  end if;
+  perform set_config('app.skip_audit', 'on', true);
+  insert into public.archived_years
+    (year, tx_count, byte_size, carryover_by_account, github_path, archived_at)
+  values
+    (p_year, p_tx_count, p_byte_size, coalesce(p_carryover, '{}'::jsonb),
+     p_github_path, now())
+  on conflict (year) do update set
+    tx_count             = excluded.tx_count,
+    byte_size            = excluded.byte_size,
+    carryover_by_account = excluded.carryover_by_account,
+    github_path          = excluded.github_path,
+    archived_at          = now();
+  delete from public.audit_log
+   where table_name = 'transactions'
+     and row_id in (
+       select id from public.transactions
+       where extract(year from occurred_on) = p_year
+     );
+  delete from public.transactions
+   where extract(year from occurred_on) = p_year;
+end;
+$$;
+revoke all on function public.archive_commit_year(int, int, bigint, jsonb, text) from public;
+grant execute on function public.archive_commit_year(int, int, bigint, jsonb, text) to authenticated;
+
+
+-- ## Migration: 0028_recurring_anchor_day.sql
+
+-- 0028: Fester Anker-Tag (Soll-Tag 1–31) je Dauerauftrag gegen Monats-Drift.
+alter table public.recurring_rules
+  add column if not exists anchor_day smallint;
+update public.recurring_rules
+   set anchor_day = extract(day from next_due)::smallint
+ where anchor_day is null;
 

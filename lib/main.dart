@@ -107,8 +107,9 @@ class _BootstrapState extends State<_Bootstrap> {
     // Sprache aus den Einstellungen (Default Deutsch) – auch schon vor der
     // Riverpod-Initialisierung, damit Lade- und Onboarding-Screen lokalisiert
     // sind.
-    final locale =
-        Locale(widget.prefs.getString('settings_locale') == 'en' ? 'en' : 'de');
+    final locale = Locale(
+      widget.prefs.getString('settings_locale') == 'en' ? 'en' : 'de',
+    );
 
     if (_initializing) {
       return MaterialApp(

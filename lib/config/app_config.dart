@@ -18,8 +18,8 @@ import 'supabase_config.dart';
 /// geändert (Override) und jederzeit auf den Standard zurückgesetzt werden.
 class AppConfig {
   AppConfig(this._prefs, {String? fileUrl, String? fileKey})
-      : _fileUrl = (fileUrl != null && fileUrl.isNotEmpty) ? fileUrl : null,
-        _fileKey = (fileKey != null && fileKey.isNotEmpty) ? fileKey : null;
+    : _fileUrl = (fileUrl != null && fileUrl.isNotEmpty) ? fileUrl : null,
+      _fileKey = (fileKey != null && fileKey.isNotEmpty) ? fileKey : null;
 
   final SharedPreferences _prefs;
 
@@ -50,8 +50,7 @@ class AppConfig {
   bool get isConfigured => url.isNotEmpty && anonKey.isNotEmpty;
 
   /// Gibt es eine fest eingebaute Standard-Verbindung (Repo-Datei/dart-define)?
-  bool get hasBakedDefault =>
-      _bakedUrl.isNotEmpty && _bakedKey.isNotEmpty;
+  bool get hasBakedDefault => _bakedUrl.isNotEmpty && _bakedKey.isNotEmpty;
 
   /// Wird gerade ein lokaler Override statt des Standards verwendet?
   bool get isUsingOverride => _overrideUrl != null || _overrideKey != null;

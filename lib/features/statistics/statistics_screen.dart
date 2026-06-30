@@ -20,30 +20,42 @@ import 'statistics_providers.dart';
 
 /// Farbpalette für die Kategorie-Diagramme.
 const _palette = <Color>[
-  Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF9C27B0),
-  Color(0xFFF44336), Color(0xFF00BCD4), Color(0xFF8BC34A), Color(0xFFFFC107),
-  Color(0xFF3F51B5), Color(0xFFE91E63), Color(0xFF009688), Color(0xFF795548),
-  Color(0xFF607D8B), Color(0xFFCDDC39), Color(0xFFFF5722), Color(0xFF673AB7),
+  Color(0xFF4CAF50),
+  Color(0xFF2196F3),
+  Color(0xFFFF9800),
+  Color(0xFF9C27B0),
+  Color(0xFFF44336),
+  Color(0xFF00BCD4),
+  Color(0xFF8BC34A),
+  Color(0xFFFFC107),
+  Color(0xFF3F51B5),
+  Color(0xFFE91E63),
+  Color(0xFF009688),
+  Color(0xFF795548),
+  Color(0xFF607D8B),
+  Color(0xFFCDDC39),
+  Color(0xFFFF5722),
+  Color(0xFF673AB7),
 ];
 
 /// Diagramm-Form für die Kategorie-Aufschlüsselung.
 enum _ChartStyle { donut, pie, bars }
 
 String _statsPeriodLabel(AppLocalizations l, StatsPeriod p) => switch (p) {
-      StatsPeriod.thisDay => l.periodDay,
-      StatsPeriod.thisWeek => l.periodWeek,
-      StatsPeriod.thisMonth => l.periodMonth,
-      StatsPeriod.thisYear => l.periodYear,
-      StatsPeriod.all => l.allTime,
-    };
+  StatsPeriod.thisDay => l.periodDay,
+  StatsPeriod.thisWeek => l.periodWeek,
+  StatsPeriod.thisMonth => l.periodMonth,
+  StatsPeriod.thisYear => l.periodYear,
+  StatsPeriod.all => l.allTime,
+};
 
 String _prevPeriodLabel(AppLocalizations l, StatsPeriod p) => switch (p) {
-      StatsPeriod.thisDay => l.prevDay,
-      StatsPeriod.thisWeek => l.prevWeek,
-      StatsPeriod.thisMonth => l.prevMonth,
-      StatsPeriod.thisYear => l.prevYear,
-      StatsPeriod.all => '',
-    };
+  StatsPeriod.thisDay => l.prevDay,
+  StatsPeriod.thisWeek => l.prevWeek,
+  StatsPeriod.thisMonth => l.prevMonth,
+  StatsPeriod.thisYear => l.prevYear,
+  StatsPeriod.all => '',
+};
 
 /// Lokalisierte Bezeichnung des Zeitfensters (Ersatz für labelFor).
 String _statsRangeLabel(AppLocalizations l, StatsPeriod p, DateTime a) {
@@ -71,9 +83,12 @@ class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
 
   void _showDrilldown(
-      BuildContext context, WidgetRef ref, String? catId, bool expense) {
-    final items =
-        categoryDrilldown(ref, categoryId: catId, expense: expense);
+    BuildContext context,
+    WidgetRef ref,
+    String? catId,
+    bool expense,
+  ) {
+    final items = categoryDrilldown(ref, categoryId: catId, expense: expense);
     final catNames = ref.read(categoryNamesProvider);
     final accounts = ref.read(accountsProvider).asData?.value ?? const [];
     final accountNames = {for (final a in accounts) a.id: a.name};
@@ -94,8 +109,10 @@ class StatisticsScreen extends ConsumerWidget {
           controller: scroll,
           children: [
             ListTile(
-              title: Text(title,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               subtitle: Text(l.txCount(items.length)),
             ),
             const Divider(height: 1),
@@ -103,9 +120,12 @@ class StatisticsScreen extends ConsumerWidget {
               ListTile(
                 title: Text(t.title.isEmpty ? title : t.title),
                 subtitle: Text(
-                    '${df.format(t.occurredOn)} · ${accountNames[t.accountId] ?? ''}'),
-                trailing: MoneyText(t.amountCents,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                  '${df.format(t.occurredOn)} · ${accountNames[t.accountId] ?? ''}',
+                ),
+                trailing: MoneyText(
+                  t.amountCents,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
                   context.go('/transactions/${t.id}');
@@ -135,10 +155,16 @@ class StatisticsScreen extends ConsumerWidget {
     for (final t in pfTxs) {
       if (t.type != TransactionType.expense) continue;
       if (t.occurredOn.year != hmNow.year) continue;
-      final d =
-          DateTime(t.occurredOn.year, t.occurredOn.month, t.occurredOn.day);
-      dailyByDate.update(d, (v) => v + t.amountCents,
-          ifAbsent: () => t.amountCents);
+      final d = DateTime(
+        t.occurredOn.year,
+        t.occurredOn.month,
+        t.occurredOn.day,
+      );
+      dailyByDate.update(
+        d,
+        (v) => v + t.amountCents,
+        ifAbsent: () => t.amountCents,
+      );
     }
     final l = AppLocalizations.of(context);
     String nameOf(String? id) =>
@@ -204,8 +230,9 @@ class StatisticsScreen extends ConsumerWidget {
           if (comparison.hasPrevious) ...[
             const SizedBox(height: 8),
             _ComparisonCard(
-                comparison: comparison,
-                prevLabel: _prevPeriodLabel(l, period)),
+              comparison: comparison,
+              prevLabel: _prevPeriodLabel(l, period),
+            ),
           ],
           const SizedBox(height: 16),
           _NetWorthTrendCard(history: netWorthHistory),
@@ -298,11 +325,12 @@ class _PeriodNavBar extends ConsumerWidget {
     final label = _statsRangeLabel(l, period, anchor);
     if (period == StatsPeriod.all) {
       return Center(
-        child: Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.bold)),
+        child: Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+        ),
       );
     }
 
@@ -310,7 +338,8 @@ class _PeriodNavBar extends ConsumerWidget {
     // Zukunft und kein „Heute"-Knopf.
     final now = DateTime.now();
     final range = rangeFor(period, anchor, previous: false);
-    final isCurrent = range == null ||
+    final isCurrent =
+        range == null ||
         (!now.isBefore(range.start) && now.isBefore(range.end));
     final notifier = ref.read(statsAnchorProvider.notifier);
 
@@ -325,12 +354,13 @@ class _PeriodNavBar extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(label,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
               if (!isCurrent)
                 TextButton(
                   style: TextButton.styleFrom(
@@ -378,10 +408,10 @@ class _SummaryCard extends StatelessWidget {
             const SizedBox(height: 4),
             MoneyText(
               cents,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold, color: color),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ],
         ),
@@ -412,18 +442,22 @@ class _NetWorthTrendCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(l.netWorthTrend12,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    l.netWorthTrend12,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                MoneyText(current,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: current >= 0
-                            ? Colors.green.shade700
-                            : Colors.red.shade700)),
+                MoneyText(
+                  current,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: current >= 0
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -432,15 +466,19 @@ class _NetWorthTrendCard extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(delta >= 0 ? Icons.trending_up : Icons.trending_down,
-                      size: 16,
-                      color: delta >= 0
-                          ? Colors.green.shade700
-                          : Colors.red.shade700),
+                  Icon(
+                    delta >= 0 ? Icons.trending_up : Icons.trending_down,
+                    size: 16,
+                    color: delta >= 0
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
+                  ),
                   const SizedBox(width: 4),
-                  MoneyText(delta,
-                      prefix: delta >= 0 ? '+' : '',
-                      style: Theme.of(context).textTheme.bodySmall),
+                  MoneyText(
+                    delta,
+                    prefix: delta >= 0 ? '+' : '',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
@@ -455,7 +493,7 @@ class _NetWorthTrendCard extends StatelessWidget {
                 values: [for (final h in history) h.cents],
                 color: Theme.of(context).colorScheme.primary,
                 labels: [
-                  for (final h in history) l.monthAbbr[h.month.month - 1]
+                  for (final h in history) l.monthAbbr[h.month.month - 1],
                 ],
               ),
           ],
@@ -479,7 +517,10 @@ class _SankeyCard extends StatelessWidget {
 
   // Top-N Kategorien + Rest als „Sonstige".
   List<({String label, int value, Color color})> _entries(
-      Map<String?, int> data, int offset, String restLabel) {
+    Map<String?, int> data,
+    int offset,
+    String restLabel,
+  ) {
     final list = data.entries.where((e) => e.value > 0).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final top = list.take(6).toList();
@@ -516,20 +557,23 @@ class _SankeyCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l.moneyFlow,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              l.moneyFlow,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               height: 200,
               child: CustomPaint(
                 size: Size.infinite,
                 painter: _SankeyPainter(
-                  left: [for (final e in left) (value: e.value, color: e.color)],
+                  left: [
+                    for (final e in left) (value: e.value, color: e.color),
+                  ],
                   right: [
-                    for (final e in right) (value: e.value, color: e.color)
+                    for (final e in right) (value: e.value, color: e.color),
                   ],
                   poolColor: Theme.of(context).colorScheme.outline,
                 ),
@@ -549,16 +593,20 @@ class _SankeyCard extends StatelessWidget {
     );
   }
 
-  Widget _legend(BuildContext context,
-      String title, List<({String label, int value, Color color})> entries) {
+  Widget _legend(
+    BuildContext context,
+    String title,
+    List<({String label, int value, Color color})> entries,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 4),
         for (final e in entries)
           Padding(
@@ -569,13 +617,17 @@ class _SankeyCard extends StatelessWidget {
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
-                      color: e.color, borderRadius: BorderRadius.circular(2)),
+                    color: e.color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(e.label,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(
+                    e.label,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
               ],
             ),
@@ -609,8 +661,15 @@ class _SankeyPainter extends CustomPainter {
     final centerX = size.width / 2 - nodeW / 2;
     final rightX = size.width - nodeW;
 
-    void band(double x1, double ya1, double yb1, double x2, double ya2,
-        double yb2, Color c) {
+    void band(
+      double x1,
+      double ya1,
+      double yb1,
+      double x2,
+      double ya2,
+      double yb2,
+      Color c,
+    ) {
       final mid = (x1 + x2) / 2;
       final p = Path()
         ..moveTo(x1, ya1)
@@ -626,22 +685,28 @@ class _SankeyPainter extends CustomPainter {
     for (final e in left) {
       final segH = e.value / maxTotal * h;
       canvas.drawRect(
-          Rect.fromLTWH(leftX, ly, nodeW, segH), Paint()..color = e.color);
+        Rect.fromLTWH(leftX, ly, nodeW, segH),
+        Paint()..color = e.color,
+      );
       band(leftX + nodeW, ly, ly + segH, centerX, ly, ly + segH, e.color);
       ly += segH;
     }
 
     // Pool (Mitte).
     final poolH = math.max(sumLeft, sumRight) / maxTotal * h;
-    canvas.drawRect(Rect.fromLTWH(centerX, 0, nodeW, poolH),
-        Paint()..color = poolColor);
+    canvas.drawRect(
+      Rect.fromLTWH(centerX, 0, nodeW, poolH),
+      Paint()..color = poolColor,
+    );
 
     // Pool → Ausgaben rechts.
     var ry = 0.0;
     for (final e in right) {
       final segH = e.value / maxTotal * h;
       canvas.drawRect(
-          Rect.fromLTWH(rightX, ry, nodeW, segH), Paint()..color = e.color);
+        Rect.fromLTWH(rightX, ry, nodeW, segH),
+        Paint()..color = e.color,
+      );
       band(centerX + nodeW, ry, ry + segH, rightX, ry, ry + segH, e.color);
       ry += segH;
     }
@@ -699,10 +764,9 @@ class _HeatmapCardState extends State<_HeatmapCard> {
                 Expanded(
                   child: Text(
                     _mode == _HeatMode.month ? l.heatmapMonth : l.heatmapYear,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 SegmentedButton<_HeatMode>(
@@ -713,9 +777,13 @@ class _HeatmapCardState extends State<_HeatmapCard> {
                   ),
                   segments: [
                     ButtonSegment(
-                        value: _HeatMode.month, label: Text(l.periodMonth)),
+                      value: _HeatMode.month,
+                      label: Text(l.periodMonth),
+                    ),
                     ButtonSegment(
-                        value: _HeatMode.year, label: Text(l.periodYear)),
+                      value: _HeatMode.year,
+                      label: Text(l.periodYear),
+                    ),
                   ],
                   selected: {_mode},
                   onSelectionChanged: (s) => setState(() => _mode = s.first),
@@ -749,22 +817,26 @@ class _HeatmapCardState extends State<_HeatmapCard> {
     for (var d = 1; d <= daysInMonth; d++) {
       final e = valOf(d);
       final intensity = e == 0 ? 0.0 : (0.18 + 0.82 * (e / maxDay));
-      cells.add(Tooltip(
-        message: e == 0 ? '$d.' : '$d. · ${formatCents(e)}',
-        child: Container(
-          margin: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            color: _cellColor(e, maxDay),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          alignment: Alignment.center,
-          child: Text('$d',
+      cells.add(
+        Tooltip(
+          message: e == 0 ? '$d.' : '$d. · ${formatCents(e)}',
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: _cellColor(e, maxDay),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '$d',
               style: TextStyle(
                 fontSize: 10,
                 color: intensity > 0.55 ? Colors.white : null,
-              )),
+              ),
+            ),
+          ),
         ),
-      ));
+      );
     }
 
     return Column(
@@ -775,8 +847,7 @@ class _HeatmapCardState extends State<_HeatmapCard> {
             for (final w in AppLocalizations.of(context).weekdayAbbr)
               Expanded(
                 child: Center(
-                  child:
-                      Text(w, style: Theme.of(context).textTheme.labelSmall),
+                  child: Text(w, style: Theme.of(context).textTheme.labelSmall),
                 ),
               ),
           ],
@@ -826,7 +897,9 @@ class _HeatmapCardState extends State<_HeatmapCard> {
         ),
         child: inYear
             ? Tooltip(
-                message: e == 0 ? _fmtDate(day) : '${_fmtDate(day)} · ${formatCents(e)}',
+                message: e == 0
+                    ? _fmtDate(day)
+                    : '${_fmtDate(day)} · ${formatCents(e)}',
                 child: const SizedBox.expand(),
               )
             : null,
@@ -840,13 +913,17 @@ class _HeatmapCardState extends State<_HeatmapCard> {
       final rep = wk.isBefore(firstDay) ? firstDay : wk;
       final show = rep.month != lastMonth;
       lastMonth = rep.month;
-      monthLabels.add(SizedBox(
-        width: slot,
-        child: show
-            ? Text(AppLocalizations.of(context).monthAbbr[rep.month - 1],
-                style: Theme.of(context).textTheme.labelSmall)
-            : const SizedBox.shrink(),
-      ));
+      monthLabels.add(
+        SizedBox(
+          width: slot,
+          child: show
+              ? Text(
+                  AppLocalizations.of(context).monthAbbr[rep.month - 1],
+                  style: Theme.of(context).textTheme.labelSmall,
+                )
+              : const SizedBox.shrink(),
+        ),
+      );
     }
 
     return Column(
@@ -877,8 +954,10 @@ class _HeatmapCardState extends State<_HeatmapCard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text(AppLocalizations.of(context).less,
-                style: Theme.of(context).textTheme.labelSmall),
+            Text(
+              AppLocalizations.of(context).less,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
             const SizedBox(width: 4),
             for (final a in const [0.05, 0.3, 0.55, 0.8, 1.0])
               Container(
@@ -886,16 +965,17 @@ class _HeatmapCardState extends State<_HeatmapCard> {
                 height: 12,
                 margin: const EdgeInsets.symmetric(horizontal: 1),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: a),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: a),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
             const SizedBox(width: 4),
-            Text(AppLocalizations.of(context).more,
-                style: Theme.of(context).textTheme.labelSmall),
+            Text(
+              AppLocalizations.of(context).more,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
           ],
         ),
       ],
@@ -912,19 +992,19 @@ class _MonthlyTrendCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final hasData =
-        months.any((m) => m.incomeCents > 0 || m.expenseCents > 0);
+    final hasData = months.any((m) => m.incomeCents > 0 || m.expenseCents > 0);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l.monthlyTrend12,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              l.monthlyTrend12,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             if (!hasData)
               Padding(
@@ -976,8 +1056,10 @@ class _LegendDot extends StatelessWidget {
         Container(
           width: 12,
           height: 12,
-          decoration:
-              BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
         ),
         const SizedBox(width: 6),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
@@ -1028,13 +1110,21 @@ class _TrendPainter extends CustomPainter {
       final expH = months[i].expenseCents / maxVal * (chartH - 4);
 
       final incRect = Rect.fromLTWH(
-          cx - barW - gap / 2, chartH - incH, barW, incH);
+        cx - barW - gap / 2,
+        chartH - incH,
+        barW,
+        incH,
+      );
       final expRect = Rect.fromLTWH(cx + gap / 2, chartH - expH, barW, expH);
       final r = const Radius.circular(2);
-      canvas.drawRRect(RRect.fromRectAndCorners(incRect, topLeft: r, topRight: r),
-          Paint()..color = incomeColor);
-      canvas.drawRRect(RRect.fromRectAndCorners(expRect, topLeft: r, topRight: r),
-          Paint()..color = expenseColor);
+      canvas.drawRRect(
+        RRect.fromRectAndCorners(incRect, topLeft: r, topRight: r),
+        Paint()..color = incomeColor,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndCorners(expRect, topLeft: r, topRight: r),
+        Paint()..color = expenseColor,
+      );
 
       // Monatslabel
       final tp = TextPainter(
@@ -1090,11 +1180,12 @@ class _CategorySectionState extends State<_CategorySection> {
             Row(
               children: [
                 Expanded(
-                  child: Text(widget.title,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    widget.title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 if (entries.isNotEmpty)
                   SegmentedButton<_ChartStyle>(
@@ -1105,21 +1196,23 @@ class _CategorySectionState extends State<_CategorySection> {
                     ),
                     segments: [
                       ButtonSegment(
-                          value: _ChartStyle.donut,
-                          icon: const Icon(Icons.donut_large, size: 18),
-                          tooltip: l.chartDonut),
+                        value: _ChartStyle.donut,
+                        icon: const Icon(Icons.donut_large, size: 18),
+                        tooltip: l.chartDonut,
+                      ),
                       ButtonSegment(
-                          value: _ChartStyle.pie,
-                          icon: const Icon(Icons.pie_chart, size: 18),
-                          tooltip: l.chartPie),
+                        value: _ChartStyle.pie,
+                        icon: const Icon(Icons.pie_chart, size: 18),
+                        tooltip: l.chartPie,
+                      ),
                       ButtonSegment(
-                          value: _ChartStyle.bars,
-                          icon: const Icon(Icons.bar_chart, size: 18),
-                          tooltip: l.chartBars),
+                        value: _ChartStyle.bars,
+                        icon: const Icon(Icons.bar_chart, size: 18),
+                        tooltip: l.chartBars,
+                      ),
                     ],
                     selected: {_style},
-                    onSelectionChanged: (s) =>
-                        setState(() => _style = s.first),
+                    onSelectionChanged: (s) => setState(() => _style = s.first),
                   ),
               ],
             ),
@@ -1154,14 +1247,13 @@ class _CategorySectionState extends State<_CategorySection> {
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(l.total,
-                                  style:
-                                      Theme.of(context).textTheme.labelSmall),
+                              Text(
+                                l.total,
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
                               MoneyText(
                                 total,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -1212,43 +1304,46 @@ class _LegendRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(3),
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
-              Text(pct,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Theme.of(context).hintColor)),
-              const SizedBox(width: 10),
-              MoneyText(cents,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (percent / 100).clamp(0.0, 1.0),
-              minHeight: 6,
-              color: color,
-              backgroundColor: color.withValues(alpha: 0.15),
+                const SizedBox(width: 8),
+                Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
+                Text(
+                  pct,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).hintColor,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                MoneyText(
+                  cents,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
+            const SizedBox(height: 4),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (percent / 100).clamp(0.0, 1.0),
+                minHeight: 6,
+                color: color,
+                backgroundColor: color.withValues(alpha: 0.15),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1279,11 +1374,16 @@ class _ComparisonCard extends StatelessWidget {
           children: [
             Expanded(child: Text(label)),
             if (pct != null && pct != 0)
-              Icon(up ? Icons.arrow_upward : Icons.arrow_downward,
-                  size: 16, color: color),
+              Icon(
+                up ? Icons.arrow_upward : Icons.arrow_downward,
+                size: 16,
+                color: color,
+              ),
             const SizedBox(width: 4),
-            Text(txt,
-                style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+            Text(
+              txt,
+              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       );
@@ -1295,11 +1395,12 @@ class _ComparisonCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l.comparisonTo(prevLabel),
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              l.comparisonTo(prevLabel),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             row(l.expenses, comparison.expenseDeltaPct, expense: true),
             row(l.income, comparison.incomeDeltaPct, expense: false),
@@ -1317,8 +1418,7 @@ class _TopExpensesCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accounts =
-        ref.watch(accountsProvider).asData?.value ?? const [];
+    final accounts = ref.watch(accountsProvider).asData?.value ?? const [];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final l = AppLocalizations.of(context);
@@ -1327,11 +1427,12 @@ class _TopExpensesCard extends ConsumerWidget {
       child: Column(
         children: [
           ListTile(
-            title: Text(l.topExpenses,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            title: Text(
+              l.topExpenses,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
           ),
           const Divider(height: 1),
           for (final t in items)
@@ -1340,15 +1441,19 @@ class _TopExpensesCard extends ConsumerWidget {
               title: Text(
                 t.title.isEmpty
                     ? (t.categoryId == null
-                        ? expenseWord
-                        : (catNames[t.categoryId] ?? expenseWord))
+                          ? expenseWord
+                          : (catNames[t.categoryId] ?? expenseWord))
                     : t.title,
               ),
               subtitle: Text(accountNames[t.accountId] ?? ''),
-              trailing: MoneyText(t.amountCents,
-                  prefix: '-',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.red.shade700)),
+              trailing: MoneyText(
+                t.amountCents,
+                prefix: '-',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade700,
+                ),
+              ),
               onTap: () => context.go('/transactions/${t.id}'),
             ),
         ],

@@ -17,14 +17,14 @@ class ArchivedYear {
   final Map<String, int> carryoverByAccount;
 
   factory ArchivedYear.fromJson(Map<String, dynamic> json) => ArchivedYear(
-        year: (json['year'] as num).toInt(),
-        archivedAt: json['archived_at'] == null
-            ? null
-            : DateTime.tryParse(json['archived_at'] as String),
-        txCount: (json['tx_count'] as num?)?.toInt() ?? 0,
-        byteSize: (json['byte_size'] as num?)?.toInt() ?? 0,
-        carryoverByAccount: _parseCarryover(json['carryover_by_account']),
-      );
+    year: (json['year'] as num).toInt(),
+    archivedAt: json['archived_at'] == null
+        ? null
+        : DateTime.tryParse(json['archived_at'] as String),
+    txCount: (json['tx_count'] as num?)?.toInt() ?? 0,
+    byteSize: (json['byte_size'] as num?)?.toInt() ?? 0,
+    carryoverByAccount: _parseCarryover(json['carryover_by_account']),
+  );
 
   static Map<String, int> _parseCarryover(dynamic raw) {
     if (raw is Map) {

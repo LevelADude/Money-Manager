@@ -36,15 +36,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ref.invalidate(myDisplayNameProvider);
       if (mounted) {
         final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.profileSaved)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.profileSaved)));
       }
     } catch (e) {
       if (mounted) {
         final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -123,8 +124,7 @@ class _DatabaseConnectionSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(l.dbConnection,
-            style: Theme.of(context).textTheme.titleSmall),
+        Text(l.dbConnection, style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         ListTile(
           contentPadding: EdgeInsets.zero,

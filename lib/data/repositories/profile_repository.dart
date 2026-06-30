@@ -65,8 +65,6 @@ class ProfileRepository {
   Future<void> updateMyDisplayName(String name) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return;
-    await _client
-        .from('profiles')
-        .update({'display_name': name}).eq('id', uid);
+    await _client.from('profiles').update({'display_name': name}).eq('id', uid);
   }
 }

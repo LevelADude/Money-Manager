@@ -7,15 +7,17 @@ class AdminRepository {
   final SupabaseClient _client;
 
   Future<List<String>> fetchAllowedEmails() async {
-    final rows =
-        await _client.from('allowed_emails').select('email').order('email');
+    final rows = await _client
+        .from('allowed_emails')
+        .select('email')
+        .order('email');
     return (rows as List).map((r) => (r as Map)['email'] as String).toList();
   }
 
   Future<void> addAllowedEmail(String email) {
-    return _client
-        .from('allowed_emails')
-        .insert({'email': email.trim().toLowerCase()});
+    return _client.from('allowed_emails').insert({
+      'email': email.trim().toLowerCase(),
+    });
   }
 
   Future<void> removeAllowedEmail(String email) {
@@ -25,26 +27,32 @@ class AdminRepository {
   Future<void> setAdmin({required String profileId, required bool value}) {
     return _client
         .from('profiles')
-        .update({'is_admin': value}).eq('id', profileId);
+        .update({'is_admin': value})
+        .eq('id', profileId);
   }
 
   Future<void> setReadOnly({required String profileId, required bool value}) {
     return _client
         .from('profiles')
-        .update({'read_only': value}).eq('id', profileId);
+        .update({'read_only': value})
+        .eq('id', profileId);
   }
 
   /// Löscht ein Auth-Konto über die Edge Function (service_role serverseitig).
   Future<void> deleteUser(String userId) async {
-    final res = await _client.functions
-        .invoke('admin-delete-user', body: {'userId': userId});
+    final res = await _client.functions.invoke(
+      'admin-delete-user',
+      body: {'userId': userId},
+    );
     _ensureOk(res);
   }
 
   /// Aktuelle Speichernutzung (Datenbank + Datei-Speicher) in Bytes.
   Future<({int dbBytes, int storageBytes})> fetchStorageStats() async {
     final rows = await _client.rpc('get_storage_stats');
-    final row = (rows is List && rows.isNotEmpty) ? rows.first as Map : const {};
+    final row = (rows is List && rows.isNotEmpty)
+        ? rows.first as Map
+        : const {};
     return (
       dbBytes: (row['db_bytes'] as num?)?.toInt() ?? 0,
       storageBytes: (row['storage_bytes'] as num?)?.toInt() ?? 0,

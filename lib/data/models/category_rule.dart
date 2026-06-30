@@ -11,8 +11,8 @@ class CategoryRule {
   final String categoryId;
 
   factory CategoryRule.fromJson(Map<String, dynamic> json) => CategoryRule(
-        id: json['id'] as String,
-        keyword: (json['keyword'] as String?) ?? '',
-        categoryId: json['category_id'] as String,
-      );
+    id: json['id'] as String,
+    keyword: (json['keyword'] as String?) ?? '',
+    categoryId: json['category_id'] as String,
+  );
 }

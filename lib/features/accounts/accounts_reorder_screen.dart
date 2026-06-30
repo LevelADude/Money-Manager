@@ -16,8 +16,7 @@ class AccountsReorderScreen extends ConsumerStatefulWidget {
       _AccountsReorderScreenState();
 }
 
-class _AccountsReorderScreenState
-    extends ConsumerState<AccountsReorderScreen> {
+class _AccountsReorderScreenState extends ConsumerState<AccountsReorderScreen> {
   List<Account>? _local;
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {

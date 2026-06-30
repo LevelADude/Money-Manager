@@ -40,7 +40,11 @@ Future<CompressedImage> compressReceipt(
 /// Eingabe für das Hintergrund-Isolate (muss zwischen Isolates kopierbar sein).
 class _CompressRequest {
   const _CompressRequest(
-      this.bytes, this.extension, this.maxDimension, this.quality);
+    this.bytes,
+    this.extension,
+    this.maxDimension,
+    this.quality,
+  );
 
   final Uint8List bytes;
   final String extension;
@@ -56,8 +60,9 @@ CompressedImage _compress(_CompressRequest req) {
     final decoded = img.decodeImage(req.bytes);
     if (decoded == null) return original;
 
-    final longest =
-        decoded.width > decoded.height ? decoded.width : decoded.height;
+    final longest = decoded.width > decoded.height
+        ? decoded.width
+        : decoded.height;
     final resized = longest > req.maxDimension
         ? img.copyResize(
             decoded,

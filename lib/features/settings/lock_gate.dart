@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -68,10 +70,26 @@ class _PinScreen extends StatefulWidget {
 class _PinScreenState extends State<_PinScreen> {
   String _pin = '';
   bool _error = false;
+  int _attempts = 0;
+  DateTime? _lockedUntil;
+  Timer? _ticker;
   static const _maxLen = 6;
 
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  bool get _isLockedOut =>
+      _lockedUntil != null && _lockedUntil!.isAfter(DateTime.now());
+
+  int get _remainingSeconds => _lockedUntil == null
+      ? 0
+      : _lockedUntil!.difference(DateTime.now()).inSeconds + 1;
+
   void _tap(String d) {
-    if (_pin.length >= _maxLen) return;
+    if (_isLockedOut || _pin.length >= _maxLen) return;
     setState(() {
       _pin += d;
       _error = false;
@@ -84,14 +102,31 @@ class _PinScreenState extends State<_PinScreen> {
   }
 
   void _submit() {
-    if (_pin.length < 4) return;
+    if (_isLockedOut || _pin.length < 4) return;
     final ok = widget.onSubmit(_pin);
-    if (!ok) {
-      setState(() {
-        _error = true;
-        _pin = '';
-      });
+    if (ok) {
+      _attempts = 0;
+      return;
     }
+    _attempts++;
+    setState(() {
+      _error = true;
+      _pin = '';
+      // Brute-Force-Bremse: nach je 5 Fehlversuchen eine zunehmende Sperre.
+      if (_attempts % 5 == 0) {
+        final secs = (30 * (_attempts ~/ 5)).clamp(30, 300);
+        _lockedUntil = DateTime.now().add(Duration(seconds: secs));
+        _startTicker();
+      }
+    });
+  }
+
+  void _startTicker() {
+    _ticker?.cancel();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!_isLockedOut) t.cancel();
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -107,8 +142,11 @@ class _PinScreenState extends State<_PinScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.lock_outline,
-                    size: 48, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.lock_outline,
+                  size: 48,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(height: 16),
                 Text(l.enterPin, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 20),
@@ -125,8 +163,8 @@ class _PinScreenState extends State<_PinScreen> {
                             shape: BoxShape.circle,
                             color: i < _pin.length
                                 ? (_error
-                                    ? theme.colorScheme.error
-                                    : theme.colorScheme.primary)
+                                      ? theme.colorScheme.error
+                                      : theme.colorScheme.primary)
                                 : Colors.transparent,
                             border: Border.all(
                               color: _error
@@ -139,11 +177,21 @@ class _PinScreenState extends State<_PinScreen> {
                       ),
                   ],
                 ),
-                if (_error)
+                if (_isLockedOut)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: Text(l.wrongPin,
-                        style: TextStyle(color: theme.colorScheme.error)),
+                    child: Text(
+                      l.pinLockedSeconds(_remainingSeconds),
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                  )
+                else if (_error)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      l.wrongPin,
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
                   ),
                 const SizedBox(height: 20),
                 for (final row in const [
@@ -172,23 +220,26 @@ class _PinScreenState extends State<_PinScreen> {
   }
 
   Widget _key(String d) => Padding(
-        padding: const EdgeInsets.all(6),
-        child: SizedBox(
-          width: 64,
-          height: 56,
-          child: OutlinedButton(
-            onPressed: () => _tap(d),
-            child: Text(d, style: const TextStyle(fontSize: 20)),
-          ),
-        ),
-      );
+    padding: const EdgeInsets.all(6),
+    child: SizedBox(
+      width: 64,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: _isLockedOut ? null : () => _tap(d),
+        child: Text(d, style: const TextStyle(fontSize: 20)),
+      ),
+    ),
+  );
 
   Widget _iconKey(IconData icon, VoidCallback onTap) => Padding(
-        padding: const EdgeInsets.all(6),
-        child: SizedBox(
-          width: 64,
-          height: 56,
-          child: FilledButton.tonal(onPressed: onTap, child: Icon(icon)),
-        ),
-      );
+    padding: const EdgeInsets.all(6),
+    child: SizedBox(
+      width: 64,
+      height: 56,
+      child: FilledButton.tonal(
+        onPressed: _isLockedOut ? null : onTap,
+        child: Icon(icon),
+      ),
+    ),
+  );
 }

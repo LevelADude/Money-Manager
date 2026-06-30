@@ -9,17 +9,36 @@ import 'package:intl/intl.dart';
 String gBaseCurrency = 'EUR';
 
 const currencySymbols = <String, String>{
-  'EUR': '€', 'USD': '\$', 'GBP': '£', 'CHF': 'CHF', 'JPY': '¥', 'PLN': 'zł',
-  'SEK': 'kr', 'NOK': 'kr', 'DKK': 'kr', 'CZK': 'Kč', 'TRY': '₺', 'CAD': 'CA\$',
-  'AUD': 'A\$', 'USDT': 'USDT',
+  'EUR': '€',
+  'USD': '\$',
+  'GBP': '£',
+  'CHF': 'CHF',
+  'JPY': '¥',
+  'PLN': 'zł',
+  'SEK': 'kr',
+  'NOK': 'kr',
+  'DKK': 'kr',
+  'CZK': 'Kč',
+  'TRY': '₺',
+  'CAD': 'CA\$',
+  'AUD': 'A\$',
+  'USDT': 'USDT',
 };
 
 String currencySymbol(String code) => currencySymbols[code] ?? code;
 
-/// Formatiert Cent in der angegebenen Währung.
-String formatMoney(int cents, String code) =>
-    NumberFormat.currency(locale: 'de_DE', symbol: currencySymbol(code))
-        .format(cents / 100);
+/// Währungen ohne Nachkommastellen (z. B. Yen). Standard sind 2 Stellen.
+const _currencyDecimals = <String, int>{'JPY': 0};
+
+/// Anzahl der Nachkommastellen für eine Währung (Standard 2).
+int currencyDecimals(String code) => _currencyDecimals[code] ?? 2;
+
+/// Formatiert Cent in der angegebenen Währung (Nachkommastellen je Währung).
+String formatMoney(int cents, String code) => NumberFormat.currency(
+  locale: 'de_DE',
+  symbol: currencySymbol(code),
+  decimalDigits: currencyDecimals(code),
+).format(cents / 100);
 
 /// Formatiert in der Hauptwährung.
 String formatCents(int cents) => formatMoney(cents, gBaseCurrency);
@@ -54,7 +73,11 @@ int? parseToCents(String input) {
 /// Wertet einen einfachen Rechenausdruck aus: + - * / und Klammern.
 /// Komma gilt als Dezimaltrenner. Gibt null bei Fehler zurück.
 double? evalExpression(String input) {
-  var s = input.trim().replaceAll('€', '').replaceAll(' ', '').replaceAll(',', '.');
+  final s = input
+      .trim()
+      .replaceAll('€', '')
+      .replaceAll(' ', '')
+      .replaceAll(',', '.');
   if (s.isEmpty) return null;
 
   // --- Tokenisierung (mit unärem Minus/Plus) ---

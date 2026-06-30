@@ -26,7 +26,7 @@ class AccountMemberRepository {
         .select('user_id')
         .eq('account_id', accountId);
     final current = {
-      for (final r in existing as List) (r as Map)['user_id'] as String
+      for (final r in existing as List) (r as Map)['user_id'] as String,
     };
     final toAdd = userIds.difference(current);
     final toRemove = current.difference(userIds);

@@ -26,7 +26,9 @@ Future<ReceiptScan?> scanReceipt(Uint8List bytes, String extension) async {
     await file.writeAsBytes(bytes, flush: true);
 
     recognizer = TextRecognizer(script: TextRecognitionScript.latin);
-    final result = await recognizer.processImage(InputImage.fromFilePath(file.path));
+    final result = await recognizer.processImage(
+      InputImage.fromFilePath(file.path),
+    );
     final scan = parseReceiptText(result.text);
     return scan.hasAnything ? scan : null;
   } catch (_) {

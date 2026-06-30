@@ -51,14 +51,18 @@ class AdminScreen extends ConsumerWidget {
       ref.invalidate(allowedEmailsProvider);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
 
   Future<void> _deleteUser(
-      BuildContext context, WidgetRef ref, Profile p) async {
+    BuildContext context,
+    WidgetRef ref,
+    Profile p,
+  ) async {
     final l = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
@@ -83,13 +87,15 @@ class AdminScreen extends ConsumerWidget {
       ref.invalidate(allProfilesProvider);
       ref.invalidate(profileNamesProvider);
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.userDeleted)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.userDeleted)));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
@@ -198,8 +204,12 @@ class AdminScreen extends ConsumerWidget {
           children: [
             _usageBar(context, l.database, s.dbBytes, _kDbLimitBytes),
             const SizedBox(height: 16),
-            _usageBar(context, l.receiptsFiles, s.storageBytes,
-                _kStorageLimitBytes),
+            _usageBar(
+              context,
+              l.receiptsFiles,
+              s.storageBytes,
+              _kStorageLimitBytes,
+            ),
           ],
         ),
       ),
@@ -218,8 +228,10 @@ class AdminScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label, style: theme.textTheme.bodyMedium),
-            Text('${formatBytes(used)} / ${formatBytes(limit)}',
-                style: theme.textTheme.bodySmall),
+            Text(
+              '${formatBytes(used)} / ${formatBytes(limit)}',
+              style: theme.textTheme.bodySmall,
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -234,9 +246,12 @@ class AdminScreen extends ConsumerWidget {
         const SizedBox(height: 2),
         Align(
           alignment: Alignment.centerRight,
-          child: Text('${(frac * 100).toStringAsFixed(0)} %',
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: warn ? color : null)),
+          child: Text(
+            '${(frac * 100).toStringAsFixed(0)} %',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: warn ? color : null,
+            ),
+          ),
         ),
       ],
     );
@@ -244,8 +259,13 @@ class AdminScreen extends ConsumerWidget {
 
   // ---- Nutzerzeile -----------------------------------------------------
 
-  Widget _userTile(BuildContext context, WidgetRef ref, Profile p,
-      String? myId, DateFormat df) {
+  Widget _userTile(
+    BuildContext context,
+    WidgetRef ref,
+    Profile p,
+    String? myId,
+    DateFormat df,
+  ) {
     final l = AppLocalizations.of(context);
     final roleParts = <String>[
       if (p.createdAt != null) l.sinceDate(df.format(p.createdAt!)),
@@ -255,9 +275,11 @@ class AdminScreen extends ConsumerWidget {
     ];
     return ListTile(
       leading: CircleAvatar(
-        child: Text(p.displayName.isEmpty
-            ? '?'
-            : p.displayName.substring(0, 1).toUpperCase()),
+        child: Text(
+          p.displayName.isEmpty
+              ? '?'
+              : p.displayName.substring(0, 1).toUpperCase(),
+        ),
       ),
       title: Text(p.displayName.isEmpty ? l.noName : p.displayName),
       subtitle: Text(roleParts.join('  ·  ')),
@@ -274,8 +296,7 @@ class AdminScreen extends ConsumerWidget {
                     await repo.setAdmin(profileId: p.id, value: !p.isAdmin);
                     ref.invalidate(allProfilesProvider);
                   case 'readonly':
-                    await repo.setReadOnly(
-                        profileId: p.id, value: !p.readOnly);
+                    await repo.setReadOnly(profileId: p.id, value: !p.readOnly);
                     ref.invalidate(allProfilesProvider);
                   case 'delete':
                     if (context.mounted) {
@@ -305,15 +326,20 @@ class AdminScreen extends ConsumerWidget {
 
   // ---- Gefahrenzone ----------------------------------------------------
 
-  Widget _buildDangerZone(BuildContext context, WidgetRef ref,
-      {required bool isOwner}) {
+  Widget _buildDangerZone(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isOwner,
+  }) {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     return Column(
       children: [
         ListTile(
-          leading: Icon(Icons.cleaning_services_outlined,
-              color: theme.colorScheme.error),
+          leading: Icon(
+            Icons.cleaning_services_outlined,
+            color: theme.colorScheme.error,
+          ),
           title: Text(l.wipeDbTitle),
           subtitle: Text(l.wipeDbSub),
           onTap: () => _runWipe(context, ref),
@@ -346,8 +372,9 @@ class AdminScreen extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
@@ -367,8 +394,9 @@ class AdminScreen extends ConsumerWidget {
       await ref.read(supabaseClientProvider).auth.signOut();
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
       }
     }
   }
@@ -427,8 +455,7 @@ class AdminScreen extends ConsumerWidget {
     return result ?? false;
   }
 
-  Future<void> _infoDialog(
-      BuildContext context, String title, String message) {
+  Future<void> _infoDialog(BuildContext context, String title, String message) {
     final l = AppLocalizations.of(context);
     return showDialog<void>(
       context: context,
@@ -436,10 +463,7 @@ class AdminScreen extends ConsumerWidget {
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l.ok),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.ok)),
         ],
       ),
     );
@@ -451,10 +475,9 @@ class AdminScreen extends ConsumerWidget {
       ListTile(title: _sectionTextStyle(context, text));
 
   Text _sectionTextStyle(BuildContext context, String text) => Text(
-        text,
-        style: Theme.of(context)
-            .textTheme
-            .titleMedium
-            ?.copyWith(fontWeight: FontWeight.bold),
-      );
+    text,
+    style: Theme.of(
+      context,
+    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+  );
 }

@@ -35,7 +35,8 @@ class AccountDetailScreen extends ConsumerWidget {
     final txs = ref.watch(accountTransactionsProvider(accountId));
     final categoryNames = ref.watch(categoryNamesProvider);
     final memberNames =
-        ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+        ref.watch(profileNamesProvider).asData?.value ??
+        const <String, String>{};
 
     return Scaffold(
       appBar: AppBar(
@@ -97,15 +98,17 @@ class _BalanceHeader extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Text(AppLocalizations.of(context).balance,
-              style: Theme.of(context).textTheme.labelLarge),
+          Text(
+            AppLocalizations.of(context).balance,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
           const SizedBox(height: 4),
           Text(
             formatCents(balanceCents),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: negative ? Colors.red.shade700 : Colors.green.shade700,
-                ),
+              fontWeight: FontWeight.bold,
+              color: negative ? Colors.red.shade700 : Colors.green.shade700,
+            ),
           ),
         ],
       ),

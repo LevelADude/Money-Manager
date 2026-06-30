@@ -33,13 +33,12 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
   void _prefill() {
     if (_prefilled) return;
     final months = ref.read(monthlyTotalsProvider);
-    final withData =
-        months.where((m) => m.incomeCents > 0 || m.expenseCents > 0).toList();
+    final withData = months
+        .where((m) => m.incomeCents > 0 || m.expenseCents > 0)
+        .toList();
     final n = withData.isEmpty ? 1 : withData.length;
-    final avgIncome =
-        withData.fold<int>(0, (s, m) => s + m.incomeCents) ~/ n;
-    final avgExpense =
-        withData.fold<int>(0, (s, m) => s + m.expenseCents) ~/ n;
+    final avgIncome = withData.fold<int>(0, (s, m) => s + m.incomeCents) ~/ n;
+    final avgExpense = withData.fold<int>(0, (s, m) => s + m.expenseCents) ~/ n;
     _income.text = centsToInput(avgIncome);
     _expense.text = centsToInput(avgExpense);
     _prefilled = true;
@@ -53,9 +52,7 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
     final effExpense = (expense * (1 - _reducePct / 100)).round();
     final surplus = income - effExpense;
     final current = ref.watch(netWorthProvider(null));
-    final projection = [
-      for (var i = 1; i <= 12; i++) current + surplus * i,
-    ];
+    final projection = [for (var i = 1; i <= 12; i++) current + surplus * i];
     final inOneYear = current + surplus * 12;
     final l = AppLocalizations.of(context);
 
@@ -107,8 +104,10 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(l.wealthIn12Months,
-                          style: Theme.of(context).textTheme.titleSmall),
+                      Text(
+                        l.wealthIn12Months,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
                       MoneyText(
                         inOneYear,
                         style: TextStyle(
@@ -122,9 +121,11 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  MoneyText(inOneYear - current,
-                      prefix: l.wealthChangePrefix((inOneYear - current) >= 0),
-                      style: Theme.of(context).textTheme.bodySmall),
+                  MoneyText(
+                    inOneYear - current,
+                    prefix: l.wealthChangePrefix((inOneYear - current) >= 0),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
@@ -141,16 +142,22 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
     );
   }
 
-  Widget _row(BuildContext context, String label, int cents,
-      {bool bold = false}) {
+  Widget _row(
+    BuildContext context,
+    String label,
+    int cents, {
+    bool bold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label),
-          MoneyText(cents,
-              style: bold ? const TextStyle(fontWeight: FontWeight.bold) : null),
+          MoneyText(
+            cents,
+            style: bold ? const TextStyle(fontWeight: FontWeight.bold) : null,
+          ),
         ],
       ),
     );

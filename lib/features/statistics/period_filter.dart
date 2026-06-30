@@ -5,12 +5,12 @@ enum StatsPeriod { thisDay, thisWeek, thisMonth, thisYear, all }
 
 extension StatsPeriodX on StatsPeriod {
   String get label => switch (this) {
-        StatsPeriod.thisDay => 'Tag',
-        StatsPeriod.thisWeek => 'Woche',
-        StatsPeriod.thisMonth => 'Monat',
-        StatsPeriod.thisYear => 'Jahr',
-        StatsPeriod.all => 'Gesamt',
-      };
+    StatsPeriod.thisDay => 'Tag',
+    StatsPeriod.thisWeek => 'Woche',
+    StatsPeriod.thisMonth => 'Monat',
+    StatsPeriod.thisYear => 'Jahr',
+    StatsPeriod.all => 'Gesamt',
+  };
 
   bool contains(DateTime d) {
     final now = DateTime.now();
@@ -40,12 +40,23 @@ class PeriodNotifier extends Notifier<StatsPeriod> {
   void set(StatsPeriod p) => state = p;
 }
 
-final periodFilterProvider =
-    NotifierProvider<PeriodNotifier, StatsPeriod>(PeriodNotifier.new);
+final periodFilterProvider = NotifierProvider<PeriodNotifier, StatsPeriod>(
+  PeriodNotifier.new,
+);
 
 const _statMonths = [
-  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+  'Januar',
+  'Februar',
+  'März',
+  'April',
+  'Mai',
+  'Juni',
+  'Juli',
+  'August',
+  'September',
+  'Oktober',
+  'November',
+  'Dezember',
 ];
 
 /// Bezugsdatum für die Statistik (welcher Tag/Woche/Monat/Jahr angezeigt wird).
@@ -57,8 +68,9 @@ class StatsAnchorNotifier extends Notifier<DateTime> {
   void reset() => state = DateTime.now();
 }
 
-final statsAnchorProvider =
-    NotifierProvider<StatsAnchorNotifier, DateTime>(StatsAnchorNotifier.new);
+final statsAnchorProvider = NotifierProvider<StatsAnchorNotifier, DateTime>(
+  StatsAnchorNotifier.new,
+);
 
 extension StatsPeriodNav on StatsPeriod {
   /// Verschiebt das Bezugsdatum um [dir] Perioden (–1 zurück, +1 vor).

@@ -11,8 +11,8 @@ class Budget {
   final int amountCents;
 
   factory Budget.fromJson(Map<String, dynamic> json) => Budget(
-        id: json['id'] as String,
-        categoryId: json['category_id'] as String,
-        amountCents: (json['amount_cents'] as num?)?.toInt() ?? 0,
-      );
+    id: json['id'] as String,
+    categoryId: json['category_id'] as String,
+    amountCents: (json['amount_cents'] as num?)?.toInt() ?? 0,
+  );
 }

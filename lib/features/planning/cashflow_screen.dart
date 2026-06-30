@@ -6,8 +6,10 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/recurring_rule.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/balances.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
+import '../archive/archive_providers.dart';
 import '../recurring/recurring_providers.dart';
 import '../transactions/transaction_providers.dart';
 
@@ -22,22 +24,21 @@ class CashflowScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts =
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
-    final txs = ref.watch(allTransactionsProvider).asData?.value ??
+    final txs =
+        ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
-    final rules = ref.watch(recurringRulesProvider).asData?.value ??
+    final rules =
+        ref.watch(recurringRulesProvider).asData?.value ??
         const <RecurringRule>[];
     final l = AppLocalizations.of(context);
     final df = DateFormat('EEEE, dd.MM.yyyy', 'de');
 
     // Aktueller Gesamt-Kontostand (nicht archivierte Konten).
+    final carryover = ref.watch(archivedCarryoverProvider);
     var current = 0;
     for (final a in accounts) {
       if (a.archived) continue;
-      var b = a.openingBalanceCents;
-      for (final t in txs) {
-        b += t.signedCentsFor(a.id);
-      }
-      current += b;
+      current += accountBalanceCents(a, txs, carryover);
     }
 
     final now = DateTime.now();
@@ -52,7 +53,7 @@ class CashflowScreen extends ConsumerWidget {
       var d = r.nextDue;
       var guard = 0;
       while (d.isBefore(today) && guard < 1000) {
-        d = advanceDate(d, r.intervalUnit, count);
+        d = advanceDate(d, r.intervalUnit, count, anchorDay: r.anchorDay);
         guard++;
       }
       while (!d.isAfter(horizon) &&
@@ -70,7 +71,7 @@ class CashflowScreen extends ConsumerWidget {
             signed: signed,
           ));
         }
-        d = advanceDate(d, r.intervalUnit, count);
+        d = advanceDate(d, r.intervalUnit, count, anchorDay: r.anchorDay);
         guard++;
       }
     }
@@ -83,7 +84,12 @@ class CashflowScreen extends ConsumerWidget {
     for (final e in events) {
       running += e.signed;
       if (running < lowest) lowest = running;
-      rows.add((date: e.date, title: e.title, signed: e.signed, balance: running));
+      rows.add((
+        date: e.date,
+        title: e.title,
+        signed: e.signed,
+        balance: running,
+      ));
     }
 
     return Scaffold(
@@ -97,20 +103,25 @@ class CashflowScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(l.currentBalance,
-                      style: Theme.of(context).textTheme.labelLarge),
+                  Text(
+                    l.currentBalance,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                   const SizedBox(height: 4),
-                  MoneyText(current,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  MoneyText(
+                    current,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(l.lowestBalance60,
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        l.lowestBalance60,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                       MoneyText(
                         lowest,
                         style: TextStyle(

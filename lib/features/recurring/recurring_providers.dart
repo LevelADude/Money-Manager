@@ -50,15 +50,18 @@ class SubscriptionCandidate {
 
 /// Erkennt regelmäßige Buchungen (gleicher Titel+Betrag+Konto in regelmäßigem
 /// Abstand), die noch kein Dauerauftrag sind → Vorschlag zum Anlegen.
-final subscriptionSuggestionsProvider =
-    Provider<List<SubscriptionCandidate>>((ref) {
-  final txs = ref.watch(allTransactionsProvider).asData?.value ??
+final subscriptionSuggestionsProvider = Provider<List<SubscriptionCandidate>>((
+  ref,
+) {
+  final txs =
+      ref.watch(allTransactionsProvider).asData?.value ??
       const <AppTransaction>[];
-  final rules = ref.watch(recurringRulesProvider).asData?.value ??
+  final rules =
+      ref.watch(recurringRulesProvider).asData?.value ??
       const <RecurringRule>[];
   final existing = {
     for (final r in rules)
-      '${r.accountId}|${r.title.trim().toLowerCase()}|${r.amountCents}'
+      '${r.accountId}|${r.title.trim().toLowerCase()}|${r.amountCents}',
   };
 
   final groups = <String, List<AppTransaction>>{};
@@ -101,17 +104,19 @@ final subscriptionSuggestionsProvider =
         '${first.accountId}|${first.title.trim().toLowerCase()}|${first.amountCents}';
     if (existing.contains(exKey)) return;
 
-    out.add(SubscriptionCandidate(
-      title: first.title,
-      amountCents: first.amountCents,
-      accountId: first.accountId,
-      type: first.type,
-      categoryId: first.categoryId,
-      intervalUnit: unit,
-      intervalCount: count,
-      nextDue: advanceDate(list.last.occurredOn, unit, count),
-      occurrences: list.length,
-    ));
+    out.add(
+      SubscriptionCandidate(
+        title: first.title,
+        amountCents: first.amountCents,
+        accountId: first.accountId,
+        type: first.type,
+        categoryId: first.categoryId,
+        intervalUnit: unit,
+        intervalCount: count,
+        nextDue: advanceDate(list.last.occurredOn, unit, count),
+        occurrences: list.length,
+      ),
+    );
   });
   out.sort((a, b) => b.occurrences.compareTo(a.occurrences));
   return out;

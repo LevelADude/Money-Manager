@@ -38,14 +38,14 @@ class Category {
       (kind == CategoryKind.income) == (type == TransactionType.income);
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        kind: categoryKindFromDb((json['kind'] as String?) ?? 'expense'),
-        parentId: json['parent_id'] as String?,
-        icon: json['icon'] as String?,
-        color: (json['color'] as num?)?.toInt(),
-        isPreset: (json['is_preset'] as bool?) ?? false,
-        active: (json['active'] as bool?) ?? true,
-        sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    kind: categoryKindFromDb((json['kind'] as String?) ?? 'expense'),
+    parentId: json['parent_id'] as String?,
+    icon: json['icon'] as String?,
+    color: (json['color'] as num?)?.toInt(),
+    isPreset: (json['is_preset'] as bool?) ?? false,
+    active: (json['active'] as bool?) ?? true,
+    sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+  );
 }

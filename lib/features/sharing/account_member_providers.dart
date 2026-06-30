@@ -4,8 +4,9 @@ import '../../data/models/account_member.dart';
 import '../../data/repositories/account_member_repository.dart';
 import '../auth/auth_providers.dart';
 
-final accountMemberRepositoryProvider =
-    Provider<AccountMemberRepository>((ref) {
+final accountMemberRepositoryProvider = Provider<AccountMemberRepository>((
+  ref,
+) {
   return AccountMemberRepository(ref.watch(supabaseClientProvider));
 });
 

@@ -4,7 +4,10 @@ import 'money.dart';
 
 /// Öffnet ein Taschenrechner-Tastenfeld als Bottom-Sheet. Gibt den berechneten
 /// Betrag als Eingabe-String ("12,50") zurück – oder null bei Abbruch.
-Future<String?> showCalculatorSheet(BuildContext context, {String initial = ''}) {
+Future<String?> showCalculatorSheet(
+  BuildContext context, {
+  String initial = '',
+}) {
   return showModalBottomSheet<String>(
     context: context,
     showDragHandle: true,
@@ -35,14 +38,11 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
   void _tap(String s) => setState(() => _expr += s);
   void _clear() => setState(() => _expr = '');
   void _back() => setState(() {
-        if (_expr.isNotEmpty) _expr = _expr.substring(0, _expr.length - 1);
-      });
+    if (_expr.isNotEmpty) _expr = _expr.substring(0, _expr.length - 1);
+  });
   void _apply() {
     final v = _result;
-    Navigator.pop(
-      context,
-      v?.toStringAsFixed(2).replaceAll('.', ','),
-    );
+    Navigator.pop(context, v?.toStringAsFixed(2).replaceAll('.', ','));
   }
 
   @override
@@ -76,12 +76,14 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  res == null ? 'ungültig' : '= ${formatCents((res * 100).round())}',
+                  res == null
+                      ? 'ungültig'
+                      : '= ${formatCents((res * 100).round())}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: res == null
-                            ? Theme.of(context).colorScheme.error
-                            : Theme.of(context).colorScheme.primary,
-                      ),
+                    color: res == null
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ],
             ),
@@ -104,19 +106,19 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
   }
 
   Widget _row(List<String> keys) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            for (final k in keys)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: _key(k),
-                ),
-              ),
-          ],
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        for (final k in keys)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: _key(k),
+            ),
+          ),
+      ],
+    ),
+  );
 
   Widget _key(String k) {
     final VoidCallback onTap = switch (k) {
@@ -127,7 +129,17 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
       '×' => () => _tap('*'),
       _ => () => _tap(k),
     };
-    final isControl = const ['C', '(', ')', '÷', '×', '-', '+', '=', '⌫'].contains(k);
+    final isControl = const [
+      'C',
+      '(',
+      ')',
+      '÷',
+      '×',
+      '-',
+      '+',
+      '=',
+      '⌫',
+    ].contains(k);
     final child = Text(k, style: const TextStyle(fontSize: 20));
     return SizedBox(
       height: 56,

@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/balances.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
+import '../archive/archive_providers.dart';
 import '../transactions/transaction_providers.dart';
 
 /// Schulden-/Kredit-Tracker: Restschuld + Verlauf je Verbindlichkeits-Konto
@@ -19,16 +21,16 @@ class DebtsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts =
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
-    final txs = ref.watch(allTransactionsProvider).asData?.value ??
+    final txs =
+        ref.watch(allTransactionsProvider).asData?.value ??
         const <AppTransaction>[];
-    final liabilities =
-        accounts.where((a) => a.type.isLiability && !a.archived).toList();
+    final carryover = ref.watch(archivedCarryoverProvider);
+    final liabilities = accounts
+        .where((a) => a.type.isLiability && !a.archived)
+        .toList();
 
     final totalDebt = liabilities.fold<int>(0, (s, a) {
-      var b = a.openingBalanceCents;
-      for (final t in txs) {
-        b += t.signedCentsFor(a.id);
-      }
+      final b = accountBalanceCents(a, txs, carryover);
       return s + (b < 0 ? -b : 0);
     });
 
@@ -49,14 +51,18 @@ class DebtsScreen extends ConsumerWidget {
                   child: ListTile(
                     leading: const Icon(Icons.trending_down),
                     title: Text(l.totalDebt),
-                    trailing: MoneyText(totalDebt,
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: totalDebt > 0 ? Colors.red.shade700 : null)),
+                    trailing: MoneyText(
+                      totalDebt,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: totalDebt > 0 ? Colors.red.shade700 : null,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                for (final a in liabilities) _DebtCard(account: a, txs: txs),
+                for (final a in liabilities)
+                  _DebtCard(account: a, txs: txs, carryover: carryover),
               ],
             ),
     );
@@ -64,19 +70,21 @@ class DebtsScreen extends ConsumerWidget {
 }
 
 class _DebtCard extends StatelessWidget {
-  const _DebtCard({required this.account, required this.txs});
+  const _DebtCard({
+    required this.account,
+    required this.txs,
+    required this.carryover,
+  });
 
   final Account account;
   final List<AppTransaction> txs;
+  final Map<String, int> carryover;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     // Aktueller Saldo (negativ = Schuld).
-    var current = account.openingBalanceCents;
-    for (final t in txs) {
-      current += t.signedCentsFor(account.id);
-    }
+    final current = accountBalanceCents(account, txs, carryover);
     final debt = current < 0 ? -current : 0;
 
     // Restschuld-Verlauf: Saldo zum Monatsende der letzten 12 Monate.
@@ -84,11 +92,7 @@ class _DebtCard extends StatelessWidget {
     final series = <int>[];
     for (var i = 11; i >= 0; i--) {
       final monthEnd = DateTime(now.year, now.month - i + 1, 0);
-      var b = account.openingBalanceCents;
-      for (final t in txs) {
-        if (!t.occurredOn.isAfter(monthEnd)) b += t.signedCentsFor(account.id);
-      }
-      series.add(b);
+      series.add(accountBalanceAsOf(account, txs, carryover, monthEnd));
     }
 
     final limit = account.creditLimitCents;
@@ -105,15 +109,21 @@ class _DebtCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(account.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Text(
+                    account.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
                 MoneyText(
                   current,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: current < 0 ? Colors.red.shade700 : Colors.green.shade700,
+                    color: current < 0
+                        ? Colors.red.shade700
+                        : Colors.green.shade700,
                   ),
                 ),
               ],
@@ -135,16 +145,19 @@ class _DebtCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(l.creditUtilization,
-                      style: Theme.of(context).textTheme.bodySmall),
-                  Text('${(utilization * 100).round()} %',
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    l.creditUtilization,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Text(
+                    '${(utilization * 100).round()} %',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             ],
             const SizedBox(height: 12),
-            Text(l.debtTrend12,
-                style: Theme.of(context).textTheme.bodySmall),
+            Text(l.debtTrend12, style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 6),
             SizedBox(
               height: 80,

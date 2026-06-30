@@ -15,7 +15,9 @@ class ReceiptStorage {
     final uid = _client.auth.currentUser?.id ?? 'anon';
     final path = '$uid/${DateTime.now().millisecondsSinceEpoch}.$ext';
     final contentType = (ext == 'png') ? 'image/png' : 'image/jpeg';
-    await _client.storage.from(bucket).uploadBinary(
+    await _client.storage
+        .from(bucket)
+        .uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(contentType: contentType, upsert: true),
