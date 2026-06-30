@@ -1,8 +1,10 @@
 -- =====================================================================
 -- Money-Manager - setup.sql  (Komplett-Einrichtung der Datenbank)
 -- =====================================================================
--- Einmalig fuer ein FRISCHES Supabase-Projekt: gesamten Inhalt im SQL-Editor einfuegen, Run.
--- Enthaelt die Migrationen 0001 bis 0028.
+-- Fuer ein frisches ODER bestehendes Supabase-Projekt: gesamten Inhalt im
+-- SQL-Editor einfuegen, Run. Das Skript ist IDEMPOTENT und NICHT destruktiv
+-- (legt nur Fehlendes an, loescht keine vorhandenen Daten) und damit beliebig
+-- oft wiederholbar. Enthaelt die Migrationen 0001 bis 0028.
 -- =====================================================================
 
 
@@ -66,83 +68,13 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- =====================================================================
--- ledgers  (die getrennten Bücher je Person)
--- =====================================================================
-create table if not exists public.ledgers (
-  id         uuid        primary key default gen_random_uuid(),
-  name       text        not null,
-  owner_id   uuid        references public.profiles(id) on delete set null default auth.uid(),
-  currency   text        not null default 'EUR',
-  archived   boolean     not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-create index if not exists ledgers_owner_id_idx on public.ledgers(owner_id);
-
-drop trigger if exists ledgers_set_updated_at on public.ledgers;
-create trigger ledgers_set_updated_at
-  before update on public.ledgers
-  for each row execute function public.set_updated_at();
-
--- =====================================================================
--- categories  (Einnahme-/Ausgabe-Kategorien je Buch)
--- =====================================================================
-create table if not exists public.categories (
-  id         uuid        primary key default gen_random_uuid(),
-  ledger_id  uuid        not null references public.ledgers(id) on delete cascade,
-  name       text        not null,
-  kind       text        not null check (kind in ('income','expense')),
-  created_at timestamptz not null default now()
-);
-create index if not exists categories_ledger_id_idx on public.categories(ledger_id);
-
--- =====================================================================
--- transactions  (die eigentlichen Buchungen)
--- =====================================================================
-create table if not exists public.transactions (
-  id          uuid          primary key default gen_random_uuid(),
-  ledger_id   uuid          not null references public.ledgers(id) on delete cascade,
-  category_id uuid          references public.categories(id) on delete set null,
-  occurred_on date          not null default current_date,
-  direction   text          not null check (direction in ('income','expense')),
-  amount      numeric(14,2) not null check (amount >= 0),
-  note        text          not null default '',
-  created_by  uuid          references public.profiles(id) on delete set null default auth.uid(),
-  created_at  timestamptz   not null default now(),
-  updated_at  timestamptz   not null default now()
-);
-create index if not exists transactions_ledger_id_idx  on public.transactions(ledger_id);
-create index if not exists transactions_occurred_on_idx on public.transactions(occurred_on);
-
-drop trigger if exists transactions_set_updated_at on public.transactions;
-create trigger transactions_set_updated_at
-  before update on public.transactions
-  for each row execute function public.set_updated_at();
-
--- =====================================================================
--- View: Kontostand je Buch (Einnahmen - Ausgaben)
--- =====================================================================
-create or replace view public.ledger_balances
-with (security_invoker = true) as
-select
-  l.id        as ledger_id,
-  l.name,
-  l.currency,
-  l.owner_id,
-  coalesce(sum(case when t.direction = 'income' then t.amount else -t.amount end), 0)::numeric(14,2) as balance,
-  count(t.id) as transaction_count
-from public.ledgers l
-left join public.transactions t on t.ledger_id = l.id
-group by l.id, l.name, l.currency, l.owner_id;
+-- (v1-Modell entfernt: ledgers / v1-categories / v1-transactions / die View
+--  ledger_balances. Maßgeblich ist das v2-Modell aus 0003 weiter unten.)
 
 -- =====================================================================
 -- Row Level Security
 -- =====================================================================
-alter table public.profiles     enable row level security;
-alter table public.ledgers      enable row level security;
-alter table public.categories   enable row level security;
-alter table public.transactions enable row level security;
+alter table public.profiles enable row level security;
 
 -- ---- profiles -------------------------------------------------------
 -- Alle Mitglieder dürfen alle Profile lesen (um Namen anzuzeigen).
@@ -159,32 +91,7 @@ drop policy if exists profiles_update_self on public.profiles;
 create policy profiles_update_self on public.profiles
   for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
--- ---- ledgers / categories / transactions ----------------------------
--- Vertrauensgruppe: jedes authentifizierte Mitglied darf alles (CRUD).
-drop policy if exists ledgers_all on public.ledgers;
-create policy ledgers_all on public.ledgers
-  for all to authenticated using (true) with check (true);
-
-drop policy if exists categories_all on public.categories;
-create policy categories_all on public.categories
-  for all to authenticated using (true) with check (true);
-
-drop policy if exists transactions_all on public.transactions;
-create policy transactions_all on public.transactions
-  for all to authenticated using (true) with check (true);
-
--- =====================================================================
--- Realtime: Tabellen für Live-Sync auf allen Geräten freigeben
--- =====================================================================
-do $$
-begin
-  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    create publication supabase_realtime;
-  end if;
-  begin alter publication supabase_realtime add table public.ledgers;      exception when duplicate_object then null; end;
-  begin alter publication supabase_realtime add table public.categories;   exception when duplicate_object then null; end;
-  begin alter publication supabase_realtime add table public.transactions; exception when duplicate_object then null; end;
-end $$;
+-- (v1-Policies + v1-Realtime entfielen; die v2-Policies/Realtime stehen unten.)
 
 
 -- ## Migration: 0002_security_hardening.sql
@@ -221,11 +128,11 @@ revoke execute on function public.handle_new_user() from public, anon, authentic
 -- Die DB war leer -> sauberer Neuaufbau. profiles + Hilfsfunktionen bleiben.
 -- =====================================================================
 
--- 1) v1-Objekte entfernen ------------------------------------------------
+-- 1) Legacy v1-Objekte aufräumen – NUR die v1-only-Namen. Die v2-Tabellen
+--    transactions/categories werden NICHT angefasst (kein Datenverlust beim
+--    erneuten Ausführen auf einer bestehenden DB).
 drop view  if exists public.ledger_balances;
-drop table if exists public.transactions cascade;
-drop table if exists public.categories   cascade;
-drop table if exists public.ledgers      cascade;
+drop table if exists public.ledgers cascade;
 
 -- updated_at-Helfer sicherstellen (mit fixem search_path, vgl. 0002)
 create or replace function public.set_updated_at()
@@ -238,7 +145,7 @@ $$;
 revoke execute on function public.set_updated_at() from public, anon, authenticated;
 
 -- 2) accounts ------------------------------------------------------------
-create table public.accounts (
+create table if not exists public.accounts (
   id                    uuid primary key default gen_random_uuid(),
   owner_id              uuid references public.profiles(id) on delete set null default auth.uid(),
   name                  text not null,
@@ -255,14 +162,15 @@ create table public.accounts (
   updated_at            timestamptz not null default now(),
   deleted_at            timestamptz
 );
-create index accounts_owner_idx   on public.accounts(owner_id);
-create index accounts_updated_idx on public.accounts(updated_at);
+create index if not exists accounts_owner_idx   on public.accounts(owner_id);
+create index if not exists accounts_updated_idx on public.accounts(updated_at);
 
+drop trigger if exists accounts_set_updated_at on public.accounts;
 create trigger accounts_set_updated_at before update on public.accounts
   for each row execute function public.set_updated_at();
 
 -- 3) categories (gruppenweit) -------------------------------------------
-create table public.categories (
+create table if not exists public.categories (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
   kind       text not null check (kind in ('income','expense')),
@@ -275,14 +183,15 @@ create table public.categories (
   updated_at timestamptz not null default now(),
   deleted_at timestamptz
 );
-create index categories_kind_idx    on public.categories(kind);
-create index categories_updated_idx on public.categories(updated_at);
+create index if not exists categories_kind_idx    on public.categories(kind);
+create index if not exists categories_updated_idx on public.categories(updated_at);
 
+drop trigger if exists categories_set_updated_at on public.categories;
 create trigger categories_set_updated_at before update on public.categories
   for each row execute function public.set_updated_at();
 
 -- 4) transactions --------------------------------------------------------
-create table public.transactions (
+create table if not exists public.transactions (
   id                  uuid primary key default gen_random_uuid(),
   account_id          uuid not null references public.accounts(id) on delete cascade,
   type                text not null check (type in ('expense','income','transfer')),
@@ -303,16 +212,17 @@ create table public.transactions (
     (type <> 'transfer' and transfer_account_id is null)
   )
 );
-create index transactions_account_idx  on public.transactions(account_id);
-create index transactions_occurred_idx on public.transactions(occurred_on);
-create index transactions_updated_idx  on public.transactions(updated_at);
-create index transactions_transfer_idx on public.transactions(transfer_account_id);
+create index if not exists transactions_account_idx  on public.transactions(account_id);
+create index if not exists transactions_occurred_idx on public.transactions(occurred_on);
+create index if not exists transactions_updated_idx  on public.transactions(updated_at);
+create index if not exists transactions_transfer_idx on public.transactions(transfer_account_id);
 
+drop trigger if exists transactions_set_updated_at on public.transactions;
 create trigger transactions_set_updated_at before update on public.transactions
   for each row execute function public.set_updated_at();
 
 -- 5) View: Kontosaldo (Anfangssaldo + Buchungen, Überträge berücksichtigt)
-create view public.account_balances
+create or replace view public.account_balances
 with (security_invoker = true) as
 select
   a.id       as account_id,
@@ -340,8 +250,11 @@ alter table public.accounts     enable row level security;
 alter table public.categories   enable row level security;
 alter table public.transactions enable row level security;
 
+drop policy if exists accounts_all     on public.accounts;
 create policy accounts_all     on public.accounts     for all to authenticated using (true) with check (true);
+drop policy if exists categories_all   on public.categories;
 create policy categories_all   on public.categories   for all to authenticated using (true) with check (true);
+drop policy if exists transactions_all on public.transactions;
 create policy transactions_all on public.transactions for all to authenticated using (true) with check (true);
 
 -- 7) Realtime ------------------------------------------------------------
@@ -1029,6 +942,10 @@ create policy ag_modify on public.access_grants for all
 --    (Die bestehenden RESTRICTIVE is_writer()-Policies bleiben und greifen
 --     zusätzlich, damit global "nur lesen"-Nutzer weiterhin nicht schreiben.)
 drop policy if exists accounts_all on public.accounts;
+drop policy if exists accounts_select on public.accounts;
+drop policy if exists accounts_insert on public.accounts;
+drop policy if exists accounts_update on public.accounts;
+drop policy if exists accounts_delete on public.accounts;
 create policy accounts_select on public.accounts for select
   using (public.can_view_owner(owner_id));
 create policy accounts_insert on public.accounts for insert
@@ -1041,6 +958,10 @@ create policy accounts_delete on public.accounts for delete
 
 -- 5) transactions: nach Konto-Besitzer.
 drop policy if exists transactions_all on public.transactions;
+drop policy if exists transactions_select on public.transactions;
+drop policy if exists transactions_insert on public.transactions;
+drop policy if exists transactions_update on public.transactions;
+drop policy if exists transactions_delete on public.transactions;
 create policy transactions_select on public.transactions for select
   using (public.can_view_account(account_id));
 create policy transactions_insert on public.transactions for insert
@@ -1053,6 +974,10 @@ create policy transactions_delete on public.transactions for delete
 
 -- 6) transaction_splits: nach zugehöriger Buchung.
 drop policy if exists transaction_splits_all on public.transaction_splits;
+drop policy if exists transaction_splits_select on public.transaction_splits;
+drop policy if exists transaction_splits_insert on public.transaction_splits;
+drop policy if exists transaction_splits_update on public.transaction_splits;
+drop policy if exists transaction_splits_delete on public.transaction_splits;
 create policy transaction_splits_select on public.transaction_splits for select
   using (public.can_view_transaction(transaction_id));
 create policy transaction_splits_insert on public.transaction_splits for insert
@@ -1065,6 +990,10 @@ create policy transaction_splits_delete on public.transaction_splits for delete
 
 -- 7) transaction_comments: nach zugehöriger Buchung.
 drop policy if exists transaction_comments_all on public.transaction_comments;
+drop policy if exists transaction_comments_select on public.transaction_comments;
+drop policy if exists transaction_comments_insert on public.transaction_comments;
+drop policy if exists transaction_comments_update on public.transaction_comments;
+drop policy if exists transaction_comments_delete on public.transaction_comments;
 create policy transaction_comments_select on public.transaction_comments for select
   using (public.can_view_transaction(transaction_id));
 create policy transaction_comments_insert on public.transaction_comments for insert
@@ -1077,6 +1006,10 @@ create policy transaction_comments_delete on public.transaction_comments for del
 
 -- 8) recurring_rules: nach Konto-Besitzer.
 drop policy if exists recurring_all on public.recurring_rules;
+drop policy if exists recurring_select on public.recurring_rules;
+drop policy if exists recurring_insert on public.recurring_rules;
+drop policy if exists recurring_update on public.recurring_rules;
+drop policy if exists recurring_delete on public.recurring_rules;
 create policy recurring_select on public.recurring_rules for select
   using (public.can_view_account(account_id));
 create policy recurring_insert on public.recurring_rules for insert
