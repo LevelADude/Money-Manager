@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../config/app_config.dart';
+import '../../config/remote_connection.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/responsive.dart';
 
@@ -12,6 +13,9 @@ enum _SetupMode {
 
   /// Mit einer bereits eingerichteten Datenbank verbinden (nur URL + Key).
   existing,
+
+  /// Zugangsdaten von einer bereits verbundenen Web-Version übernehmen.
+  easySetup,
 }
 
 /// Erststart-Einrichtung: lässt zuerst zwischen „neue eigene Datenbank" und
@@ -44,6 +48,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   late final _url = TextEditingController(text: widget.config.url);
   late final _key = TextEditingController(text: widget.config.anonKey);
+  final _link = TextEditingController();
   bool _busy = false;
   String? _error;
   _SetupMode? _mode;
@@ -58,6 +63,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void dispose() {
     _url.dispose();
     _key.dispose();
+    _link.dispose();
     super.dispose();
   }
 
@@ -90,6 +96,57 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _busy = false;
       _error = error;
     });
+  }
+
+  /// Holt URL + Key von der bereits verbundenen Web-Version (per Link) und
+  /// verbindet damit - statt sie manuell abzutippen.
+  Future<void> _submitEasySetup() async {
+    final l = AppLocalizations.of(context);
+    final link = _link.text.trim();
+    if (link.isEmpty) {
+      setState(() => _error = l.enterLink);
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final conn = await RemoteConnection.fetch(link);
+      final error = await widget.onSubmit(conn.url, conn.anonKey);
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = error;
+      });
+    } on RemoteConnectionException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = _remoteErrorMessage(l, e);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = '$e';
+      });
+    }
+  }
+
+  String _remoteErrorMessage(AppLocalizations l, RemoteConnectionException e) {
+    switch (e.kind) {
+      case RemoteConnectionError.emptyLink:
+        return l.enterLink;
+      case RemoteConnectionError.invalidLink:
+        return l.invalidLink;
+      case RemoteConnectionError.unreachable:
+        return l.remoteConnectionUnreachable(e.detail ?? '');
+      case RemoteConnectionError.httpError:
+        return l.remoteConnectionHttpError(e.detail ?? '');
+      case RemoteConnectionError.notConnected:
+        return l.remoteConnectionNotConnected;
+    }
   }
 
   @override
@@ -154,6 +211,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           subtitle: l.connectExistingSub,
           onTap: () => setState(() => _mode = _SetupMode.existing),
         ),
+        const SizedBox(height: 12),
+        _ChoiceCard(
+          icon: Icons.bolt_outlined,
+          title: l.easySetupChoiceTitle,
+          subtitle: l.easySetupChoiceSub,
+          onTap: () => setState(() => _mode = _SetupMode.easySetup),
+        ),
       ],
     );
   }
@@ -162,19 +226,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildForm(ThemeData theme) {
     final l = AppLocalizations.of(context);
     final fresh = _mode == _SetupMode.fresh;
+    final easySetup = _mode == _SetupMode.easySetup;
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            fresh ? l.newOwnDatabase : l.connectExistingDb,
+            easySetup
+                ? l.easySetupTitle
+                : (fresh ? l.newOwnDatabase : l.connectExistingDb),
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineSmall,
           ),
           const SizedBox(height: 16),
 
-          if (fresh) ...[
+          if (easySetup) ...[
+            Text(l.easySetupBody),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _link,
+              keyboardType: TextInputType.url,
+              decoration: InputDecoration(
+                labelText: l.webVersionLink,
+                hintText: 'https://dein-name.github.io/dein-repo/',
+                prefixIcon: const Icon(Icons.link),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ] else if (fresh) ...[
             _StepCard(
               number: '1',
               title: l.step1Title,
@@ -233,7 +313,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      l.connectionFailed(_error!),
+                      easySetup ? _error! : l.connectionFailed(_error!),
                       style: TextStyle(
                         color: theme.colorScheme.onErrorContainer,
                       ),
@@ -246,7 +326,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           const SizedBox(height: 20),
           FilledButton.icon(
-            onPressed: _busy ? null : _submit,
+            onPressed: _busy ? null : (easySetup ? _submitEasySetup : _submit),
             icon: _busy
                 ? const SizedBox(
                     height: 20,

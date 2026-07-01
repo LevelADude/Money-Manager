@@ -23,7 +23,20 @@ class DbConnectionFile {
   static Future<({String url, String anonKey})?> load() async {
     try {
       final raw = await rootBundle.loadString(assetPath);
-      if (raw.trim().isEmpty) return null;
+      return parse(raw);
+    } catch (_) {
+      // Datei fehlt -> Onboarding.
+      return null;
+    }
+  }
+
+  /// Parst + validiert den Inhalt einer `connection.json` - lokal aus dem
+  /// Asset-Bundle ([load]) oder von einer bereits verbundenen Web-Version per
+  /// HTTP geholt (siehe [RemoteConnection]). Gibt `null` zurueck, wenn
+  /// leer/ungueltig/Platzhalter.
+  static ({String url, String anonKey})? parse(String raw) {
+    if (raw.trim().isEmpty) return null;
+    try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
       final url = (map['url'] as String?)?.trim() ?? '';
       // Sowohl "anonKey" als auch "anon_key" akzeptieren.
@@ -34,7 +47,6 @@ class DbConnectionFile {
       if (url.contains('DEIN-PROJEKT') || key.startsWith('DEIN-')) return null;
       return (url: url, anonKey: key);
     } catch (_) {
-      // Datei fehlt oder ist ungueltig -> Onboarding.
       return null;
     }
   }

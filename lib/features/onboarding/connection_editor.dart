@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_config.dart';
+import '../../config/remote_connection.dart';
 import '../../l10n/app_localizations.dart';
 
 /// Dialog zum Ändern der Datenbank-Verbindung (URL + Key) pro Gerät – inkl.
@@ -40,6 +41,15 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
               minLines: 1,
               maxLines: 3,
               decoration: InputDecoration(labelText: l.anonKeyLabel),
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _takeOverFromWeb(context, urlCtrl, keyCtrl),
+                icon: const Icon(Icons.bolt_outlined, size: 18),
+                label: Text(l.takeOverFromWeb),
+              ),
             ),
           ],
         ),
@@ -90,4 +100,65 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
   // Android beendet "App schliessen"/wechseln den Prozess meist nicht
   // wirklich, wodurch ein reines "bitte neu starten" wirkungslos bliebe).
   await ref.read(appRestartProvider)();
+}
+
+/// Fragt einen Link zur Web-Version ab und übernimmt deren Zugangsdaten in
+/// die URL-/Key-Felder des Editors (der Nutzer muss danach noch „Speichern"
+/// drücken, wie bei manueller Eingabe).
+Future<void> _takeOverFromWeb(
+  BuildContext context,
+  TextEditingController urlCtrl,
+  TextEditingController keyCtrl,
+) async {
+  final l = AppLocalizations.of(context);
+  final linkCtrl = TextEditingController();
+  final link = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l.takeOverFromWeb),
+      content: TextField(
+        controller: linkCtrl,
+        keyboardType: TextInputType.url,
+        autofocus: true,
+        decoration: InputDecoration(
+          labelText: l.webVersionLink,
+          hintText: 'https://dein-name.github.io/dein-repo/',
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, linkCtrl.text.trim()),
+          child: Text(l.ok),
+        ),
+      ],
+    ),
+  );
+  if (link == null || link.isEmpty) return;
+  if (!context.mounted) return;
+
+  try {
+    final conn = await RemoteConnection.fetch(link);
+    urlCtrl.text = conn.url;
+    keyCtrl.text = conn.anonKey;
+  } on RemoteConnectionException catch (e) {
+    if (!context.mounted) return;
+    final msg = switch (e.kind) {
+      RemoteConnectionError.emptyLink => l.enterLink,
+      RemoteConnectionError.invalidLink => l.invalidLink,
+      RemoteConnectionError.unreachable => l.remoteConnectionUnreachable(
+        e.detail ?? '',
+      ),
+      RemoteConnectionError.httpError => l.remoteConnectionHttpError(
+        e.detail ?? '',
+      ),
+      RemoteConnectionError.notConnected => l.remoteConnectionNotConnected,
+    };
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$e')));
+  }
 }

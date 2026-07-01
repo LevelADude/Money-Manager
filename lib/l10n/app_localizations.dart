@@ -881,6 +881,35 @@ class AppLocalizations {
     'Jemand hat die Datenbank schon eingerichtet. Du gibst nur die Zugangsdaten ein und meldest dich an.',
     'Someone has already set up the database. You just enter the credentials and sign in.',
   );
+  String get easySetupChoiceTitle =>
+      _t('Easy-Setup per Link', 'Easy setup via link');
+  String get easySetupChoiceSub => _t(
+    'Die Web-Version dieser App läuft schon? Einfach deren Link eingeben – Zugangsdaten werden automatisch übernommen.',
+    'Already running the web version of this app? Just paste its link – credentials are picked up automatically.',
+  );
+  String get easySetupTitle =>
+      _t('Mit Web-Version verbinden', 'Connect via web version');
+  String get easySetupBody => _t(
+    'Gib den Link zur Web-Version dieser App ein (z. B. https://dein-name.github.io/dein-repo/ oder ein Kurzlink darauf). Die Web-Version muss bereits mit einer Datenbank verbunden sein – deren Zugangsdaten werden automatisch übernommen.',
+    'Enter the link to this app\'s web version (e.g. https://your-name.github.io/your-repo/ or a short link to it). The web version must already be connected to a database – its credentials are picked up automatically.',
+  );
+  String get webVersionLink => _t('Link zur Web-Version', 'Link to web version');
+  String get enterLink => _t('Bitte einen Link eingeben', 'Please enter a link');
+  String get invalidLink => _t('Ungültiger Link', 'Invalid link');
+  String remoteConnectionUnreachable(Object e) => _t(
+    'Link nicht erreichbar: $e',
+    'Link not reachable: $e',
+  );
+  String remoteConnectionHttpError(Object status) => _t(
+    'Web-Version antwortet mit Fehler $status. Ist der Link korrekt?',
+    'Web version responded with error $status. Is the link correct?',
+  );
+  String get remoteConnectionNotConnected => _t(
+    'Die Web-Version unter diesem Link ist noch nicht mit einer Datenbank verbunden.',
+    'The web version at this link isn\'t connected to a database yet.',
+  );
+  String get takeOverFromWeb =>
+      _t('Von Web-Version übernehmen', 'Take over from web version');
   String get newOwnDatabase => _t('Neue eigene Datenbank', 'New own database');
   String get connectExistingDb =>
       _t('Bestehende Datenbank verbinden', 'Connect existing database');
