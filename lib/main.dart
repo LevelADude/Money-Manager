@@ -48,6 +48,13 @@ class _BootstrapState extends State<_Bootstrap> {
   bool _ready = false;
   String? _error;
 
+  /// Wird bei jedem [restart] hochgezaehlt und als Key auf die ProviderScope
+  /// unterhalb des Bootstraps gegeben, damit Flutter den gesamten App-Baum
+  /// (alle Riverpod-Provider, Router, Auth-Listener, ...) verwirft und neu
+  /// aufbaut, statt mit Providern zu arbeiten, die noch den alten
+  /// Supabase-Client referenzieren.
+  int _generation = 0;
+
   @override
   void initState() {
     super.initState();
@@ -92,13 +99,36 @@ class _BootstrapState extends State<_Bootstrap> {
     return _error;
   }
 
+  /// Verbindet nach einer geänderten DB-Verbindung neu (siehe
+  /// „Verbindung ändern" in Login/Profil/Einstellungen), OHNE dass der Nutzer
+  /// die App von Hand beenden muss.
+  ///
+  /// `Supabase.initialize()` ist ab dem zweiten Aufruf ein No-Op (die
+  /// Bibliothek ignoriert es und behaelt den alten Client) – deshalb muss die
+  /// alte Instanz zuerst per [Supabase.dispose] freigegeben werden. Danach
+  /// wird der komplette App-Baum ueber einen neuen ProviderScope-Key verworfen
+  /// und neu aufgebaut, damit keine Provider/Router/Auth-Listener mehr auf den
+  /// alten Client zeigen.
+  Future<void> _restart() async {
+    if (Supabase.instance.isInitialized) {
+      await Supabase.instance.dispose();
+    }
+    setState(() {
+      _generation++;
+      _ready = false;
+    });
+    await _initSupabase();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_ready) {
       return ProviderScope(
+        key: ValueKey(_generation),
         overrides: [
           sharedPrefsProvider.overrideWithValue(widget.prefs),
           appConfigProvider.overrideWithValue(_config),
+          appRestartProvider.overrideWithValue(_restart),
         ],
         child: const MoneyManagerApp(),
       );

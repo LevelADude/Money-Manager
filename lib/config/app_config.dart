@@ -72,3 +72,15 @@ class AppConfig {
 final appConfigProvider = Provider<AppConfig>((ref) {
   throw UnimplementedError('appConfigProvider muss in main() gesetzt werden');
 });
+
+/// Verbindet nach einer Änderung der DB-Verbindung neu, OHNE dass der Nutzer
+/// die App manuell neu starten muss (wichtig auf Android: dort beendet
+/// "App schliessen" den Prozess meist nicht wirklich, ein simples
+/// `Supabase.initialize()` nach dem ersten Aufruf ist ein No-Op). Baut dazu
+/// den kompletten Widget-Baum unterhalb des Bootstraps neu auf – siehe
+/// [main.dart]'s `_BootstrapState.restart()`.
+final appRestartProvider = Provider<Future<void> Function()>((ref) {
+  throw UnimplementedError(
+    'appRestartProvider muss in main() gesetzt werden',
+  );
+});

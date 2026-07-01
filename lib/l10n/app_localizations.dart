@@ -940,8 +940,8 @@ class AppLocalizations {
   String get connectionChanged =>
       _t('Verbindung geändert', 'Connection changed');
   String get connectionChangedBody => _t(
-    'Bitte lade die Seite neu (Strg+R) bzw. starte die App neu, damit die neue Verbindung wirksam wird. Deine Daten in Supabase bleiben erhalten.',
-    'Please reload the page (Ctrl+R) or restart the app for the new connection to take effect. Your data in Supabase is kept.',
+    'Die App verbindet sich jetzt neu mit der neuen Datenbank. Deine Daten in Supabase bleiben erhalten.',
+    'The app will now reconnect using the new database. Your data in Supabase is kept.',
   );
   String get ok => 'OK';
 

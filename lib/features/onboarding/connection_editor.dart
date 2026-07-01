@@ -86,4 +86,8 @@ Future<void> showConnectionEditor(BuildContext context, WidgetRef ref) async {
       ],
     ),
   );
+  // Verbindet neu, ohne dass der Nutzer die App von Hand beenden muss (auf
+  // Android beendet "App schliessen"/wechseln den Prozess meist nicht
+  // wirklich, wodurch ein reines "bitte neu starten" wirkungslos bliebe).
+  await ref.read(appRestartProvider)();
 }
