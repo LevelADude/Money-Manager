@@ -28,9 +28,14 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signiert mit den Debug-Keys – persönliche/Sideload-Nutzung (kein Play Store).
             signingConfig = signingConfigs.getByName("debug")
+            // R8/Code-Shrinking aus: das ML-Kit-Texterkennungs-Plugin referenziert
+            // optionale Sprach-Recognizer (Chinesisch/Japanisch/…), die nicht mit
+            // eingebunden sind; R8 bricht sonst mit "Missing classes" ab. Für eine
+            // Sideload-APK ist die etwas größere Datei unkritisch.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
