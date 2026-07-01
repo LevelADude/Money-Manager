@@ -5,67 +5,55 @@
 #  - Code-Signing-Zertifikat unter windows\certs\mm.pfx  (einmalig erzeugen, s. u.)
 #  - Visual Studio "Desktopentwicklung mit C++" + Windows-Entwicklermodus
 #
-# Zertifikat einmalig erzeugen (PowerShell):
+# Zertifikat einmalig erzeugen (PowerShell) - <DEIN-PASSWORT> selbst waehlen,
+# NICHT ins Skript eintragen (siehe unten, wie der Build das Passwort findet):
 #   $c = New-SelfSignedCertificate -Subject "CN=Money Manager" -Type CodeSigningCert `
 #        -CertStoreLocation Cert:\CurrentUser\My -KeyExportPolicy Exportable `
 #        -KeyUsage DigitalSignature -NotAfter (Get-Date).AddYears(5)
-#   $pw = ConvertTo-SecureString "MoneyMgr!2026" -Force -AsPlainText
+#   $pw = ConvertTo-SecureString "<DEIN-PASSWORT>" -Force -AsPlainText
 #   New-Item -ItemType Directory -Force windows\certs | Out-Null
 #   Export-PfxCertificate -Cert $c -FilePath windows\certs\mm.pfx -Password $pw
 #   Export-Certificate   -Cert $c -FilePath windows\certs\mm.cer
 #   Remove-Item ("Cert:\CurrentUser\My\" + $c.Thumbprint)
+#   "<DEIN-PASSWORT>" | Set-Content windows\certs\mm.pass -NoNewline
+#   (windows\certs\ ist komplett gitignored - Passwort landet nie im Repo.)
 #
-# Hinweis: Das mit dem msix-Paket gebündelte makeappx.exe wirft auf manchen
-# Systemen einen "Side-by-Side"-Fehler; daher packen/signieren wir mit den
-# Tools aus dem Windows SDK.
+# Hinweis: msix:create packt/signiert seit Paketversion 3.17 selbst (ueber die
+# gebuendelten MSIX-Toolkit-Tools) direkt mit --certificate-path/-password.
+# Der AppxManifest.xml-Zwischenschritt im alten "build/windows/runner/Release"
+# Pfad (ohne "x64") existiert bei aktuellen Flutter-Versionen nicht mehr -
+# deshalb hier direkt signieren statt manuell nachzupacken.
 
-param([string]$CertPassword = "MoneyMgr!2026")
+param([string]$CertPassword)
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
-$flutter = "F:\flutter\bin\flutter.bat"  # ggf. anpassen oder 'flutter' wenn im PATH
-$dart = "F:\flutter\bin\dart.bat"
+$flutter = "C:\dev\flutter\bin\flutter.bat"  # ggf. anpassen oder 'flutter' wenn im PATH
+$dart = "C:\dev\flutter\bin\dart.bat"
 
-Write-Host "1/3  Windows-Release bauen (mit Supabase-Konfig) ..."
+if (-not $CertPassword) {
+  $passFile = "$root\windows\certs\mm.pass"
+  if (Test-Path $passFile) {
+    $CertPassword = (Get-Content $passFile -Raw).Trim()
+  } else {
+    $secure = Read-Host "Zertifikat-Passwort (windows\certs\mm.pfx)" -AsSecureString
+    $CertPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
+      [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure))
+  }
+}
+
+Write-Host "1/2  Windows-Release bauen (mit Supabase-Konfig) ..."
 & $flutter build windows --release --dart-define-from-file="$root\env.json"
 
-Write-Host "2/3  MSIX-Manifest + Assets erzeugen ..."
-# Erzeugt AppxManifest.xml + Logos im Release-Ordner. Das eingebaute Packen
-# schlägt auf manchen Systemen fehl (Side-by-Side) -> wir fangen den Fehler ab
-# und packen anschließend selbst mit den Windows-SDK-Tools (Schritt 3).
-try {
-  $ErrorActionPreference = "Continue"
-  & $dart run msix:create --build-windows false --output-path "$root\build\windows\msix" --output-name MoneyManager
-} catch {
-  Write-Host "   (eingebautes Packen uebersprungen: $($_.Exception.Message))"
-} finally {
-  $ErrorActionPreference = "Stop"
-}
-if (-not (Test-Path "$root\build\windows\x64\runner\Release\AppxManifest.xml")) {
-  throw "AppxManifest.xml wurde nicht erzeugt - msix:create ist komplett fehlgeschlagen."
-}
+Write-Host "2/2  MSIX packen + signieren (mit windows\certs\mm.pfx) ..."
+& $dart run msix:create `
+  --build-windows false `
+  --certificate-path "$root\windows\certs\mm.pfx" `
+  --certificate-password $CertPassword `
+  --install-certificate false `
+  --output-path "$root\build\windows\msix" `
+  --output-name MoneyManager
 
-# Publisher im Manifest exakt an das Signatur-Zertifikat angleichen, sonst
-# scheitert signtool mit 0x8007000b (Publisher-Mismatch).
-$cer = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("$root\windows\certs\mm.cer")
-$manifestPath = "$root\build\windows\x64\runner\Release\AppxManifest.xml"
-[xml]$mx = Get-Content $manifestPath
-$mx.Package.Identity.Publisher = $cer.Subject
-$mx.Save($manifestPath)
-Write-Host "     Manifest-Publisher = $($cer.Subject)"
-
-Write-Host "3/3  Mit Windows-SDK packen + signieren ..."
-$make = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter makeappx.exe -ErrorAction SilentlyContinue |
-  Where-Object { $_.FullName -match '\\x64\\' } | Select-Object -Last 1
-$sign = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
-  Where-Object { $_.FullName -match '\\x64\\' } | Select-Object -Last 1
-if (-not $make -or -not $sign) { throw "makeappx/signtool nicht gefunden (Windows SDK fehlt?)" }
-
-$rel = "$root\build\windows\x64\runner\Release"
-$out = "$root\build\windows\msix"
-New-Item -ItemType Directory -Force -Path $out | Out-Null
-$msix = "$out\MoneyManager.msix"
-
-& $make.FullName pack /o /d $rel /p $msix
-& $sign.FullName sign /fd SHA256 /f "$root\windows\certs\mm.pfx" /p $CertPassword $msix
-
+$msix = "$root\build\windows\msix\MoneyManager.msix"
+if (-not (Test-Path $msix)) { throw "MoneyManager.msix wurde nicht erzeugt." }
 Write-Host "Fertig: $msix"
+Write-Host "Zum Installieren muss windows\certs\mm.cer einmalig als vertrauenswuerdig importiert werden (Cert:\LocalMachine\Root), sonst lehnt Windows die Installation ab (Publisher nicht vertrauenswuerdig)."
