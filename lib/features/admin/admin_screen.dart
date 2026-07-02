@@ -58,6 +58,79 @@ class AdminScreen extends ConsumerWidget {
     }
   }
 
+  /// Entfernt eine E-Mail aus der Whitelist. Existiert dazu bereits ein
+  /// Konto, warnt der Dialog explizit: Whitelist-Entfernen sperrt bestehende
+  /// Konten NICHT (nur die Registrierung neuer Konten) — echter Zugriffsentzug
+  /// braucht das zusätzliche Löschen des Kontos.
+  Future<void> _removeAllowedEmail(
+    BuildContext context,
+    WidgetRef ref,
+    String email,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final repo = ref.read(adminRepositoryProvider);
+    try {
+      final userEmails = await repo.fetchUserEmails();
+      String? matchedId;
+      for (final entry in userEmails.entries) {
+        if (entry.value.toLowerCase() == email.toLowerCase()) {
+          matchedId = entry.key;
+          break;
+        }
+      }
+      if (matchedId != null) {
+        final profiles = ref.read(allProfilesProvider).asData?.value ?? [];
+        Profile? match;
+        for (final p in profiles) {
+          if (p.id == matchedId) {
+            match = p;
+            break;
+          }
+        }
+        final name = (match == null || match.displayName.isEmpty)
+            ? email
+            : match.displayName;
+        if (!context.mounted) return;
+        final alsoDelete = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l.removeWhitelistAlsoDeleteTitle(name)),
+            content: Text(l.removeWhitelistAlsoDeleteBody),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l.keepAccount),
+              ),
+              FilledButton(
+                onPressed: match?.isOwner == true
+                    ? null
+                    : () => Navigator.pop(ctx, true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(ctx).colorScheme.error,
+                ),
+                child: Text(l.alsoDeleteAccount),
+              ),
+            ],
+          ),
+        );
+        if (alsoDelete == true) {
+          await repo.deleteUser(matchedId);
+          ref.invalidate(allProfilesProvider);
+          ref.invalidate(profileNamesProvider);
+          ref.invalidate(userEmailsProvider);
+        }
+      }
+      await repo.removeAllowedEmail(email);
+      ref.invalidate(allowedEmailsProvider);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+      }
+    }
+  }
+
   Future<void> _deleteUser(
     BuildContext context,
     WidgetRef ref,
@@ -114,6 +187,7 @@ class AdminScreen extends ConsumerWidget {
     final isOwner = ref.watch(isOwnerProvider).asData?.value ?? false;
     final emails = ref.watch(allowedEmailsProvider);
     final profiles = ref.watch(allProfilesProvider);
+    final userEmails = ref.watch(userEmailsProvider).asData?.value ?? const {};
     final myId = ref.watch(supabaseClientProvider).auth.currentUser?.id;
     final df = DateFormat('dd.MM.yyyy');
 
@@ -153,12 +227,8 @@ class AdminScreen extends ConsumerWidget {
                           title: Text(email),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete_outline),
-                            onPressed: () async {
-                              await ref
-                                  .read(adminRepositoryProvider)
-                                  .removeAllowedEmail(email);
-                              ref.invalidate(allowedEmailsProvider);
-                            },
+                            onPressed: () =>
+                                _removeAllowedEmail(context, ref, email),
                           ),
                         ),
                     ],
@@ -171,7 +241,8 @@ class AdminScreen extends ConsumerWidget {
             error: (e, _) => ListTile(title: Text(l.errorWith(e))),
             data: (list) => Column(
               children: [
-                for (final p in list) _userTile(context, ref, p, myId, df),
+                for (final p in list)
+                  _userTile(context, ref, p, myId, df, userEmails[p.id]),
               ],
             ),
           ),
@@ -265,6 +336,7 @@ class AdminScreen extends ConsumerWidget {
     Profile p,
     String? myId,
     DateFormat df,
+    String? email,
   ) {
     final l = AppLocalizations.of(context);
     final roleParts = <String>[
@@ -282,7 +354,15 @@ class AdminScreen extends ConsumerWidget {
         ),
       ),
       title: Text(p.displayName.isEmpty ? l.noName : p.displayName),
-      subtitle: Text(roleParts.join('  ·  ')),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (email != null && email.isNotEmpty)
+            Text(email, style: Theme.of(context).textTheme.bodySmall),
+          Text(roleParts.join('  ·  ')),
+        ],
+      ),
       trailing: p.isOwner
           ? Chip(
               avatar: const Icon(Icons.shield_outlined, size: 18),

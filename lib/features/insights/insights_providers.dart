@@ -7,6 +7,7 @@ import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
 import '../../data/models/recurring_rule.dart';
 import '../../data/models/savings_goal.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../budgets/budget_providers.dart';
 import '../categories/category_providers.dart';
@@ -87,6 +88,8 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   final convert = ref.watch(converterProvider);
   final curOf = ref.watch(accountCurrencyProvider);
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
+  final localeCode = ref.watch(settingsProvider.select((s) => s.localeCode));
+  final l = AppLocalizations(Locale(localeCode));
   final cats =
       ref.watch(categoriesProvider).asData?.value ?? const <Category>[];
   final catName = {for (final c in cats) c.id: c.name};
@@ -102,7 +105,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   int amt(AppTransaction t) =>
       convert(t.amountCents, curOf[t.accountId] ?? base);
   String nameOf(String? id) =>
-      id == null ? 'Ohne Kategorie' : (catName[id] ?? 'Kategorie');
+      id == null ? l.insNoCategory : (catName[id] ?? l.insCategoryFallback);
 
   final now = DateTime.now();
   final monthStart = DateTime(now.year, now.month, 1);
@@ -115,7 +118,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     now.month,
     now.day,
   ).add(const Duration(days: 1));
-  final scopeWord = isYear ? 'dieses Jahr' : 'diesen Monat';
+  final scopeWord = isYear ? l.insThisYearWord : l.insThisMonthWord;
   final prevStart = isYear
       ? DateTime(now.year - 1, 1, 1)
       : DateTime(now.year, now.month - 1, 1);
@@ -178,11 +181,13 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
               ? Icons.error_outline
               : Icons.warning_amber_outlined,
           title: util >= 1.0
-              ? 'Budget „$name" überschritten'
-              : 'Budget „$name" fast aufgebraucht',
-          detail:
-              '${formatCents(spent)} von ${formatCents(b.amountCents)} '
-              '(${(util * 100).toStringAsFixed(0)} %) diesen Monat.',
+              ? l.insBudgetExceededTitle(name)
+              : l.insBudgetAlmostUsedTitle(name),
+          detail: l.insBudgetDetail(
+            formatCents(spent),
+            formatCents(b.amountCents),
+            (util * 100).toStringAsFixed(0),
+          ),
           severity: InsightSeverity.warning,
           route: '/more/budgets',
         ),
@@ -214,10 +219,12 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       out.add(
         Insight(
           icon: Icons.show_chart,
-          title: '${nameOf(topCat)} höher als sonst',
-          detail:
-              '${formatCents(topCur)} diesen Monat – +${topPct.toStringAsFixed(0)} % '
-              'ggü. Ø der letzten 3 Monate (${formatCents(topAvg)}).',
+          title: l.insCategoryHigherTitle(nameOf(topCat)),
+          detail: l.insCategoryHigherDetail(
+            formatCents(topCur),
+            topPct.toStringAsFixed(0),
+            formatCents(topAvg),
+          ),
           severity: InsightSeverity.warning,
           route: '/statistics',
         ),
@@ -256,10 +263,12 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.warning_amber_outlined,
-        title: 'Ungewöhnlich hoch',
-        detail:
-            '${t.title.isEmpty ? cat : t.title}: ${formatCents(amt(t))} – '
-            'deutlich über dem Schnitt der Kategorie „$cat".',
+        title: l.insOutlierTitle,
+        detail: l.insOutlierDetail(
+          t.title.isEmpty ? cat : t.title,
+          formatCents(amt(t)),
+          cat,
+        ),
         severity: InsightSeverity.warning,
         route: '/transactions/${t.id}',
       ),
@@ -273,12 +282,12 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.ssid_chart,
-        title: 'Monatsverlauf (Netto)',
-        detail: 'Einnahmen minus Ausgaben der letzten ${months.length} Monate.',
+        title: l.insMonthlyTrendTitle,
+        detail: l.insMonthlyTrendDetail(months.length),
         section: InsightSection.overview,
         route: '/statistics',
         sparkline: [for (final m in months) m.netCents],
-        sparkLabels: [for (final m in months) _monthAbbr[m.month.month - 1]],
+        sparkLabels: [for (final m in months) l.monthAbbr[m.month.month - 1]],
       ),
     );
   }
@@ -288,10 +297,12 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   out.add(
     Insight(
       icon: net >= 0 ? Icons.trending_up : Icons.trending_down,
-      title: net >= 0 ? 'Im Plus ($scopeWord)' : 'Im Minus ($scopeWord)',
+      title: net >= 0
+          ? l.insSurplusTitle(scopeWord)
+          : l.insDeficitTitle(scopeWord),
       detail: net >= 0
-          ? 'Einnahmen liegen ${formatCents(net)} über den Ausgaben.'
-          : 'Ausgaben liegen ${formatCents(-net)} über den Einnahmen.',
+          ? l.insSurplusDetail(formatCents(net))
+          : l.insDeficitDetail(formatCents(-net)),
       severity: net >= 0 ? InsightSeverity.positive : InsightSeverity.warning,
       section: InsightSection.overview,
       route: '/statistics',
@@ -301,20 +312,19 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   // Sparquote (mit Trend ggü. Vorzeitraum).
   if (w.income > 0) {
     final rate = (w.income - w.expense) / w.income * 100;
-    var detail =
-        '$scopeWord bleiben ${rate.toStringAsFixed(0)} % deiner '
-        'Einnahmen übrig.';
+    var detail = l.insSavingsRateDetail(scopeWord, rate.toStringAsFixed(0));
     if (pv.income > 0) {
       final prevRate = (pv.income - pv.expense) / pv.income * 100;
       final d = rate - prevRate;
-      detail +=
-          ' (${d >= 0 ? '+' : ''}${d.toStringAsFixed(0)} %-Punkte ggü. '
-          '${isYear ? 'Vorjahr' : 'Vormonat'})';
+      detail += l.insSavingsRateTrend(
+        '${d >= 0 ? '+' : ''}${d.toStringAsFixed(0)}',
+        isYear,
+      );
     }
     out.add(
       Insight(
         icon: Icons.savings_outlined,
-        title: 'Sparquote',
+        title: l.insSavingsRateTitle,
         detail: detail,
         severity: rate >= 0
             ? InsightSeverity.positive
@@ -334,12 +344,16 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       out.add(
         Insight(
           icon: delta >= 0 ? Icons.trending_up : Icons.trending_down,
-          title: 'Vermögenstrend (3 Monate)',
+          title: l.insNetWorthTrendTitle,
           detail: delta >= 0
-              ? 'Dein Vermögen ist um ${formatCents(delta)} gewachsen '
-                    '(jetzt ${formatCents(nowNw)}).'
-              : 'Dein Vermögen ist um ${formatCents(-delta)} gesunken '
-                    '(jetzt ${formatCents(nowNw)}).',
+              ? l.insNetWorthGrowDetail(
+                  formatCents(delta),
+                  formatCents(nowNw),
+                )
+              : l.insNetWorthShrinkDetail(
+                  formatCents(-delta),
+                  formatCents(nowNw),
+                ),
           severity: delta >= 0
               ? InsightSeverity.positive
               : InsightSeverity.warning,
@@ -359,10 +373,12 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.flag_outlined,
-        title: 'Sparziel „${g.name}"',
-        detail:
-            '${(g.fraction * 100).toStringAsFixed(0)} % erreicht – noch '
-            '${formatCents(g.remainingCents)} bis ${formatCents(g.targetCents)}.',
+        title: l.insSavingsGoalTitle(g.name),
+        detail: l.insSavingsGoalDetail(
+          (g.fraction * 100).toStringAsFixed(0),
+          formatCents(g.remainingCents),
+          formatCents(g.targetCents),
+        ),
         section: InsightSection.overview,
         route: '/more/goals',
       ),
@@ -371,8 +387,8 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.emoji_events_outlined,
-        title: 'Sparziel erreicht 🎉',
-        detail: '„${reached.first.name}" ist vollständig angespart.',
+        title: l.insSavingsGoalReachedTitle,
+        detail: l.insSavingsGoalReachedDetail(reached.first.name),
         severity: InsightSeverity.positive,
         section: InsightSection.overview,
         route: '/more/goals',
@@ -399,11 +415,10 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.event_repeat_outlined,
-        title:
-            '$dueCount Dauerauftrag${dueCount == 1 ? '' : 'e'} fällig (≤ 7 Tage)',
+        title: l.insRecurringDueTitle(dueCount),
         detail: dueExpense > 0
-            ? 'Davon ${formatCents(dueExpense)} Ausgaben. Sorge für Deckung.'
-            : 'Demnächst fällig – im Blick behalten.',
+            ? l.insRecurringDueDetail(formatCents(dueExpense))
+            : l.insRecurringDueSoon,
         route: '/more/recurring',
       ),
     );
@@ -415,10 +430,11 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.query_stats,
-        title: 'Hochrechnung',
-        detail:
-            'Bei aktuellem Tempo ~${formatCents(projected)} Ausgaben bis '
-            'Monatsende (bisher ${formatCents(winExpense)}).',
+        title: l.insProjectionTitle,
+        detail: l.insProjectionDetail(
+          formatCents(projected),
+          formatCents(winExpense),
+        ),
       ),
     );
   }
@@ -429,9 +445,8 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.local_fire_department_outlined,
-        title: 'Tagesdurchschnitt',
-        detail:
-            'Du gibst diesen Monat im Schnitt ${formatCents(perDay)} pro Tag aus.',
+        title: l.insDailyAverageTitle,
+        detail: l.insDailyAverageDetail(formatCents(perDay)),
       ),
     );
   }
@@ -450,8 +465,12 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.pie_chart_outline,
-        title: 'Größter Posten: ${nameOf(big)}',
-        detail: '${formatCents(bigV)} $scopeWord – $share % deiner Ausgaben.',
+        title: l.insBiggestCategoryTitle(nameOf(big)),
+        detail: l.insBiggestCategoryDetail(
+          formatCents(bigV),
+          scopeWord,
+          share,
+        ),
         route: '/statistics',
       ),
     );
@@ -474,8 +493,8 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.payments_outlined,
-        title: 'Größte Ausgabe ($scopeWord)',
-        detail: '$label: ${formatCents(amt(maxTx))}.',
+        title: l.insBiggestExpenseTitle(scopeWord),
+        detail: l.insBiggestExpenseDetail(label, formatCents(amt(maxTx))),
         route: '/transactions/${maxTx.id}',
       ),
     );
@@ -496,10 +515,8 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       out.add(
         Insight(
           icon: Icons.spa_outlined,
-          title: '$noSpend ausgabenfreie Tage',
-          detail:
-              'An $noSpend von ${now.day} Tagen diesen Monat hast du nichts '
-              'ausgegeben.',
+          title: l.insNoSpendDaysTitle(noSpend),
+          detail: l.insNoSpendDaysDetail(noSpend, now.day),
           severity: InsightSeverity.positive,
         ),
       );
@@ -526,10 +543,12 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.autorenew,
-        title: 'Mögliches Abo',
-        detail:
-            '„${t0.title}" ${formatCents(t0.amountCents)} – ${list.length}× '
-            'erkannt, wirkt regelmäßig.',
+        title: l.insPossibleSubTitle,
+        detail: l.insPossibleSubDetail(
+          t0.title,
+          formatCents(t0.amountCents),
+          list.length,
+        ),
         route: '/more/subscriptions',
       ),
     );
@@ -553,8 +572,8 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
     out.add(
       Insight(
         icon: Icons.label_off_outlined,
-        title: '$uncategorized Buchungen ohne Kategorie',
-        detail: 'Kategorisieren verbessert die Auswertungen und Budgets.',
+        title: l.insUncategorizedTitle(uncategorized),
+        detail: l.insUncategorizedDetail,
         route: '/transactions',
       ),
     );
@@ -562,18 +581,3 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
 
   return out;
 });
-
-const _monthAbbr = [
-  'Jan',
-  'Feb',
-  'Mär',
-  'Apr',
-  'Mai',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Okt',
-  'Nov',
-  'Dez',
-];

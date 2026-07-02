@@ -38,6 +38,15 @@ class AdminRepository {
         .eq('id', profileId);
   }
 
+  /// E-Mail je Nutzer-Id (admin-only RPC, `profiles` speichert keine E-Mail).
+  Future<Map<String, String>> fetchUserEmails() async {
+    final rows = await _client.rpc('admin_list_user_emails');
+    return {
+      for (final r in (rows as List))
+        (r as Map)['id'] as String: (r['email'] as String?) ?? '',
+    };
+  }
+
   /// Löscht ein Auth-Konto über die Edge Function (service_role serverseitig).
   Future<void> deleteUser(String userId) async {
     final res = await _client.functions.invoke(

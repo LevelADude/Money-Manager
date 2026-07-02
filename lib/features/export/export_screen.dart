@@ -120,6 +120,19 @@ class ExportScreen extends ConsumerWidget {
         incomeText: formatCents(income),
         expenseText: formatCents(expense),
         balanceText: formatCents(income - expense),
+        headers: [
+          l.dateLabel,
+          l.pdfColType,
+          l.accountLabel,
+          l.category,
+          l.fieldTitle,
+          l.amount,
+        ],
+        emptyText: l.noTransactionsPeriod,
+        incomeLabel: l.income,
+        expenseLabel: l.expenses,
+        balanceLabel: l.balance,
+        pageLabel: l.pdfPageOf,
         filename: 'money-manager-buchungen.pdf',
       );
     } catch (e) {

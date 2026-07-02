@@ -26,6 +26,72 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _changePassword() async {
+    final l = AppLocalizations.of(context);
+    final formKey = GlobalKey<FormState>();
+    final pw = TextEditingController();
+    final pw2 = TextEditingController();
+    final newPassword = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.changePasswordAction),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: pw,
+                obscureText: true,
+                autofocus: true,
+                decoration: InputDecoration(labelText: l.newPasswordLabel),
+                validator: (v) =>
+                    (v == null || v.length < 6) ? l.passwordMin : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: pw2,
+                obscureText: true,
+                decoration: InputDecoration(labelText: l.repeatPasswordLabel),
+                validator: (v) =>
+                    v != pw.text ? l.passwordsDontMatch : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, pw.text);
+              }
+            },
+            child: Text(l.save),
+          ),
+        ],
+      ),
+    );
+    if (newPassword == null || !mounted) return;
+    try {
+      await ref.read(authRepositoryProvider).updatePassword(newPassword);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.passwordUpdated)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+      }
+    }
+  }
+
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
@@ -96,6 +162,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     )
                   : const Icon(Icons.check),
               label: Text(l.save),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _changePassword,
+              icon: const Icon(Icons.lock_outline),
+              label: Text(l.changePasswordAction),
             ),
             const SizedBox(height: 24),
             OutlinedButton.icon(

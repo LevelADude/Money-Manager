@@ -225,6 +225,9 @@ class AppLocalizations {
   String get pdfHeading =>
       _t('Money Manager – Buchungen', 'Money Manager – Transactions');
   String txCount(int n) => _t('$n Buchungen', '$n transactions');
+  String get pdfColType => _t('Typ', 'Type');
+  String pdfPageOf(int page, int total) =>
+      _t('Seite $page / $total', 'Page $page of $total');
 
   String transactionType(TransactionType t) => switch (t) {
     TransactionType.income => _t('Einnahme', 'Income'),
@@ -619,6 +622,11 @@ class AppLocalizations {
       _t('Lege ein neues Passwort fest.', 'Set a new password.');
   String get newPasswordLabel => _t('Neues Passwort', 'New password');
   String get passwordUpdated => _t('Passwort aktualisiert', 'Password updated');
+  String get changePasswordAction => _t('Passwort ändern', 'Change password');
+  String get repeatPasswordLabel =>
+      _t('Passwort wiederholen', 'Repeat password');
+  String get passwordsDontMatch =>
+      _t('Passwörter stimmen nicht überein', 'Passwords don\'t match');
 
   // ---- Auto-Kategorien (Regeln) ----
   String get rulesTitle => _t('Auto-Kategorien', 'Auto-categories');
@@ -1008,6 +1016,22 @@ class AppLocalizations {
     'The account is permanently removed. Recorded transactions/accounts are kept (unassigned). This cannot be undone.',
   );
   String get userDeleted => _t('Nutzer gelöscht', 'User deleted');
+  String removeWhitelistAlsoDeleteTitle(String name) => _t(
+    'Auch das Konto von „$name" löschen?',
+    'Also delete the account of "$name"?',
+  );
+  String get removeWhitelistAlsoDeleteBody => _t(
+    'Diese E-Mail hat bereits ein bestehendes Konto mit vollem Zugriff. Nur '
+    'aus der Freischaltung zu entfernen sperrt dieses Konto NICHT — es kann '
+    'sich weiterhin anmelden. Konto jetzt zusätzlich löschen, um den Zugriff '
+    'wirklich zu entziehen?',
+    'This email already has an existing account with full access. Removing '
+    'it from the allow-list alone does NOT lock that account out — it can '
+    'still sign in. Also delete the account now to actually revoke access?',
+  );
+  String get keepAccount => _t('Konto behalten', 'Keep account');
+  String get alsoDeleteAccount =>
+      _t('Auch Konto löschen', 'Also delete account');
   String get storageSection => _t('Speicher', 'Storage');
   String get allowedEmailsSection =>
       _t('Freigeschaltete E-Mails', 'Allowed emails');
@@ -1212,6 +1236,161 @@ class AppLocalizations {
   String get archiveKeyBackupBody => _t(
     'Dieser Verschlüsselungs-Schlüssel wurde erzeugt und serverseitig gespeichert. Bewahre eine Kopie sicher auf: Geht die Datenbank verloren, sind die archivierten Daten OHNE diesen Schlüssel nicht wiederherstellbar.',
     'This encryption key was generated and stored server-side. Keep a copy somewhere safe: if the database is lost, the archived data CANNOT be recovered without this key.',
+  );
+
+  // ---- Insights (generierte Karten, insights_providers.dart) ----
+  String get insNoCategory => _t('Ohne Kategorie', 'No category');
+  String get insCategoryFallback => _t('Kategorie', 'Category');
+  String get insThisYearWord => _t('dieses Jahr', 'this year');
+  String get insThisMonthWord => _t('diesen Monat', 'this month');
+  String insBudgetExceededTitle(String name) =>
+      _t('Budget „$name" überschritten', 'Budget "$name" exceeded');
+  String insBudgetAlmostUsedTitle(String name) =>
+      _t('Budget „$name" fast aufgebraucht', 'Budget "$name" almost used up');
+  String insBudgetDetail(String spent, String total, String pct) => _t(
+    '$spent von $total ($pct %) diesen Monat.',
+    '$spent of $total ($pct%) this month.',
+  );
+  String insCategoryHigherTitle(String name) =>
+      _t('$name höher als sonst', '$name higher than usual');
+  String insCategoryHigherDetail(String current, String pct, String avg) =>
+      _t(
+        '$current diesen Monat – +$pct % ggü. Ø der letzten 3 Monate ($avg).',
+        '$current this month – +$pct% vs. the last 3 months\' average ($avg).',
+      );
+  String get insOutlierTitle => _t('Ungewöhnlich hoch', 'Unusually high');
+  String insOutlierDetail(String label, String amount, String category) => _t(
+    '$label: $amount – deutlich über dem Schnitt der Kategorie „$category".',
+    '$label: $amount – well above the average for category "$category".',
+  );
+  String get insMonthlyTrendTitle =>
+      _t('Monatsverlauf (Netto)', 'Monthly trend (net)');
+  String insMonthlyTrendDetail(int months) => _t(
+    'Einnahmen minus Ausgaben der letzten $months Monate.',
+    'Income minus expenses over the last $months months.',
+  );
+  String insSurplusTitle(String scope) =>
+      _t('Im Plus ($scope)', 'In the black ($scope)');
+  String insDeficitTitle(String scope) =>
+      _t('Im Minus ($scope)', 'In the red ($scope)');
+  String insSurplusDetail(String amount) => _t(
+    'Einnahmen liegen $amount über den Ausgaben.',
+    'Income exceeds expenses by $amount.',
+  );
+  String insDeficitDetail(String amount) => _t(
+    'Ausgaben liegen $amount über den Einnahmen.',
+    'Expenses exceed income by $amount.',
+  );
+  String get insSavingsRateTitle => _t('Sparquote', 'Savings rate');
+  String insSavingsRateDetail(String scope, String pct) => _t(
+    '$scope bleiben $pct % deiner Einnahmen übrig.',
+    '$scope, you keep $pct% of your income.',
+  );
+  String insSavingsRateTrend(String signedDelta, bool isYear) => _t(
+    ' ($signedDelta %-Punkte ggü. ${isYear ? 'Vorjahr' : 'Vormonat'})',
+    ' ($signedDelta pp vs. ${isYear ? 'last year' : 'last month'})',
+  );
+  String get insNetWorthTrendTitle =>
+      _t('Vermögenstrend (3 Monate)', 'Net worth trend (3 months)');
+  String insNetWorthGrowDetail(String delta, String now) => _t(
+    'Dein Vermögen ist um $delta gewachsen (jetzt $now).',
+    'Your net worth grew by $delta (now $now).',
+  );
+  String insNetWorthShrinkDetail(String delta, String now) => _t(
+    'Dein Vermögen ist um $delta gesunken (jetzt $now).',
+    'Your net worth dropped by $delta (now $now).',
+  );
+  String insSavingsGoalTitle(String name) =>
+      _t('Sparziel „$name"', 'Savings goal "$name"');
+  String insSavingsGoalDetail(String pct, String remaining, String target) =>
+      _t(
+        '$pct % erreicht – noch $remaining bis $target.',
+        '$pct% reached – $remaining to go until $target.',
+      );
+  String get insSavingsGoalReachedTitle =>
+      _t('Sparziel erreicht 🎉', 'Savings goal reached 🎉');
+  String insSavingsGoalReachedDetail(String name) => _t(
+    '„$name" ist vollständig angespart.',
+    '"$name" is fully saved up.',
+  );
+  String insRecurringDueTitle(int count) => _t(
+    '$count Dauerauftrag${count == 1 ? '' : 'e'} fällig (≤ 7 Tage)',
+    '$count recurring ${count == 1 ? 'payment' : 'payments'} due (≤ 7 days)',
+  );
+  String insRecurringDueDetail(String amount) => _t(
+    'Davon $amount Ausgaben. Sorge für Deckung.',
+    '$amount of that is expenses. Make sure you\'re covered.',
+  );
+  String get insRecurringDueSoon => _t(
+    'Demnächst fällig – im Blick behalten.',
+    'Due soon – keep an eye on it.',
+  );
+  String get insProjectionTitle => _t('Hochrechnung', 'Projection');
+  String insProjectionDetail(String projected, String soFar) => _t(
+    'Bei aktuellem Tempo ~$projected Ausgaben bis Monatsende (bisher $soFar).',
+    'At the current pace, ~$projected in expenses by month end (so far $soFar).',
+  );
+  String get insDailyAverageTitle => _t('Tagesdurchschnitt', 'Daily average');
+  String insDailyAverageDetail(String perDay) => _t(
+    'Du gibst diesen Monat im Schnitt $perDay pro Tag aus.',
+    'This month you spend $perDay per day on average.',
+  );
+  String insBiggestCategoryTitle(String category) =>
+      _t('Größter Posten: $category', 'Biggest expense: $category');
+  String insBiggestCategoryDetail(String amount, String scope, int share) =>
+      _t(
+        '$amount $scope – $share % deiner Ausgaben.',
+        '$amount $scope – $share% of your expenses.',
+      );
+  String insBiggestExpenseTitle(String scope) =>
+      _t('Größte Ausgabe ($scope)', 'Biggest expense ($scope)');
+  String insBiggestExpenseDetail(String label, String amount) =>
+      _t('$label: $amount.', '$label: $amount.');
+  String insNoSpendDaysTitle(int days) =>
+      _t('$days ausgabenfreie Tage', '$days no-spend days');
+  String insNoSpendDaysDetail(int noSpend, int total) => _t(
+    'An $noSpend von $total Tagen diesen Monat hast du nichts ausgegeben.',
+    'You spent nothing on $noSpend of $total days this month.',
+  );
+  String get insPossibleSubTitle =>
+      _t('Mögliches Abo', 'Possible subscription');
+  String insPossibleSubDetail(String title, String amount, int count) => _t(
+    '„$title" $amount – $count× erkannt, wirkt regelmäßig.',
+    '"$title" $amount – detected $count×, looks recurring.',
+  );
+  String insUncategorizedTitle(int count) => _t(
+    '$count Buchungen ohne Kategorie',
+    '$count transactions without a category',
+  );
+  String get insUncategorizedDetail => _t(
+    'Kategorisieren verbessert die Auswertungen und Budgets.',
+    'Categorizing improves reports and budgets.',
+  );
+
+  // ---- Erinnerungen (generiert, reminders_providers.dart) ----
+  String get remDefaultTitle => _t('Dauerauftrag', 'Recurring payment');
+  String remOverdueDetail(int days) =>
+      _t('überfällig seit $days Tag(en)', 'overdue by $days day(s)');
+  String get remDueTodayDetail => _t('heute fällig', 'due today');
+  String remDueInDaysDetail(int days) =>
+      _t('fällig in $days Tag(en)', 'due in $days day(s)');
+  String remBudgetTitle(String category) =>
+      _t('Budget: $category', 'Budget: $category');
+  String remBudgetExceededDetail(String spent, String total) => _t(
+    'überschritten ($spent / $total)',
+    'exceeded ($spent / $total)',
+  );
+  String remBudgetAlmostDetail(int pct) =>
+      _t('fast aufgebraucht ($pct %)', 'almost used up ($pct%)');
+  String remSavingsGoalTitle(String name) =>
+      _t('Sparziel: $name', 'Savings goal: $name');
+  String remGoalOverdueDetail(String remaining) => _t(
+    'Zieltermin überschritten · noch $remaining',
+    'Target date passed · $remaining left',
+  );
+  String remGoalDaysLeftDetail(int days, String remaining) => _t(
+    'noch $days Tag(e) · $remaining fehlen',
+    '$days day(s) left · $remaining missing',
   );
 }
 

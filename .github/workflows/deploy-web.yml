@@ -42,12 +42,18 @@ jobs:
       # --no-web-resources-cdn: CanvasKit/Schriften lokal mitliefern statt von
       # gstatic.com laden. Sonst bleibt die Seite weiss, wenn gstatic langsam
       # oder gesperrt ist (haengt beim Engine-Start). Funktioniert so auch offline.
+      # --pwa-strategy=none: kein Service-Worker. Die App ist ohnehin auf Live-
+      # Sync angewiesen (kein Offline-Feature), ein SW brachte nur das Risiko,
+      # dass iOS/Android nach "Zum Home-Bildschirm" einen alten Build ewig
+      # weiter-cached (Nutzer sieht dann z. B. Logins gegen einen veralteten
+      # Stand haengen). Ohne SW greift stattdessen der normale, kurzlebige
+      # HTTP-Cache des Browsers/CDN.
       - name: Build web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          flutter build web --release --no-web-resources-cdn \
+          flutter build web --release --no-web-resources-cdn --pwa-strategy=none \
             --base-href "/${{ github.event.repository.name }}/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"

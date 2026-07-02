@@ -39,34 +39,52 @@ desktop – without writing or building anything? Here's how, in a few minutes:
 
 1. **Fork the repo.** Click **"Fork"** at the top right → the project is now in
    your GitHub account.
-2. **Create a free Supabase project.** Sign up at
+2. ⚠️ **IMMEDIATELY AFTER: delete `assets/db_connection/connection.json`.**
+   This file permanently binds the original fork to **the original project's
+   database** — if you don't delete it, **your** published site will later
+   **connect silently and automatically to the original database** (your
+   bookings mix with someone else's; RLS won't save you here, because you'd
+   just be a normal authenticated user in someone else's DB). In the GitHub
+   web UI: open the file → trash-can icon top right → **"Commit changes"**.
+   (Keep the `assets/db_connection/` folder and its `README.txt` — delete
+   only the `.json` file, otherwise the build breaks.) Do this before step 4
+   (publishing).
+3. **Create a free Supabase project.** Sign up at
    [supabase.com](https://supabase.com) → **New Project** (Europe region
    recommended) → wait a moment until it's ready.
-3. **Set up the database (1 click).** In the Supabase dashboard open the
+4. **Set up the database (1 click).** In the Supabase dashboard open the
    **"SQL Editor"**, paste the entire contents of
    [`supabase/setup.sql`](supabase/setup.sql) and click **"Run"**. (The app also
    offers this SQL text via a copy button on first launch.)
    - Optional, so registration works without email confirmation:
      **Authentication → Providers → Email → turn off "Confirm email".**
-4. **Publish the website (GitHub Pages).** In your fork:
+5. **Publish the website (GitHub Pages).** In your fork:
    **Settings → Pages → Source: "GitHub Actions".** Then under **Actions** run
    the **"Deploy Web (GitHub Pages)"** workflow once (or make a small commit).
    After ~2 minutes the site is reachable at
    `https://<your-name>.github.io/<repo-name>/`.
    - **Optional (auto-connect your site):** In **Settings → Secrets and variables
-     → Actions** store the two secrets `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
-     Then *your* published site connects to your database automatically. Without
-     the secrets the site starts empty and asks for the credentials in the
-     onboarding (see step 5).
-5. **Open the app & connect.** A fresh fork starts **empty** and shows the
-   onboarding with two paths: **"New installation"** (your own empty DB) or
-   **"Connect to an existing DB"**. Enter the **Supabase URL** and
-   **anon/publishable key** (both in the Supabase dashboard under
-   *Project Settings → Data API* and *API Keys*) → **"Connect & start"**.
+     → Actions** store the two secrets `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+     (of **your own** project from step 3). Then *your* published site connects
+     to your database automatically. Without the secrets the site starts empty
+     and asks for the credentials in the onboarding (see step 6).
+6. **Open the app & connect.** A fresh fork **without `connection.json`**
+   (step 2!) starts **empty** and shows the onboarding with two paths:
+   **"New installation"** (your own empty DB) or **"Connect to an existing
+   DB"**. Enter the **Supabase URL** and **anon/publishable key** (both in
+   the Supabase dashboard under *Project Settings → Data API* and *API
+   Keys*) → **"Connect & start"**.
    - **The first person to register automatically becomes the owner**
      (administrator with all rights – protected, cannot be removed).
    - Change/disconnect later: **More → Settings → Database connection**
      (this device only, your data is kept).
+
+> **Already forked and forgot to delete `connection.json`?** Check the
+> **original** project's Supabase dashboard (Authentication → Users) for
+> unexpected accounts (e.g. your new test email) — that's the tell. Fix:
+> delete `connection.json` in your fork now (or overwrite it with **your
+> own** project's credentials), redeploy, and remove the accidentally
+> created accounts/whitelist entries from the original database.
 
 > **On iPhone:** open the site in **Safari** → **Share** → **"Add to Home
 > Screen"**. Money Manager then launches like a real app (PWA). On Android the

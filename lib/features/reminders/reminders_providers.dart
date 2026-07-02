@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/recurring_rule.dart';
 import '../../data/models/savings_goal.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../budgets/budget_providers.dart';
 import '../categories/category_providers.dart';
 import '../recurring/recurring_providers.dart';
 import '../savings/savings_providers.dart';
+import '../settings/settings_providers.dart';
 import '../transactions/transaction_providers.dart';
 
 enum ReminderLevel { info, warning, alert }
@@ -34,6 +36,8 @@ class Reminder {
 final remindersProvider = Provider<List<Reminder>>((ref) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
+  final localeCode = ref.watch(settingsProvider.select((s) => s.localeCode));
+  final l = AppLocalizations(Locale(localeCode));
   final out = <Reminder>[];
 
   // Fällige / bald fällige Daueraufträge.
@@ -47,12 +51,12 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
       out.add(
         Reminder(
           icon: Icons.repeat,
-          title: r.title.isEmpty ? 'Dauerauftrag' : r.title,
+          title: r.title.isEmpty ? l.remDefaultTitle : r.title,
           subtitle: diff < 0
-              ? 'überfällig seit ${-diff} Tag(en)'
+              ? l.remOverdueDetail(-diff)
               : diff == 0
-              ? 'heute fällig'
-              : 'fällig in $diff Tag(en)',
+              ? l.remDueTodayDetail
+              : l.remDueInDaysDetail(diff),
           level: diff < 0 ? ReminderLevel.alert : ReminderLevel.info,
           route: '/more/recurring',
         ),
@@ -72,10 +76,13 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
       out.add(
         Reminder(
           icon: Icons.savings_outlined,
-          title: 'Budget: ${catNames[catId] ?? 'Kategorie'}',
+          title: l.remBudgetTitle(catNames[catId] ?? l.insCategoryFallback),
           subtitle: s > b.amountCents
-              ? 'überschritten (${formatCents(s)} / ${formatCents(b.amountCents)})'
-              : 'fast aufgebraucht (${(pct * 100).round()} %)',
+              ? l.remBudgetExceededDetail(
+                  formatCents(s),
+                  formatCents(b.amountCents),
+                )
+              : l.remBudgetAlmostDetail((pct * 100).round()),
           level: s > b.amountCents
               ? ReminderLevel.alert
               : ReminderLevel.warning,
@@ -100,10 +107,13 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
       out.add(
         Reminder(
           icon: Icons.flag_outlined,
-          title: 'Sparziel: ${g.name}',
+          title: l.remSavingsGoalTitle(g.name),
           subtitle: daysLeft < 0
-              ? 'Zieltermin überschritten · noch ${formatCents(g.remainingCents)}'
-              : 'noch $daysLeft Tag(e) · ${formatCents(g.remainingCents)} fehlen',
+              ? l.remGoalOverdueDetail(formatCents(g.remainingCents))
+              : l.remGoalDaysLeftDetail(
+                  daysLeft,
+                  formatCents(g.remainingCents),
+                ),
           level: daysLeft < 0 ? ReminderLevel.alert : ReminderLevel.warning,
           route: '/more/goals',
         ),

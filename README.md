@@ -41,34 +41,55 @@ So geht's in wenigen Minuten:
 
 1. **Repo forken.** Oben rechts auf **„Fork"** klicken → das Projekt liegt jetzt
    in deinem GitHub-Konto.
-2. **Kostenloses Supabase-Projekt anlegen.** Auf [supabase.com](https://supabase.com)
+2. ⚠️ **SOFORT DANACH: `assets/db_connection/connection.json` löschen.**
+   Diese Datei bindet den Original-Fork fest an **die Datenbank des
+   Original-Projekts** — wird sie nicht gelöscht, verbindet sich **deine**
+   veröffentlichte Seite später **automatisch und unsichtbar mit der
+   Original-Datenbank** (fremde/eigene Buchungen vermischen sich, RLS schützt
+   dich hier nicht davor, weil du dann ganz normal als eigener Nutzer in der
+   fremden DB angemeldet bist). Im GitHub-Webinterface: Datei öffnen →
+   Papierkorb-Symbol oben rechts → **„Commit changes"**. (Den Ordner
+   `assets/db_connection/` inkl. `README.txt` dabei **behalten** — nur die
+   `.json`-Datei löschen, sonst schlägt der Build fehl.) Diesen Schritt vor
+   Schritt 4 (Veröffentlichen) erledigen.
+3. **Kostenloses Supabase-Projekt anlegen.** Auf [supabase.com](https://supabase.com)
    registrieren → **New Project** (Region Europa empfohlen) → kurz warten, bis es
    fertig ist.
-3. **Datenbank einrichten (1 Klick).** Im Supabase-Dashboard **„SQL Editor"**
+4. **Datenbank einrichten (1 Klick).** Im Supabase-Dashboard **„SQL Editor"**
    öffnen, den kompletten Inhalt von [`supabase/setup.sql`](supabase/setup.sql)
    einfügen und **„Run"** klicken. (Diesen SQL-Text bietet die App beim ersten
    Start auch per Kopier-Knopf an.)
    - Optional, damit die Registrierung ohne E-Mail-Bestätigung klappt:
      **Authentication → Providers → Email → „Confirm email" ausschalten.**
-4. **Website veröffentlichen (GitHub Pages).** In deinem Fork:
+5. **Website veröffentlichen (GitHub Pages).** In deinem Fork:
    **Settings → Pages → Source: „GitHub Actions".** Dann unter **Actions** den
    Workflow **„Deploy Web (GitHub Pages)"** einmal starten (oder einen kleinen
    Commit machen). Nach ~2 Minuten ist die Seite unter
    `https://<dein-name>.github.io/<repo-name>/` erreichbar.
    - **Optional (Auto-Verbindung deiner Seite):** Hinterlege in **Settings →
      Secrets and variables → Actions** die zwei Secrets `SUPABASE_URL` und
-     `SUPABASE_ANON_KEY`. Dann verbindet sich *deine* veröffentlichte Seite
-     automatisch mit deiner Datenbank. Ohne Secrets startet die Seite leer und
-     fragt im Onboarding nach den Zugangsdaten (siehe Schritt 5).
-5. **App öffnen & verbinden.** Ein frischer Fork startet **leer** und zeigt das
-   Onboarding mit zwei Wegen: **„Neue Installation"** (eigene, leere DB) oder
-   **„Mit bestehender DB verbinden"**. Trage **Supabase-URL** und
-   **anon/publishable Key** ein (beide im Supabase-Dashboard unter
-   *Project Settings → Data API* bzw. *API Keys*) → **„Verbinden & starten"**.
+     `SUPABASE_ANON_KEY` (deines **eigenen** Projekts aus Schritt 3). Dann
+     verbindet sich *deine* veröffentlichte Seite automatisch mit deiner
+     Datenbank. Ohne Secrets startet die Seite leer und fragt im Onboarding
+     nach den Zugangsdaten (siehe Schritt 6).
+6. **App öffnen & verbinden.** Ein frischer Fork **ohne `connection.json`**
+   (Schritt 2!) startet **leer** und zeigt das Onboarding mit zwei Wegen:
+   **„Neue Installation"** (eigene, leere DB) oder **„Mit bestehender DB
+   verbinden"**. Trage **Supabase-URL** und **anon/publishable Key** ein
+   (beide im Supabase-Dashboard unter *Project Settings → Data API* bzw.
+   *API Keys*) → **„Verbinden & starten"**.
    - **Die erste Person, die sich registriert, wird automatisch Besitzer**
      (Administrator mit allen Rechten – geschützt, nicht entziehbar).
    - Verbindung später ändern/trennen: **Mehr → Einstellungen →
      Datenbank-Verbindung** (gilt nur für dieses Gerät, Daten bleiben erhalten).
+
+> **Schon geforkt und `connection.json` nicht gelöscht?** Prüfe im Supabase-
+> Dashboard des **Original**-Projekts (Authentication → Users), ob dort
+> unerwartete Konten (z. B. deine neue Test-E-Mail) auftauchen — das ist das
+> Anzeichen. Fix: `connection.json` im Fork jetzt löschen (oder mit den
+> Zugangsdaten deines **eigenen** Projekts überschreiben), neu deployen, und
+> die versehentlich in der Original-DB angelegten Konten/Whitelist-Einträge
+> dort wieder entfernen.
 
 > **Auf dem iPhone:** Seite in **Safari** öffnen → **Teilen** → **„Zum
 > Home-Bildschirm"**. Dann startet Money Manager wie eine echte App (PWA).

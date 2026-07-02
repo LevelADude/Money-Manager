@@ -17,6 +17,11 @@ final allProfilesProvider = FutureProvider<List<Profile>>((ref) {
   return ref.watch(profileRepositoryProvider).fetchProfiles();
 });
 
+/// E-Mail je Nutzer-Id, nur für Admins (Nutzer-Id -> E-Mail).
+final userEmailsProvider = FutureProvider<Map<String, String>>((ref) {
+  return ref.watch(adminRepositoryProvider).fetchUserEmails();
+});
+
 /// Aktuelle Speichernutzung (DB + Datei-Speicher) in Bytes.
 final storageStatsProvider = FutureProvider<({int dbBytes, int storageBytes})>((
   ref,

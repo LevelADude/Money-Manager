@@ -33,6 +33,116 @@ Stand: 2026-07-02
 > bleibt zusätzlich als Weg bestehen. `flutter analyze` beider Dateien → keine
 > Fehler; `flutter test` → alle 70 Tests grün. **Noch offen:** committen +
 > pushen.
+> **⚠️ Kritischer Bug gefunden + Doku-Fix (diese Session):** Nutzer meldete,
+> dass sein geforktes Repo ("ForkMoneyManager.de") trotz eigenem neuen
+> Supabase-Projekt weiterhin **Original-Buchungen zeigte** und Original-Logins
+> akzeptierte. Ursache: die committete
+> [assets/db_connection/connection.json](assets/db_connection/connection.json)
+> (seit Commit `7b95c79`, enthält URL+Key des **Produktiv-Projekts**
+> `uaaqehspnlncjzrajfue`) hat **Vorrang vor allem** (Abschnitt 5) und wird bei
+> jedem Fork unverändert mitkopiert — die Haupt-`README.md`/`README.en.md`
+> erwähnten den nötigen Lösch-Schritt (dokumentiert nur versteckt in
+> [assets/db_connection/README.txt](assets/db_connection/README.txt)) nicht
+> und behaupteten fälschlich "Ein frischer Fork startet leer". Jeder Fork, der
+> die Datei nicht löscht, landet **unsichtbar in der Original-DB** (echtes
+> Datenvermischungs-/Datenschutzproblem, kein Cosmetic-Bug). Fix diese Session:
+> [README.md](README.md) + [README.en.md](README.en.md) Fork-Anleitung um
+> expliziten Lösch-Schritt (jetzt Schritt 2, vor dem Veröffentlichen) +
+> Troubleshooting-Hinweis ergänzt. **Noch offen:** der Nutzer muss in seinem
+> bereits bestehenden Fork die Datei jetzt noch manuell löschen/ersetzen.
+> **Korrektur:** die ursprüngliche Vermutung, `test@gmail.com`/die
+> Whitelist-Freischaltung der zweiten Test-Mail seien dabei in der
+> Original-DB gelandet, wurde per direkter Prüfung (s. u.) **widerlegt** — in
+> der Original-DB existiert weiterhin nur der echte Besitzer-Account, nichts
+> aufzuräumen.
+> **⚠️ Preset-Kategorien verschwunden — Ursache gefunden + Prod-Fix (diese
+> Session):** Nutzer meldete, dass alle Preset-Kategorien (Buchungen-Screen)
+> weg waren. Untersuchung via Supabase-MCP direkt gegen die Produktiv-DB
+> (`uaaqehspnlncjzrajfue`, nur nach expliziter Nutzer-Freigabe) ergab: die
+> Tabelle `categories` war **komplett leer** (0 Zeilen, keine Tombstones) —
+> `accounts`=3, `transactions`=2, `recurring_rules`=1, `audit_log`=3, **alle
+> Zeitstempel von heute**. Nutzer bestätigte: er hatte bewusst "Datenbank
+> leeren" (`admin-wipe-data`) genutzt, um eigene Test-Buchungen zu entfernen —
+> **Bug:** `admin_wipe_data()`/`admin_factory_reset()`
+> ([supabase/migrations/0023_admin_maintenance.sql](supabase/migrations/0023_admin_maintenance.sql))
+> truncateten bislang die komplette `categories`-Tabelle inkl. `is_preset`-Zeilen
+> statt nur Testdaten, ohne Re-Seed. Fix:
+> [supabase/migrations/0029_wipe_keeps_presets.sql](supabase/migrations/0029_wipe_keeps_presets.sql)
+> (neue Helferfunktion `_seed_preset_categories()`, `admin_wipe_data`/
+> `admin_factory_reset` löschen jetzt nur `is_preset=false` und säen Presets
+> danach neu falls leer — Verhalten entspricht jetzt "Zustand wie
+> Neuinstallation"), auch in [supabase/setup.sql](supabase/setup.sql)
+> nachgezogen. **Migration mit expliziter Nutzer-Freigabe live auf die
+> Produktiv-DB angewendet** + die 31 fehlenden Presets direkt nachgesät
+> (verifiziert: `accounts`/`transactions` unverändert bei 3/2, `categories`
+> jetzt 31). Für andere Instanzen (inkl. Forks) reicht künftig ein
+> `supabase db push`/erneutes `setup.sql`, um Migration 0029 zu bekommen.
+> **⚠️ Zugriffskontroll-Lücken gefunden + teilweise gefixt (diese Session):**
+> Nutzer fragte zu Recht, ob es ein Problem sei, sich mit einer
+> nicht-freigeschalteten E-Mail einloggen zu können, ohne davon zu erfahren.
+> Direkte Prüfung der Produktiv-DB (mit Nutzer-Freigabe) ergab: aktuell nur
+> **ein** Account (Besitzer, echte E-Mail) und nur `khafi4@gmail.com` in der
+> Whitelist (kein Fremdzugriff aktiv) — die vorherige Vermutung eines
+> Fremdkontos in der Original-DB war falsch (s. o.). **Strukturell bestätigt
+> als echte Lücken:** (1) Die E-Mail-Whitelist
+> ([0007_admin_whitelist.sql](supabase/migrations/0007_admin_whitelist.sql))
+> greift **nur beim Signup** (DB-Trigger auf `auth.users` insert) — ein
+> einmal registrierter Account kann sich **immer** weiter einloggen, auch
+> nach Entfernen aus der Whitelist; RLS-Policies sind bewusst
+> `for all to authenticated using (true)` (jeder eingeloggte Account hat
+> vollen Zugriff auf alle Daten — Kern des "kleine Gruppe teilt alles"-Modells).
+> Echter Zugriffsentzug ging bisher nur über Admin → Nutzer → Löschen. (2)
+> `public.profiles` speichert keine E-Mail (liegt nur in `auth.users`, für den
+> Client nicht abfragbar) — der Admin-Bereich zeigte bisher nur den
+> selbstgewählten Anzeigenamen, konnte also nicht zuverlässig zeigen, wer
+> hinter einem Account steckt. **Fix (mit Nutzer-Freigabe live auf Prod
+> angewendet):**
+> [supabase/migrations/0030_admin_list_user_emails.sql](supabase/migrations/0030_admin_list_user_emails.sql)
+> (neue admin-only RPC `admin_list_user_emails()`) +
+> [lib/data/repositories/admin_repository.dart](lib/data/repositories/admin_repository.dart)
+> `fetchUserEmails()` +
+> [lib/features/admin/admin_providers.dart](lib/features/admin/admin_providers.dart)
+> `userEmailsProvider` +
+> [lib/features/admin/admin_screen.dart](lib/features/admin/admin_screen.dart):
+> E-Mail wird jetzt im "Nutzer"-Bereich unter dem Namen angezeigt, und beim
+> Entfernen einer E-Mail aus der Whitelist prüft `_removeAllowedEmail()`, ob
+> dazu schon ein Konto existiert — falls ja, Warndialog mit expliziter Option
+> "Auch Konto löschen" (echter Zugriffsentzug), sonst bleibt das Konto
+> zugriffsfähig (bewusst, mit Warntext erklärt). `flutter analyze`/`test`
+> grün. **Nicht umgesetzt (bewusst nicht gefordert):** proaktive
+> Benachrichtigung bei Neuregistrierung (z. B. E-Mail an Besitzer) — größeres
+> Feature, bräuchte einen E-Mail-Versanddienst; als Idee notiert, falls
+> gewünscht.
+> **Vier offene ToDos abgearbeitet (diese Session, je einzeln vom Nutzer
+> freigegeben):**
+> 1. **Archivierungs-Deployment verifiziert** (nur lesend gegen Prod-DB) —
+>    siehe Abschnitt 11, vollständig live, nur noch ungetestet in der Praxis.
+> 2. **"Passwort ändern" für eingeloggte Nutzer** in
+>    [lib/features/profile/profile_screen.dart](lib/features/profile/profile_screen.dart)
+>    ergänzt (Dialog, nutzt bestehendes `AuthRepository.updatePassword()`).
+> 3. **Service-Worker für Web/PWA deaktiviert** (vorsorglicher Fix gegen das
+>    iPhone-Login-Caching-Problem aus Abschnitt 10, Ursache nicht bestätigt,
+>    aber bekannte Klasse von Flutter-Web-PWA-Bug): `--pwa-strategy=none` in
+>    [.github/workflows/deploy-web.yml](.github/workflows/deploy-web.yml) —
+>    verifiziert im lokalen Build, dass `flutter_bootstrap.js` danach
+>    `_flutter.loader.load()` **ohne** `serviceWorker`-Config aufruft, also
+>    gar keine Registrierung mehr stattfindet. Die App ist ohnehin auf
+>    Live-Sync angewiesen, kein Offline-Feature verloren.
+> 4. **Restliche deutsche Texte lokalisiert:** Insight-Karten
+>    ([insights_providers.dart](lib/features/insights/insights_providers.dart)),
+>    Erinnerungs-Texte
+>    ([reminders_providers.dart](lib/features/reminders/reminders_providers.dart))
+>    und PDF-Export
+>    ([pdf_export.dart](lib/features/export/pdf_export.dart), Signatur um
+>    `headers`/`emptyText`/`incomeLabel`/`expenseLabel`/`balanceLabel`/
+>    `pageLabel` erweitert, beide Call-Sites in `export_screen.dart` +
+>    `all_transactions_screen.dart` angepasst) — alle über neue Getter/Funktionen
+>    in [app_localizations.dart](lib/l10n/app_localizations.dart) (Präfixe
+>    `ins`/`rem`/`pdf`). Damit sind laut Abschnitt 6 jetzt **alle** Nutzer-Screens
+>    inkl. generierter Texte lokalisiert (nur noch CSV-Format, `period_filter.dart`
+>    [ungenutzt] und ein kontextloser Fallback bleiben bewusst deutsch).
+>
+> `flutter analyze` + `flutter test` (70/70) für alle vier Punkte grün.
 > **Davor:** Archivierung alter Jahre nach GitHub (Commit `94189e2`) und DB
 > fest über committete `assets/db_connection/connection.json` gebunden
 > (Abschnitt 5) — beide laut Git-Historie bereits committet, dieser Stand war
@@ -124,7 +234,7 @@ nichts konfiguriert, wird stattdessen das Onboarding gezeigt (eigene
 
 ## 4. Backend / Supabase
 
-- **Migrationen:** `supabase/migrations/0001…0023_*.sql`. `supabase/setup.sql`
+- **Migrationen:** `supabase/migrations/0001…0030_*.sql`. `supabase/setup.sql`
   ist das **Komplett-Setup** (alle Tabellen + RLS + Storage), das im Onboarding
   zum Kopieren angeboten wird (als Asset gebündelt).
 - **Edge Functions** (`supabase/functions/`, Deno):
@@ -132,8 +242,8 @@ nichts konfiguriert, wird stattdessen das Onboarding gezeigt (eigene
 - **Rollen:** erste registrierte E-Mail wird **Besitzer** (`is_owner`,
   Migration 0022); Admin-Wartung in 0023. Zugriff zusätzlich über
   E-Mail-Whitelist (0007) + RLS gesteuert.
-- **Produktiv-Projekt:** Supabase `uaaqehspnlncjzrajfue` (Migrationen 0001–0023
-  dort angewandt).
+- **Produktiv-Projekt:** Supabase `uaaqehspnlncjzrajfue` (Migrationen 0001–0030
+  dort angewandt, Stand 2026-07-02).
 
 ⚠️ Die zerstörerischen Functions `admin-wipe-data` / `admin-factory-reset`
 **niemals** gegen die Produktiv-DB ausführen.
@@ -186,13 +296,17 @@ hält eine Getter-Tabelle über `String _t(String de, String en)` plus einen
   `transactionType(...)`, `intervalUnitLabel(...)`, `everyInterval(...)`,
   `monthName/monthAbbr/weekdayAbbr`, `dayHeader(...)`, `auditAction(...)`.
 
+- **Auch Provider (kein `BuildContext`) lokalisiert:** `AppLocalizations` hat
+  einen öffentlichen Konstruktor (`AppLocalizations(Locale(...))`), daher in
+  `insights_providers.dart`/`reminders_providers.dart` per
+  `AppLocalizations(Locale(ref.watch(settingsProvider.select((s) => s.localeCode))))`
+  nutzbar, ganz ohne Context. Muster für künftige Provider-seitige Texte.
+
 **Bewusst deutsch geblieben (Daten/Format, keine UI-Chrome):**
 - CSV-Export/-Import-Format (Spalten `Datum;Typ;Betrag;…`) — für Round-Trip-Import.
 - `period_filter.dart` Extension-Labels (`.label`/`labelFor`) — **ungenutzt**
   (Statistik hat eigene lokalisierte Helfer).
 - Ein Provider-Fallback `'Unbekannt'` in `person_filter.dart` (kein `context`).
-- Insight-Kartentexte ([insights_providers.dart](lib/features/insights/insights_providers.dart)),
-  Reminder-/PDF-Texte.
 - Geldformat bleibt `de_DE`; numerische Datumsangaben bleiben `dd.MM.yyyy`.
 
 ---
@@ -253,22 +367,79 @@ hält eine Getter-Tabelle über `String _t(String de, String en)` plus einen
   Session, s. Zusammenfassung oben.
 - ✅ **Logout über Profilbild** — behoben diese Session, s. Zusammenfassung
   oben.
-- **Archivierung alter Jahre nach GitHub** — laut Git-Historie (Commit
-  `94189e2`) code-seitig umgesetzt; **Deployment beim Nutzer noch nicht
-  bestätigt** (privates Repo anlegen, Token, Migrationen 0024+0025 anwenden,
-  Edge Function deployen, in der App verbinden — Checkliste in Abschnitt 11,
-  11.0). Vor Weiterarbeit verifizieren, ob das inzwischen live ist.
-- **Finalisierungs-Phase** ist geplant, aber NICHT freigegeben: aufräumen
-  (löschen, säubern), Fehler-Check, Verbesserungsvorschläge. Erst auf
-  ausdrückliche Anweisung starten.
-- Optional verbleibende „generated text"-Buckets übersetzen (Insight-Karten,
-  Reminder-/PDF-Texte) — bisher bewusst deutsch.
+- ✅ **README-Fork-Anleitung fehlte Lösch-Schritt für `connection.json`** —
+  behoben diese Session (kritischer Datenvermischungs-Bug), s.
+  Zusammenfassung oben. **Nutzer muss noch selbst** in seinem Fork die Datei
+  löschen/ersetzen und die versehentlichen Konten in der Original-DB
+  aufräumen (Supabase-Dashboard Original-Projekt `uaaqehspnlncjzrajfue` →
+  Authentication → Users: `test@gmail.com` + die zweite Test-Mail-Whitelist
+  aus Admin → Whitelist entfernen).
+- ⭐ **Login schlägt auf iPhone/Safari fehl, obwohl auf iPad (gleiche Seite,
+  gleiche Zugangsdaten) funktioniert.** Vom Nutzer am 2026-07-02 gemeldet,
+  **Root-Cause weiterhin nicht bestätigt** (kein Zugriff auf die konkrete
+  Fork-Website/Supabase-Projekt hier). **Vorsorglicher Fix diese Session:**
+  Service-Worker für den Web-Build deaktiviert (`--pwa-strategy=none` in
+  [.github/workflows/deploy-web.yml](.github/workflows/deploy-web.yml)) —
+  häufigste Ursache für "altes Gerät hängt an altem Build" bei Flutter-Web-PWAs
+  ist damit strukturell ausgeschlossen (verifiziert: kein
+  `serviceWorker.register()` mehr im gebauten `flutter_bootstrap.js`). Falls
+  das Problem nach dem nächsten Deploy weiter auftritt, liegt es an etwas
+  anderem — dann needs (b)/(c) aus der ursprünglichen Diagnose-Liste: (b)
+  prüfen ob der GitHub-Actions-Workflow "Deploy Web" beim letzten relevanten
+  Commit fehlerfrei durchlief, (c) im Supabase-Dashboard **Authentication →
+  Logs** den tatsächlichen Fehler des fehlgeschlagenen Login-Versuchs ansehen
+  (z. B. "Invalid login credentials" vs. "Email not confirmed" vs.
+  Netzwerkfehler). Erst nach Behebung von Problem 2 (richtige DB verbunden)
+  erneut testen, da beide Symptome zum Teil zusammenhängen könnten.
+- ✅ **"Passwort ändern" für eingeloggte Nutzer** — behoben diese Session:
+  Dialog in [profile_screen.dart](lib/features/profile/profile_screen.dart)
+  (`_changePassword()`, nutzt bestehendes `AuthRepository.updatePassword()`).
+  "Passwort vergessen" gab es schon vorher (kleiner Link auf
+  [login_screen.dart](lib/features/auth/login_screen.dart) →
+  [reset_password_screen.dart](lib/features/auth/reset_password_screen.dart)
+  unter Route `/reset-password`) — falls auf einem Fork weiterhin unbrauchbar,
+  liegt das evtl. am Redirect-Ziel/Site-URL im Supabase-Dashboard des Forks
+  (Authentication → URL Configuration), nicht am App-Code.
+- ✅ **Preset-Kategorien verschwunden** — behoben diese Session (Prod-DB-Fix +
+  strukturelle Ursache gefixt), s. Zusammenfassung oben. **Für andere/künftige
+  Instanzen (Forks, neue Projekte) noch offen:** Migration 0029 muss dort
+  separat angewendet werden (`supabase db push` oder `setup.sql` neu
+  einspielen) — sonst truncatet `admin_wipe_data`/`admin_factory_reset` dort
+  weiterhin auch die Presets.
+- ✅ **E-Mail-Sichtbarkeit im Admin-Bereich + echter Zugriffsentzug bei
+  Whitelist-Entfernung** — behoben diese Session, s. Zusammenfassung oben
+  (Migration 0030 live). **Für andere/künftige Instanzen (Forks) noch
+  offen:** Migration 0030 muss dort separat angewendet werden.
+- ⭐ **Proaktive Benachrichtigung bei Neuregistrierung** — noch nicht
+  umgesetzt, nur als Idee notiert (vom Nutzer nicht explizit gefordert,
+  ergab sich aus der Zugriffskontroll-Diskussion). Aktuell muss der
+  Besitzer/Admin selbst regelmäßig Admin → Nutzer prüfen, um neue Accounts zu
+  bemerken. Für eine E-Mail-Benachrichtigung bräuchte es einen
+  E-Mail-Versanddienst (z. B. Resend) + einen Supabase Auth-Webhook oder
+  DB-Trigger → Edge Function — vor Umsetzung mit Nutzer klären, ob/welcher
+  Dienst gewünscht ist (Kosten/Datenschutz, ähnlich der LLM-Entscheidung in
+  Abschnitt 8).
+- ✅ **Archivierung alter Jahre nach GitHub — Deployment verifiziert (diese
+  Session).** Direkt gegen Prod-DB geprüft (nur lesend): Migrationen 0024+0025
+  angewendet (`archived_years`/`archive_config` existieren), Edge Function
+  `archive-proxy` ACTIVE, `archive_config` enthält bereits einen Eintrag
+  (Repo `LevelADude/Money-Manager-Archieve`, Stand 22.06.2026). Deployment ist
+  also **vollständig live** — noch **0 archivierte Jahre** (Feature bisher
+  nicht genutzt, nur eingerichtet). Punkt 6 der Checkliste (End-to-End-Test:
+  archivieren → ansehen → de-archivieren) steht noch aus, sonst nichts mehr
+  offen.
+- **Finalisierungs-Phase** ist geplant, aber NICHT freigegeben (Nutzer hat
+  das am 2026-07-02 nochmal explizit bestätigt, als danach gefragt wurde):
+  aufräumen (löschen, säubern), Fehler-Check, Verbesserungsvorschläge. Erst
+  auf ausdrückliche Anweisung starten.
+- ✅ **Restliche „generated text"-Buckets übersetzt** (Insight-Karten,
+  Reminder-/PDF-Texte) — behoben diese Session, s. Zusammenfassung oben.
 - `verify`/manuelles Testen auf echtem Android-Gerät (OCR, Beleg-Flow) steht
   noch beim Nutzer aus (hier kein Gerät verfügbar).
 
 ---
 
-## 11. Archivierung alter Jahre nach GitHub — IMPLEMENTIERT (Deploy offen)
+## 11. Archivierung alter Jahre nach GitHub — IMPLEMENTIERT + DEPLOYED (0 Jahre genutzt)
 
 **Ziel des Nutzers:** Alte Buchungen aus der Supabase-DB **nach GitHub
 auslagern**, um DB-/Storage-Speicher freizugeben. Ausgelagerte Jahre bleiben in
@@ -307,15 +478,12 @@ Instanz**, nicht pro Nutzer.
 - Strings in [app_localizations.dart](lib/l10n/app_localizations.dart);
   Setup-Anleitung in [README.md](README.md).
 
-**Noch zu tun (Deployment — braucht den Nutzer):**
-1. Privates Repo anlegen (leer, nur Daten).
-2. Fine-grained PAT (nur dieses Repo, „Contents: Read and write").
-3. Migrationen **0024 + 0025** auf Prod-Supabase `uaaqehspnlncjzrajfue` anwenden.
-4. `supabase functions deploy archive-proxy` (oder via Dashboard) — **keine
-   Function-Secrets nötig.**
-5. **In der App** „Archiv-Repo verbinden" (Repo + Token; Schlüssel wird erzeugt
-   und einmalig angezeigt → **sichern**).
-6. End-to-End mit Owner-Konto testen (archivieren → ansehen → de-archivieren).
+**Deployment-Status (verifiziert 2026-07-02 direkt gegen Prod-DB, nur
+lesend):** Schritte 1–5 ✅ **erledigt** — Migrationen 0024+0025 angewendet,
+`archive-proxy` ACTIVE, `archive_config` zeigt auf
+`LevelADude/Money-Manager-Archieve` (Stand 22.06.2026). Nur noch offen:
+6. End-to-End mit Owner-Konto testen (archivieren → ansehen → de-archivieren)
+   — bisher 0 archivierte Jahre, Feature ungetestet in der Praxis.
 
 **Hinweis Belege/Größe:** Eine Jahresdatei enthält die Belege inline (base64);
 der Proxy liest große Dateien über `Accept: application/vnd.github.raw` (bis
@@ -416,7 +584,14 @@ ausdrückliche Anweisung.
 
 ## Verifikation des aktuellen Stands
 
-**DB-Bindung (diese Session):** `flutter analyze lib/main.dart
+**Neuester Stand (diese Session, 2026-07-02, nach den 4 abgearbeiteten
+ToDos):** `flutter analyze lib` → keine Fehler; `flutter test` → alle 70
+Tests grün; `flutter build web --release --pwa-strategy=none` → erfolgreich,
+verifiziert dass `flutter_bootstrap.js` danach `_flutter.loader.load()` ohne
+`serviceWorker`-Config aufruft (keine SW-Registrierung mehr). Migrationen bis
+0030 live auf Prod (`uaaqehspnlncjzrajfue`) angewendet.
+
+**DB-Bindung (Session zuvor):** `flutter analyze lib/main.dart
 lib/config/app_config.dart lib/config/db_connection_file.dart` → keine Fehler;
 `flutter test` → alle 49 Tests grün. Asset `assets/db_connection/` in
 [pubspec.yaml](pubspec.yaml) registriert. **Noch offen:** committen + pushen, damit

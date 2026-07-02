@@ -15,10 +15,15 @@ Future<void> shareTransactionsPdf({
   required String incomeText,
   required String expenseText,
   required String balanceText,
+  required List<String> headers,
+  required String emptyText,
+  required String incomeLabel,
+  required String expenseLabel,
+  required String balanceLabel,
+  required String Function(int page, int total) pageLabel,
   String filename = 'money-manager.pdf',
 }) async {
   final doc = pw.Document();
-  final headers = ['Datum', 'Typ', 'Konto', 'Kategorie', 'Titel', 'Betrag'];
 
   doc.addPage(
     pw.MultiPage(
@@ -41,7 +46,7 @@ Future<void> shareTransactionsPdf({
         alignment: pw.Alignment.centerRight,
         margin: const pw.EdgeInsets.only(top: 8),
         child: pw.Text(
-          'Seite ${ctx.pageNumber} / ${ctx.pagesCount}',
+          pageLabel(ctx.pageNumber, ctx.pagesCount),
           style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
         ),
       ),
@@ -75,14 +80,14 @@ Future<void> shareTransactionsPdf({
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              _summaryBox(label: 'Einnahmen', value: incomeText),
-              _summaryBox(label: 'Ausgaben', value: expenseText),
-              _summaryBox(label: 'Saldo', value: balanceText),
+              _summaryBox(label: incomeLabel, value: incomeText),
+              _summaryBox(label: expenseLabel, value: expenseText),
+              _summaryBox(label: balanceLabel, value: balanceText),
             ],
           ),
         ),
         if (rows.isEmpty)
-          pw.Text('Keine Buchungen in diesem Zeitraum.')
+          pw.Text(emptyText)
         else
           pw.TableHelper.fromTextArray(
             headers: headers,
