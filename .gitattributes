@@ -1,0 +1,6 @@
+# Schützt die geräte-/instanzspezifische DB-Verbindung eines Forks davor,
+# von einem automatisierten Upstream-Sync (.github/workflows/sync-upstream.yml)
+# überschrieben zu werden. Braucht den "ours"-Merge-Treiber, den der
+# Sync-Workflow vor jedem Merge per `git config merge.ours.driver true`
+# registriert (steht nicht standardmäßig in jeder Git-Installation).
+assets/db_connection/connection.json merge=ours

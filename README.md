@@ -95,6 +95,24 @@ So geht's in wenigen Minuten:
 > Home-Bildschirm"**. Dann startet Money Manager wie eine echte App (PWA).
 > Auf Android funktioniert das in Chrome genauso („App installieren").
 
+### 🔄 Updates automatisch erhalten
+
+Dein Fork bekommt Bugfixes und neue Features aus diesem Original-Repo **automatisch**
+— **einmal pro Woche** (montags) synchronisiert ein mitgelieferter Workflow
+(„Sync Fork with Upstream") deinen Fork mit dem Original. Deine eigene
+Datenbank-Verbindung (`assets/db_connection/connection.json`) bleibt dabei
+**garantiert unangetastet**. Nach einem sauberen Sync deployt sich deine Seite
+automatisch neu (via „Deploy Web").
+
+- **Sofort aktualisieren, statt eine Woche zu warten:** In deinem Fork unter
+  **Actions → „Sync Fork with Upstream" → Run workflow**.
+- **Falls du selbst Code im Fork verändert hast** und es dadurch zu einem
+  echten Konflikt kommt (nicht bei `connection.json` — die ist geschützt):
+  Der Workflow merged dann nicht still, sondern öffnet eine **Pull Request**
+  zum manuellen Prüfen unter **Pull requests**.
+- Braucht keine Einrichtung — der Workflow ist Teil dieses Repos und kommt mit
+  jedem neuen Fork automatisch mit.
+
 > **Alternative zum Hosting:** Statt GitHub Pages kannst du den Ordner
 > `build/web` (nach `flutter build web`) auch bei **Cloudflare Pages** oder
 > **Netlify** hochladen – beides kostenlos und ohne eigenes Konto bei dritten

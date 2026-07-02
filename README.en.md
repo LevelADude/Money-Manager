@@ -90,6 +90,23 @@ desktop – without writing or building anything? Here's how, in a few minutes:
 > Screen"**. Money Manager then launches like a real app (PWA). On Android the
 > same works in Chrome ("Install app").
 
+### 🔄 Getting updates automatically
+
+Your fork gets bugfixes and new features from this original repo **automatically**
+— **once a week** (Mondays) a bundled workflow ("Sync Fork with Upstream")
+syncs your fork with the original. Your own database connection
+(`assets/db_connection/connection.json`) is **guaranteed to stay untouched**.
+After a clean sync, your site redeploys automatically (via "Deploy Web").
+
+- **Update immediately instead of waiting a week:** in your fork, go to
+  **Actions → "Sync Fork with Upstream" → Run workflow**.
+- **If you've made your own code changes in the fork** and that causes a real
+  conflict (not with `connection.json` — that's protected): the workflow
+  won't merge silently, it opens a **pull request** for manual review under
+  **Pull requests** instead.
+- No setup needed — the workflow is part of this repo and comes with every
+  new fork automatically.
+
 > **Hosting alternative:** instead of GitHub Pages you can upload the `build/web`
 > folder (after `flutter build web`) to **Cloudflare Pages** or **Netlify** –
 > both free and without a third-party account. GitHub Pages is preconfigured here

@@ -1,0 +1,87 @@
+name: Sync Fork with Upstream
+
+# Hält einen Fork automatisch mit dem Original-Repo (LevelADude/Money-Manager)
+# synchron, damit Bugfixes/Features dort ankommen, ohne dass der Fork-Besitzer
+# manuell git-Kommandos ausfuehren muss.
+#
+# Läuft NUR in Forks (im Original-Repo selbst wird der Job übersprungen).
+# `assets/db_connection/connection.json` bleibt dank .gitattributes
+# (merge=ours) IMMER unangetastet, egal was sich im Original ändert -
+# das ist die instanz-eigene DB-Verbindung dieses Forks.
+#
+# Bei einem sauberen Merge wird direkt auf `main` gepusht (naechster Deploy-
+# Web-Lauf zieht das automatisch nach). Bei einem echten Konflikt (z. B.
+# eigene Anpassungen ausserhalb von connection.json) wird NICHT stumm
+# gemerged, sondern eine Pull Request zum manuellen Pruefen eroeffnet.
+
+on:
+  schedule:
+    - cron: '0 4 * * 1' # jeden Montag 04:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  UPSTREAM_URL: https://github.com/LevelADude/Money-Manager.git
+  UPSTREAM_BRANCH: main
+
+jobs:
+  sync:
+    if: github.repository != 'LevelADude/Money-Manager'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Git konfigurieren
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Registriert den "ours"-Treiber, den .gitattributes fuer
+          # connection.json anfordert (kein Git-Standardtreiber).
+          git config merge.ours.driver true
+
+      - name: Upstream holen
+        run: |
+          git remote add upstream "$UPSTREAM_URL"
+          git fetch upstream "$UPSTREAM_BRANCH"
+
+      - name: Versuchen zu mergen
+        id: merge
+        run: |
+          before="$(git rev-parse HEAD)"
+          if git merge "upstream/$UPSTREAM_BRANCH" --no-edit; then
+            after="$(git rev-parse HEAD)"
+            if [ "$before" = "$after" ]; then
+              echo "status=uptodate" >> "$GITHUB_OUTPUT"
+            else
+              echo "status=clean" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "status=conflict" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sauberen Merge pushen
+        if: steps.merge.outputs.status == 'clean'
+        run: git push origin main
+
+      - name: Bei Konflikt PR statt Merge
+        if: steps.merge.outputs.status == 'conflict'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git merge --abort
+          branch="sync/upstream-$(date +%Y%m%d%H%M)"
+          git checkout -b "$branch"
+          git merge "upstream/$UPSTREAM_BRANCH" --no-edit || true
+          git add -A
+          git commit -m "Sync von Upstream (Konflikte - bitte manuell pruefen)"
+          git push origin "$branch"
+          gh pr create \
+            --title "Sync von Upstream: Konflikte pruefen" \
+            --base main --head "$branch" \
+            --body "Automatischer Upstream-Sync hatte Konflikte (vermutlich eigene Anpassungen ausserhalb von \`connection.json\`). Bitte die markierten Stellen in dieser PR manuell aufloesen und mergen."

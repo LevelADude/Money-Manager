@@ -143,6 +143,33 @@ Stand: 2026-07-02
 >    [ungenutzt] und ein kontextloser Fallback bleiben bewusst deutsch).
 >
 > `flutter analyze` + `flutter test` (70/70) für alle vier Punkte grün.
+> **⚠️ CI-Format-Fix (diese Session):** `dart format --set-exit-if-changed`
+> schlug in der Web-Deploy-Pipeline fehl (3 der oben geänderten Dateien nicht
+> `dart format`-konform). Mit `dart format` (nicht `flutter format` — das
+> Kommando existiert in dieser Flutter-Version nicht mehr) neu formatiert;
+> lokal exakt denselben CI-Befehl nachgestellt → 0 Dateien geändert. Nur
+> Whitespace/Zeilenumbrüche, keine Logikänderung; `flutter test` weiterhin
+> 70/70 grün.
+> **Auto-Sync für Forks (diese Session):** Nutzer möchte, dass unabhängige
+> Dritte selbst forken/hosten können und trotzdem künftige Bugfixes/Features
+> automatisch bekommen, ohne manuell git-Befehle auszuführen. Neuer Workflow
+> [.github/workflows/sync-upstream.yml](.github/workflows/sync-upstream.yml):
+> läuft **wöchentlich (montags) + manuell auslösbar** in jedem Fork (im
+> Original-Repo selbst übersprungen, `if: github.repository !=
+> 'LevelADude/Money-Manager'`), merged `upstream/main` und pusht bei
+> sauberem Merge direkt (nächster Deploy-Web-Lauf zieht nach) — bei echtem
+> Konflikt wird **keinesfalls still gemergt**, sondern eine PR zum manuellen
+> Prüfen eröffnet. [.gitattributes](.gitattributes) mit `assets/db_connection/
+> connection.json merge=ours` schützt die instanzeigene DB-Verbindung
+> **strukturell** davor, jemals durch einen Auto-Sync überschrieben zu werden
+> (der "ours"-Treiber wird im Workflow selbst per `git config
+> merge.ours.driver true` registriert, da kein Git-Standardtreiber). Der
+> Workflow liegt im Hauptrepo, kommt also mit **jedem künftigen Fork
+> automatisch mit** — nur bereits bestehende Forks (aktuell nur die eigenen
+> Test-Instanzen des Nutzers) müssten ihn einmalig manuell nachziehen. README
+> (DE/EN) um Abschnitt "🔄 Updates automatisch erhalten" ergänzt. **Bewusst
+> nicht umgesetzt:** Sync auf Basis von Git-Tags/Releases (Nutzer wollte
+> explizit jeden main-Commit sofort, nicht nur getaggte Stände).
 > **Davor:** Archivierung alter Jahre nach GitHub (Commit `94189e2`) und DB
 > fest über committete `assets/db_connection/connection.json` gebunden
 > (Abschnitt 5) — beide laut Git-Historie bereits committet, dieser Stand war
