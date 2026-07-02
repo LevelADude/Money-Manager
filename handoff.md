@@ -1,17 +1,42 @@
 # Money Manager — Handoff
 
-Stand: 2026-06-22
+Stand: 2026-07-02
 
-> **Zuletzt erledigt (diese Session):** **Archivierung alter Jahre nach GitHub
-> — Code-Seite vollständig implementiert & verifiziert** (analyze sauber, 49
-> Tests grün, Web-Build ohne ML-Kit). Das Archiv-Repo ist **pro Instanz IN DER
-> APP einrichtbar** (Repo+Token; Token/Schlüssel serverseitig in Supabase, nicht
-> als Function-Secret). Offen ist nur das **Deployment** (privates Repo,
-> Token, Migrationen 0024+0025 anwenden, Edge Function deployen, in der App
-> verbinden) — Checkliste in **Abschnitt 11** (11.0). Noch **nicht
-> committet/gepusht.**
-> **Davor:** DB fest über committete `assets/db_connection/connection.json`
-> gebunden (Abschnitt 5).
+> **Zuletzt erledigt (diese Session):** **DB-Verbindungswechsel auf
+> Android/Windows repariert** — `Supabase.initialize()` ist ab dem zweiten
+> Aufruf ein No-Op, daher wirkte "Verbindung ändern" nach dem Speichern
+> effektiv nicht (auf Web kaschierte "Seite neu laden" das zufällig). Fix:
+> alte Supabase-Instanz wird disposed, neu initialisiert, kompletter
+> Riverpod-Baum über neuen `ProviderScope`-Key verworfen/neu gebaut — kein
+> manueller App-Neustart mehr nötig ([lib/main.dart](lib/main.dart) `_restart()`,
+> Commit `9dde9e9`). Dazu **Easy-Setup per Web-Link**: Zugangsdaten lassen
+> sich jetzt von einer bereits verbundenen Web-Version (GitHub Pages/git.io)
+> per HTTP übernehmen statt URL/Key abzutippen
+> ([lib/config/remote_connection.dart](lib/config/remote_connection.dart),
+> Commit `5a4eb0a`) — bisher eingebaut in Onboarding + Verbindungs-Editor
+> (Profil/Einstellungen), **auf dem Login-Screen aber noch nicht sichtbar**,
+> siehe offener Punkt in Abschnitt 10. Nebenbei `tool/build-msix.ps1`
+> repariert (falscher Flutter-Pfad, kaputter Signier-Schritt, Passwort nicht
+> mehr hart codiert, Commit `d89b27d`). APK/EXE/MSIX neu gebaut mit allen
+> drei Fixes.
+> **Nutzer-Feedback nach voriger Session — jetzt behoben (diese Session):**
+> **"Verbindung ändern" auf dem Login-Screen** ist jetzt immer sichtbar (die
+> Sichtbarkeits-Bedingung `!config.hasBakedDefault || config.isUsingOverride`
+> wurde entfernt), aber bewusst diskret als kleiner, unauffälliger Text-Link
+> statt prominentem Button dargestellt (Rücksprache mit Nutzer:
+> "Diskreter Text-Link" gewählt) — [lib/features/auth/login_screen.dart](lib/features/auth/login_screen.dart).
+> **Logout über Profilbild:** in das bestehende `PopupMenuButton` in
+> [lib/features/profile/profile_switcher.dart](lib/features/profile/profile_switcher.dart)
+> wurde unten (mit `PopupMenuDivider`) ein "Abmelden"-Eintrag ergänzt, der
+> `authRepositoryProvider.signOut()` aufruft (Rücksprache mit Nutzer: "In
+> bestehendes Menü einfügen" statt separatem Profil-Avatar gewählt). Settings
+> bleibt zusätzlich als Weg bestehen. `flutter analyze` beider Dateien → keine
+> Fehler; `flutter test` → alle 70 Tests grün. **Noch offen:** committen +
+> pushen.
+> **Davor:** Archivierung alter Jahre nach GitHub (Commit `94189e2`) und DB
+> fest über committete `assets/db_connection/connection.json` gebunden
+> (Abschnitt 5) — beide laut Git-Historie bereits committet, dieser Stand war
+> im Dokument noch nicht nachgezogen.
 
 Gemeinsame Finanz-Buchhaltung für eine kleine Gruppe (Windows + Android, dazu
 Web), Daten-Sync über **Supabase**. Flutter-App, zweisprachig **DE/EN**.
@@ -224,11 +249,15 @@ hält eine Getter-Tabelle über `String _t(String de, String en)` plus einen
 
 ## 10. Offene Punkte / als Nächstes
 
-- ⭐ **NÄCHSTE AUFGABE: Archivierung alter Jahre nach GitHub** — vom Nutzer
-  angefordert, **noch nicht begonnen**. Vollständige Anforderung + technischer
-  Plan + offene Entscheidungen in **Abschnitt 11**. Vor der Implementierung die
-  dort markierten ⚠️-Entscheidungen mit dem Nutzer klären (v. a. Repo-Sichtbarkeit
-  und Kontosalden).
+- ✅ **DB-Verbindung ändern/setzen auf dem Login-Screen** — behoben diese
+  Session, s. Zusammenfassung oben.
+- ✅ **Logout über Profilbild** — behoben diese Session, s. Zusammenfassung
+  oben.
+- **Archivierung alter Jahre nach GitHub** — laut Git-Historie (Commit
+  `94189e2`) code-seitig umgesetzt; **Deployment beim Nutzer noch nicht
+  bestätigt** (privates Repo anlegen, Token, Migrationen 0024+0025 anwenden,
+  Edge Function deployen, in der App verbinden — Checkliste in Abschnitt 11,
+  11.0). Vor Weiterarbeit verifizieren, ob das inzwischen live ist.
 - **Finalisierungs-Phase** ist geplant, aber NICHT freigegeben: aufräumen
   (löschen, säubern), Fehler-Check, Verbesserungsvorschläge. Erst auf
   ausdrückliche Anweisung starten.

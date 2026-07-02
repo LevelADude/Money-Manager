@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../config/app_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/connection_editor.dart';
 import 'auth_providers.dart';
@@ -193,28 +192,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: _loading ? null : _forgotPassword,
                       child: Text(l.forgotPassword),
                     ),
-                  // Verbindungs-Knopf nur zeigen, wenn er gebraucht wird:
-                  // wenn ein eigener Override aktiv ist (z. B. falsche URL zum
-                  // Zuruecksetzen) oder gar keine feste Verbindung eingebaut ist
-                  // (Fork). Fuer normale Besucher der Standard-Instanz bleibt er
-                  // verborgen.
-                  Builder(
-                    builder: (context) {
-                      final config = ref.watch(appConfigProvider);
-                      if (config.hasBakedDefault && !config.isUsingOverride) {
-                        return const SizedBox.shrink();
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: TextButton.icon(
-                          onPressed: _loading
-                              ? null
-                              : () => showConnectionEditor(context, ref),
-                          icon: const Icon(Icons.dns_outlined, size: 18),
-                          label: Text(l.changeDbConnection),
+                  // Immer sichtbar (auch bei fest eingebauter Standard-Instanz),
+                  // aber bewusst diskret gehalten (kleiner, unauffälliger Link),
+                  // damit normale Nutzer nicht versehentlich davon abgelenkt
+                  // werden.
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Center(
+                      child: TextButton(
+                        onPressed: _loading
+                            ? null
+                            : () => showConnectionEditor(context, ref),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.outline,
+                          textStyle: Theme.of(context).textTheme.bodySmall,
                         ),
-                      );
-                    },
+                        child: Text(l.changeDbConnection),
+                      ),
+                    ),
                   ),
                 ],
               ),

@@ -14,6 +14,8 @@ import 'profile_providers.dart';
 class ProfileSwitcher extends ConsumerWidget {
   const ProfileSwitcher({super.key});
 
+  static const _signOutValue = '__sign_out__';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final myId = ref.watch(currentUserIdProvider);
@@ -61,7 +63,13 @@ class ProfileSwitcher extends ConsumerWidget {
         foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
         child: avatar(),
       ),
-      onSelected: (v) => ref.read(personFilterProvider.notifier).set(v),
+      onSelected: (v) {
+        if (v == _signOutValue) {
+          ref.read(authRepositoryProvider).signOut();
+          return;
+        }
+        ref.read(personFilterProvider.notifier).set(v);
+      },
       itemBuilder: (ctx) => [
         if (myId != null)
           CheckedPopupMenuItem<String?>(
@@ -83,6 +91,17 @@ class ProfileSwitcher extends ConsumerWidget {
             checked: selected == o.id,
             child: Text(o.name),
           ),
+        const PopupMenuDivider(),
+        PopupMenuItem<String?>(
+          value: _signOutValue,
+          child: Row(
+            children: [
+              const Icon(Icons.logout, size: 18),
+              const SizedBox(width: 8),
+              Text(l.signOut),
+            ],
+          ),
+        ),
       ],
     );
   }
