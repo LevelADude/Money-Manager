@@ -1022,12 +1022,12 @@ class AppLocalizations {
   );
   String get removeWhitelistAlsoDeleteBody => _t(
     'Diese E-Mail hat bereits ein bestehendes Konto mit vollem Zugriff. Nur '
-    'aus der Freischaltung zu entfernen sperrt dieses Konto NICHT — es kann '
-    'sich weiterhin anmelden. Konto jetzt zusätzlich löschen, um den Zugriff '
-    'wirklich zu entziehen?',
+        'aus der Freischaltung zu entfernen sperrt dieses Konto NICHT — es kann '
+        'sich weiterhin anmelden. Konto jetzt zusätzlich löschen, um den Zugriff '
+        'wirklich zu entziehen?',
     'This email already has an existing account with full access. Removing '
-    'it from the allow-list alone does NOT lock that account out — it can '
-    'still sign in. Also delete the account now to actually revoke access?',
+        'it from the allow-list alone does NOT lock that account out — it can '
+        'still sign in. Also delete the account now to actually revoke access?',
   );
   String get keepAccount => _t('Konto behalten', 'Keep account');
   String get alsoDeleteAccount =>
@@ -1253,11 +1253,10 @@ class AppLocalizations {
   );
   String insCategoryHigherTitle(String name) =>
       _t('$name höher als sonst', '$name higher than usual');
-  String insCategoryHigherDetail(String current, String pct, String avg) =>
-      _t(
-        '$current diesen Monat – +$pct % ggü. Ø der letzten 3 Monate ($avg).',
-        '$current this month – +$pct% vs. the last 3 months\' average ($avg).',
-      );
+  String insCategoryHigherDetail(String current, String pct, String avg) => _t(
+    '$current diesen Monat – +$pct % ggü. Ø der letzten 3 Monate ($avg).',
+    '$current this month – +$pct% vs. the last 3 months\' average ($avg).',
+  );
   String get insOutlierTitle => _t('Ungewöhnlich hoch', 'Unusually high');
   String insOutlierDetail(String label, String amount, String category) => _t(
     '$label: $amount – deutlich über dem Schnitt der Kategorie „$category".',
@@ -1309,10 +1308,8 @@ class AppLocalizations {
       );
   String get insSavingsGoalReachedTitle =>
       _t('Sparziel erreicht 🎉', 'Savings goal reached 🎉');
-  String insSavingsGoalReachedDetail(String name) => _t(
-    '„$name" ist vollständig angespart.',
-    '"$name" is fully saved up.',
-  );
+  String insSavingsGoalReachedDetail(String name) =>
+      _t('„$name" ist vollständig angespart.', '"$name" is fully saved up.');
   String insRecurringDueTitle(int count) => _t(
     '$count Dauerauftrag${count == 1 ? '' : 'e'} fällig (≤ 7 Tage)',
     '$count recurring ${count == 1 ? 'payment' : 'payments'} due (≤ 7 days)',
@@ -1337,11 +1334,10 @@ class AppLocalizations {
   );
   String insBiggestCategoryTitle(String category) =>
       _t('Größter Posten: $category', 'Biggest expense: $category');
-  String insBiggestCategoryDetail(String amount, String scope, int share) =>
-      _t(
-        '$amount $scope – $share % deiner Ausgaben.',
-        '$amount $scope – $share% of your expenses.',
-      );
+  String insBiggestCategoryDetail(String amount, String scope, int share) => _t(
+    '$amount $scope – $share % deiner Ausgaben.',
+    '$amount $scope – $share% of your expenses.',
+  );
   String insBiggestExpenseTitle(String scope) =>
       _t('Größte Ausgabe ($scope)', 'Biggest expense ($scope)');
   String insBiggestExpenseDetail(String label, String amount) =>
@@ -1376,10 +1372,8 @@ class AppLocalizations {
       _t('fällig in $days Tag(en)', 'due in $days day(s)');
   String remBudgetTitle(String category) =>
       _t('Budget: $category', 'Budget: $category');
-  String remBudgetExceededDetail(String spent, String total) => _t(
-    'überschritten ($spent / $total)',
-    'exceeded ($spent / $total)',
-  );
+  String remBudgetExceededDetail(String spent, String total) =>
+      _t('überschritten ($spent / $total)', 'exceeded ($spent / $total)');
   String remBudgetAlmostDetail(int pct) =>
       _t('fast aufgebraucht ($pct %)', 'almost used up ($pct%)');
   String remSavingsGoalTitle(String name) =>

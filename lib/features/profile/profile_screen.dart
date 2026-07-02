@@ -53,8 +53,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 controller: pw2,
                 obscureText: true,
                 decoration: InputDecoration(labelText: l.repeatPasswordLabel),
-                validator: (v) =>
-                    v != pw.text ? l.passwordsDontMatch : null,
+                validator: (v) => v != pw.text ? l.passwordsDontMatch : null,
               ),
             ],
           ),

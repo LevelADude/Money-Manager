@@ -346,10 +346,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
           icon: delta >= 0 ? Icons.trending_up : Icons.trending_down,
           title: l.insNetWorthTrendTitle,
           detail: delta >= 0
-              ? l.insNetWorthGrowDetail(
-                  formatCents(delta),
-                  formatCents(nowNw),
-                )
+              ? l.insNetWorthGrowDetail(formatCents(delta), formatCents(nowNw))
               : l.insNetWorthShrinkDetail(
                   formatCents(-delta),
                   formatCents(nowNw),
@@ -466,11 +463,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
       Insight(
         icon: Icons.pie_chart_outline,
         title: l.insBiggestCategoryTitle(nameOf(big)),
-        detail: l.insBiggestCategoryDetail(
-          formatCents(bigV),
-          scopeWord,
-          share,
-        ),
+        detail: l.insBiggestCategoryDetail(formatCents(bigV), scopeWord, share),
         route: '/statistics',
       ),
     );
