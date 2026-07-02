@@ -80,7 +80,5 @@ final appConfigProvider = Provider<AppConfig>((ref) {
 /// den kompletten Widget-Baum unterhalb des Bootstraps neu auf – siehe
 /// [main.dart]'s `_BootstrapState.restart()`.
 final appRestartProvider = Provider<Future<void> Function()>((ref) {
-  throw UnimplementedError(
-    'appRestartProvider muss in main() gesetzt werden',
-  );
+  throw UnimplementedError('appRestartProvider muss in main() gesetzt werden');
 });

@@ -157,8 +157,6 @@ Future<void> _takeOverFromWeb(
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('$e')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
   }
 }
