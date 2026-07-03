@@ -1,6 +1,37 @@
 # Money Manager — Handoff
 
-Stand: 2026-07-02
+Stand: 2026-07-03 · **Alles committet & gepusht** (`a5d2668`, Branch `main`
+up to date mit `origin/main`) · **Nächster Schritt: Finalisierungs-Phase
+FREIGEGEBEN** (Nutzer hat sie am 2026-07-03 ausdrücklich angestoßen — siehe
+Abschnitt 10).
+
+## TL;DR — was diese Session (02.–03.07.2026) passiert ist
+
+- Drei echte Bugs gefunden + gefixt: DB-Verbindung reagierte nicht zuverlässig,
+  Fork-Repos verbanden sich unsichtbar mit der **Original-Produktiv-DB**
+  (`connection.json`-Vorrang), `admin_wipe_data()` löschte versehentlich die
+  Preset-Kategorien mit.
+- Zugriffskontrolle gehärtet: E-Mail-Sichtbarkeit im Admin-Bereich, echter
+  Zugriffsentzug bei Whitelist-Entfernung.
+- Vier Alt-ToDos abgearbeitet (Archivierung verifiziert live, Passwort-ändern,
+  Service-Worker-Fix, restliche Lokalisierung) + CI-Format-Fix.
+- Neu: **Auto-Sync-Workflow für Forks**, **Freitext-Bezeichnung pro
+  Teilsumme** (Splits), **Quick-Toggle „Beträge verbergen"** (`*` statt
+  Punkte) auf Konten/Buchungen.
+- `dart format` + `flutter test` (70/70) für **alles** grün.
+  `flutter analyze` hing in dieser Umgebung wiederholt (Abschnitt 9) — nicht
+  als alleinige Verifikation verwendet.
+- **Nicht abschließend live im Browser getestet:** die beiden neuesten
+  Features (Splits-Notiz, Beträge-Toggle) — Preview-Sandbox hing beim
+  App-Start (Abschnitt 9). Kurzer manueller Gegentest empfohlen, sonst
+  unauffällig.
+
+Details/Begründungen zu jedem Punkt im ausführlichen Session-Log direkt
+darunter — nur bei Bedarf lesen, für den Einstieg reicht das TL;DR + Abschnitt
+10.
+
+<details>
+<summary>Ausführlicher Session-Log (02.–03.07.2026)</summary>
 
 > **Zuletzt erledigt (diese Session):** **DB-Verbindungswechsel auf
 > Android/Windows repariert** — `Supabase.initialize()` ist ab dem zweiten
@@ -227,6 +258,8 @@ Stand: 2026-07-02
 > (Abschnitt 5) — beide laut Git-Historie bereits committet, dieser Stand war
 > im Dokument noch nicht nachgezogen.
 
+</details>
+
 Gemeinsame Finanz-Buchhaltung für eine kleine Gruppe (Windows + Android, dazu
 Web), Daten-Sync über **Supabase**. Flutter-App, zweisprachig **DE/EN**.
 
@@ -356,6 +389,14 @@ das ist in Ordnung, weil beide **öffentliche Client-Werte** sind (stecken ohneh
 im Web-Bundle); der Schutz läuft über **RLS + E-Mail-Whitelist**, nicht über
 Geheimhaltung. Trotzdem: **`env.json` weiterhin nicht committen.**
 
+**Forks bekommen Updates jetzt automatisch:**
+[.github/workflows/sync-upstream.yml](.github/workflows/sync-upstream.yml)
+synct wöchentlich (+ manuell auslösbar) mit diesem Original-Repo; bei
+sauberem Merge direkter Push, bei Konflikt eine PR statt stillem Merge.
+[.gitattributes](.gitattributes) (`merge=ours` für `connection.json`)
+schützt die instanzeigene DB-Verbindung strukturell davor, dabei je
+überschrieben zu werden. Läuft nur in Forks (im Original-Repo übersprungen).
+
 ---
 
 ## 6. Lokalisierung (DE/EN) — abgeschlossen
@@ -393,9 +434,15 @@ hält eine Getter-Tabelle über `String _t(String de, String en)` plus einen
 ## 7. Nennenswerte Features
 
 - Konten (mehrere Typen, Archiv, Sortierung, Gemeinschaftskonten/Freigaben).
-- Buchungen: Einnahme/Ausgabe/Übertrag, Splits, Vorlagen, Tags, Beleg-Foto
+- Buchungen: Einnahme/Ausgabe/Übertrag, Splits (**inkl. Freitext-Bezeichnung
+  pro Posten**, z. B. "12 € Produkt A"), Vorlagen, Tags, Beleg-Foto
   (**Kompression vor Upload**, [shared/image_compress.dart](lib/shared/image_compress.dart)),
   Papierkorb (30 Tage, Retention-Cleanup-Migration 0021).
+- **Beträge verbergen** (Privatsphäre): Quick-Toggle (Augen-Icon) direkt in
+  der AppBar von Konten- und Buchungen-Screen
+  ([shared/hide_amounts_toggle.dart](lib/shared/hide_amounts_toggle.dart)),
+  zeigt `****` statt Beträgen ([shared/money_text.dart](lib/shared/money_text.dart));
+  zusätzlich in Einstellungen umschaltbar. Gilt bewusst nicht für PDF-Exporte.
 - **OCR (nur Android, ML Kit, on-device):** Beleg-Foto füllt Betrag/Datum/Titel
   vor. Hinter conditional import — darf **nie** in den Web-Build.
 - **Insights** (lokal, regelbasiert): Monatsvergleich, Ausreißer, Sparquote,
@@ -456,79 +503,46 @@ hält eine Getter-Tabelle über `String _t(String de, String en)` plus einen
 
 ## 10. Offene Punkte / als Nächstes
 
-- ✅ **DB-Verbindung ändern/setzen auf dem Login-Screen** — behoben diese
-  Session, s. Zusammenfassung oben.
-- ✅ **Logout über Profilbild** — behoben diese Session, s. Zusammenfassung
-  oben.
-- ✅ **README-Fork-Anleitung fehlte Lösch-Schritt für `connection.json`** —
-  behoben diese Session (kritischer Datenvermischungs-Bug), s.
-  Zusammenfassung oben. **Nutzer muss noch selbst** in seinem Fork die Datei
-  löschen/ersetzen und die versehentlichen Konten in der Original-DB
-  aufräumen (Supabase-Dashboard Original-Projekt `uaaqehspnlncjzrajfue` →
-  Authentication → Users: `test@gmail.com` + die zweite Test-Mail-Whitelist
-  aus Admin → Whitelist entfernen).
-- ⭐ **Login schlägt auf iPhone/Safari fehl, obwohl auf iPad (gleiche Seite,
-  gleiche Zugangsdaten) funktioniert.** Vom Nutzer am 2026-07-02 gemeldet,
-  **Root-Cause weiterhin nicht bestätigt** (kein Zugriff auf die konkrete
-  Fork-Website/Supabase-Projekt hier). **Vorsorglicher Fix diese Session:**
-  Service-Worker für den Web-Build deaktiviert (`--pwa-strategy=none` in
-  [.github/workflows/deploy-web.yml](.github/workflows/deploy-web.yml)) —
-  häufigste Ursache für "altes Gerät hängt an altem Build" bei Flutter-Web-PWAs
-  ist damit strukturell ausgeschlossen (verifiziert: kein
-  `serviceWorker.register()` mehr im gebauten `flutter_bootstrap.js`). Falls
-  das Problem nach dem nächsten Deploy weiter auftritt, liegt es an etwas
-  anderem — dann needs (b)/(c) aus der ursprünglichen Diagnose-Liste: (b)
-  prüfen ob der GitHub-Actions-Workflow "Deploy Web" beim letzten relevanten
-  Commit fehlerfrei durchlief, (c) im Supabase-Dashboard **Authentication →
-  Logs** den tatsächlichen Fehler des fehlgeschlagenen Login-Versuchs ansehen
-  (z. B. "Invalid login credentials" vs. "Email not confirmed" vs.
-  Netzwerkfehler). Erst nach Behebung von Problem 2 (richtige DB verbunden)
-  erneut testen, da beide Symptome zum Teil zusammenhängen könnten.
-- ✅ **"Passwort ändern" für eingeloggte Nutzer** — behoben diese Session:
-  Dialog in [profile_screen.dart](lib/features/profile/profile_screen.dart)
-  (`_changePassword()`, nutzt bestehendes `AuthRepository.updatePassword()`).
-  "Passwort vergessen" gab es schon vorher (kleiner Link auf
-  [login_screen.dart](lib/features/auth/login_screen.dart) →
-  [reset_password_screen.dart](lib/features/auth/reset_password_screen.dart)
-  unter Route `/reset-password`) — falls auf einem Fork weiterhin unbrauchbar,
-  liegt das evtl. am Redirect-Ziel/Site-URL im Supabase-Dashboard des Forks
-  (Authentication → URL Configuration), nicht am App-Code.
-- ✅ **Preset-Kategorien verschwunden** — behoben diese Session (Prod-DB-Fix +
-  strukturelle Ursache gefixt), s. Zusammenfassung oben. **Für andere/künftige
-  Instanzen (Forks, neue Projekte) noch offen:** Migration 0029 muss dort
-  separat angewendet werden (`supabase db push` oder `setup.sql` neu
-  einspielen) — sonst truncatet `admin_wipe_data`/`admin_factory_reset` dort
-  weiterhin auch die Presets.
-- ✅ **E-Mail-Sichtbarkeit im Admin-Bereich + echter Zugriffsentzug bei
-  Whitelist-Entfernung** — behoben diese Session, s. Zusammenfassung oben
-  (Migration 0030 live). **Für andere/künftige Instanzen (Forks) noch
-  offen:** Migration 0030 muss dort separat angewendet werden.
-- ⭐ **Proaktive Benachrichtigung bei Neuregistrierung** — noch nicht
-  umgesetzt, nur als Idee notiert (vom Nutzer nicht explizit gefordert,
-  ergab sich aus der Zugriffskontroll-Diskussion). Aktuell muss der
-  Besitzer/Admin selbst regelmäßig Admin → Nutzer prüfen, um neue Accounts zu
-  bemerken. Für eine E-Mail-Benachrichtigung bräuchte es einen
-  E-Mail-Versanddienst (z. B. Resend) + einen Supabase Auth-Webhook oder
-  DB-Trigger → Edge Function — vor Umsetzung mit Nutzer klären, ob/welcher
-  Dienst gewünscht ist (Kosten/Datenschutz, ähnlich der LLM-Entscheidung in
-  Abschnitt 8).
-- ✅ **Archivierung alter Jahre nach GitHub — Deployment verifiziert (diese
-  Session).** Direkt gegen Prod-DB geprüft (nur lesend): Migrationen 0024+0025
-  angewendet (`archived_years`/`archive_config` existieren), Edge Function
-  `archive-proxy` ACTIVE, `archive_config` enthält bereits einen Eintrag
-  (Repo `LevelADude/Money-Manager-Archieve`, Stand 22.06.2026). Deployment ist
-  also **vollständig live** — noch **0 archivierte Jahre** (Feature bisher
-  nicht genutzt, nur eingerichtet). Punkt 6 der Checkliste (End-to-End-Test:
-  archivieren → ansehen → de-archivieren) steht noch aus, sonst nichts mehr
-  offen.
-- **Finalisierungs-Phase** ist geplant, aber NICHT freigegeben (Nutzer hat
-  das am 2026-07-02 nochmal explizit bestätigt, als danach gefragt wurde):
-  aufräumen (löschen, säubern), Fehler-Check, Verbesserungsvorschläge. Erst
-  auf ausdrückliche Anweisung starten.
-- ✅ **Restliche „generated text"-Buckets übersetzt** (Insight-Karten,
-  Reminder-/PDF-Texte) — behoben diese Session, s. Zusammenfassung oben.
+**🚀 Finalisierungs-Phase — FREIGEGEBEN (2026-07-03), jetzt der aktuelle
+Auftrag.** Aufräumen (löschen, säubern), Fehler-Check, Verbesserungsvorschläge.
+Alles bisherige ist committet/gepusht (`a5d2668`) — sauberer Ausgangspunkt.
+Empfohlener Fahrplan:
+1. Zuerst die zwei "noch nicht live gegengetesteten" Punkte unten selbst kurz
+   antesten (Splits-Notiz, Beträge-Toggle) — bevor größere Refactorings
+   draufkommen, die das erschweren würden.
+2. Codebase auf tote Dateien/Importe/ungenutzte Provider durchsuchen.
+3. `flutter analyze` versuchen (hing zuletzt wiederholt, s. Abschnitt 9) —
+   falls es diesmal durchläuft, alle Warnungen durchgehen.
+4. Verbesserungsvorschläge sammeln und mit dem Nutzer priorisieren, statt
+   ungefragt umzusetzen.
+
+**Wirklich noch offen (nicht Teil der Finalisierung, eigenständige Punkte):**
+
+- ⭐ **Login schlägt auf iPhone/Safari fehl** (iPad geht, gleiche
+  Zugangsdaten). **Root-Cause weiterhin nicht bestätigt.** Vorsorglicher Fix
+  bereits drin: Service-Worker für den Web-Build deaktiviert
+  (`--pwa-strategy=none`, [deploy-web.yml](.github/workflows/deploy-web.yml)) —
+  häufigste Ursache ("altes Gerät hängt an altem Build") damit ausgeschlossen.
+  Tritt es weiterhin auf: im Supabase-Dashboard **Authentication → Logs** den
+  genauen Fehler des fehlgeschlagenen Versuchs ansehen.
+- ⭐ **Proaktive Benachrichtigung bei Neuregistrierung** — nur als Idee
+  notiert, nicht gefordert/umgesetzt. Bräuchte E-Mail-Versanddienst (z. B.
+  Resend) + Supabase Auth-Webhook — vor Umsetzung mit Nutzer klären
+  (Kosten/Datenschutz, wie bei Abschnitt 8/LLM-Entscheidung).
+- **Für Forks/andere Instanzen (nicht das Original) noch nachzuziehen, falls
+  sie schon vor dieser Session bestanden:** Migrationen 0029 (Presets-Fix)
+  und 0030 (E-Mail-Sichtbarkeit) per `setup.sql`/`supabase db push`
+  einspielen — der neue Auto-Sync-Workflow (Abschnitt 5) übernimmt das ab
+  jetzt automatisch für zukünftige Änderungen.
+- **Archivierung:** Deployment vollständig live (Migrationen, Edge Function,
+  Repo verbunden), aber **0 archivierte Jahre** — End-to-End-Test
+  (archivieren → ansehen → de-archivieren) mit echten Daten steht noch aus.
+- ⭐ **Splits-Notiz + Beträge-Toggle nicht live im Browser gegengetestet**
+  (Preview-Sandbox hing beim App-Start, s. Abschnitt 9, TL;DR) — Code +
+  Tests grün, aber vor dem "als erledigt betrachten" kurz manuell
+  antesten.
 - `verify`/manuelles Testen auf echtem Android-Gerät (OCR, Beleg-Flow) steht
-  noch beim Nutzer aus (hier kein Gerät verfügbar).
+  weiterhin beim Nutzer aus (hier kein Gerät verfügbar).
 
 ---
 
@@ -677,19 +691,17 @@ ausdrückliche Anweisung.
 
 ## Verifikation des aktuellen Stands
 
-**Neuester Stand (diese Session, 2026-07-02, nach den 4 abgearbeiteten
-ToDos):** `flutter analyze lib` → keine Fehler; `flutter test` → alle 70
-Tests grün; `flutter build web --release --pwa-strategy=none` → erfolgreich,
-verifiziert dass `flutter_bootstrap.js` danach `_flutter.loader.load()` ohne
-`serviceWorker`-Config aufruft (keine SW-Registrierung mehr). Migrationen bis
-0030 live auf Prod (`uaaqehspnlncjzrajfue`) angewendet.
+**Stand 2026-07-03 (alles committet/gepusht, `a5d2668`):** `dart format
+--output=none --set-exit-if-changed lib test` → 0 Dateien geändert;
+`flutter test` → alle 70 Tests grün; `flutter build web --release
+--pwa-strategy=none` → erfolgreich, verifiziert dass `flutter_bootstrap.js`
+danach `_flutter.loader.load()` ohne `serviceWorker`-Config aufruft (keine
+SW-Registrierung mehr). Migrationen bis 0030 live auf Prod
+(`uaaqehspnlncjzrajfue`) angewendet. `flutter analyze`/`dart analyze` liefen
+in dieser Umgebung wiederholt nicht durch (hingen minutenlang, s. Abschnitt 9)
+— `dart format` + `flutter test` als Ersatz-Verifikation genutzt.
 
-**DB-Bindung (Session zuvor):** `flutter analyze lib/main.dart
-lib/config/app_config.dart lib/config/db_connection_file.dart` → keine Fehler;
-`flutter test` → alle 49 Tests grün. Asset `assets/db_connection/` in
-[pubspec.yaml](pubspec.yaml) registriert. **Noch offen:** committen + pushen, damit
-der Web-Deploy die Datei einbäckt (siehe Self-Hosting, Abschnitt 5).
-
-Älterer Stand: `flutter analyze lib` → keine Fehler. `flutter build web --release`
-→ erfolgreich (die wasm-dry-run-Warnung zu `ua_client_hints`/`dart:html` ist
-vorbestehend und betrifft nur potenzielle wasm-Builds, nicht den Standard-Build).
+**Nicht verifiziert:** Splits-Notiz-Feature und Beträge-Verbergen-Toggle
+liefen nicht durch einen Live-Browser-Test (Preview-Sandbox hing beim
+App-Start). Code-Review war gründlich, aber ein kurzer manueller Test steht
+noch aus (s. Abschnitt 10).
