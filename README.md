@@ -8,10 +8,6 @@ native App für **Windows** und **Android** aus einer einzigen Codebasis
 die Bücher der anderen **sehen und bearbeiten**. Alle Geräte werden über
 **Supabase** live synchronisiert.
 
-> Status: **Grundgerüst** – Auth, Bücher (anlegen/auflisten) und Buchungen
-> (erfassen/auflisten/löschen) mit Realtime-Sync stehen. Siehe
-> [Nächste Schritte](#nächste-schritte).
-
 ## Tech-Stack
 
 | Bereich        | Wahl                                                     |
@@ -25,9 +21,6 @@ die Bücher der anderen **sehen und bearbeiten**. Alle Geräte werden über
 Warum dieser Stack? → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
 ## Screenshots
-
-> Die Bilder werden unter [`docs/screenshots/`](docs/screenshots/) abgelegt
-> (Anleitung zum Erstellen dort). Sobald vorhanden, erscheinen sie hier:
 
 | Konten | Buchungen | Statistik |
 |---|---|---|
