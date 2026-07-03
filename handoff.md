@@ -170,6 +170,58 @@ Stand: 2026-07-02
 > (DE/EN) um Abschnitt "🔄 Updates automatisch erhalten" ergänzt. **Bewusst
 > nicht umgesetzt:** Sync auf Basis von Git-Tags/Releases (Nutzer wollte
 > explizit jeden main-Commit sofort, nicht nur getaggte Stände).
+> **Neues Feature: Freitext-Bezeichnung pro Teilsumme (diese Session, per Plan
+> Mode geplant + freigegeben):** Nutzer wollte eine Buchung in Teilsummen mit
+> eigener Bezeichnung aufteilen können (z. B. "12 € Produkt A"). Fund bei der
+> Recherche: Die "Aufteilen"-Funktion existierte schon (`transaction_splits`:
+> Kategorie + Betrag + ein `note`-Feld) — nur wurde `note` in der UI nirgends
+> befüllt oder angezeigt (immer hart `''`). **Keine neue Migration nötig.** Fix
+> in [lib/features/transactions/transaction_form_screen.dart](lib/features/transactions/transaction_form_screen.dart):
+> `_SplitRow` um `noteCtrl` erweitert, neues Freitext-Feld pro Split-Zeile in
+> `_buildSplitEditor()`, `_prefillSplits()` lädt jetzt auch `note`, beide
+> Speicherpfade (`_save()`, `_duplicate()`) reichen `noteCtrl.text` durch statt
+> `''`. Neue Strings `splitItemNoteLabel` in
+> [app_localizations.dart](lib/l10n/app_localizations.dart);
+> `splitMultiple`-Wortlaut von "Kategorien" auf "Posten" verallgemeinert. Mit
+> Nutzer geklärt: Posten-Details bleiben auf das Bearbeiten-Formular
+> beschränkt (kein Preview in der Buchungsliste), Kategorie pro Posten bleibt
+> optional wie bisher. `dart format` + `flutter test` (70/70) grün — `flutter
+> analyze`/`dart analyze` hingen in dieser Session wiederholt (Umgebungsproblem,
+> nicht Code-bezogen) und wurden abgebrochen, siehe Abschnitt 9. **Live-Test im
+> Preview-Browser nicht abschließend möglich:** `.claude/launch.json` (neu,
+> `flutter run -d web-server`) + Claude-Preview-Tool aufgesetzt; App startete
+> nachweislich (Konsole zeigt "Supabase init completed", Boot-Screen
+> verschwand), aber Screenshot/Accessibility-Snapshot des Canvas-gerenderten
+> Flutter-Web-Inhalts blieben in diesem Sandbox-Tooling leer/timeout (Flutter
+> Web exponiert ohne aktivierte Semantics keine anklickbaren DOM-Elemente).
+> **Empfehlung: kurz manuell gegentesten** (`pwsh tool/run-windows.ps1` oder
+> im Browser), bevor es als vollständig verifiziert gilt.
+> **Neues Feature: Quick-Toggle „Beträge verbergen" (diese Session):** Nutzer
+> wollte einen schnellen Ein/Aus-Schalter für Geldbeträge direkt auf Konten-
+> und Buchungen-Screen (statt nur in den Einstellungen), plus `*` statt
+> Punkte als Platzhalter. **Fund bei der Recherche:** Die Grundfunktion
+> existierte schon (`AppSettings.hideAmounts` + `MoneyText`-Widget, zeigte
+> „••••"), nur ohne Schnellzugriff außerhalb der Einstellungen — und die
+> Summenkarten (Einnahmen/Ausgaben/Saldo) auf dem Buchungen-Screen
+> (`_SumBox` in `all_transactions_screen.dart`) nutzten noch rohes
+> `formatCents()` statt `MoneyText`, ignorierten die Einstellung also
+> versehentlich. Fix: [lib/shared/money_text.dart](lib/shared/money_text.dart)
+> zeigt jetzt „****"; neues wiederverwendbares
+> [lib/shared/hide_amounts_toggle.dart](lib/shared/hide_amounts_toggle.dart)
+> (Augen-Icon, Zustand spiegelt `hideAmounts`, tauscht direkt
+> `settingsProvider.notifier.setHideAmounts()`) als erste AppBar-Aktion in
+> [accounts_screen.dart](lib/features/accounts/accounts_screen.dart) und
+> [all_transactions_screen.dart](lib/features/transactions/all_transactions_screen.dart)
+> ergänzt; `_SumBox` dort auf `MoneyText` umgestellt (schließt die
+> Sichtbarkeits-Lücke). PDF-Export-Summen (`_sharePeriodPdf`) bewusst
+> **nicht** an `hideAmounts` gekoppelt — ein bewusst exportiertes PDF soll
+> lesbar bleiben, das ist kein Bildschirm-Privatsphäre-Fall. Neuer String
+> `showAmounts` in [app_localizations.dart](lib/l10n/app_localizations.dart).
+> `dart format` + `flutter test` (70/70) grün. **Live-Test im
+> Preview-Browser diesmal nicht möglich** (App blieb im Boot-Screen hängen,
+> anders als beim vorigen Feature in dieser Session) — Ursache vermutlich
+> weiterhin das in Abschnitt 9 dokumentierte Sandbox-Tooling-Problem, nicht
+> der neue Code. **Manuell gegentesten empfohlen.**
 > **Davor:** Archivierung alter Jahre nach GitHub (Commit `94189e2`) und DB
 > fest über committete `assets/db_connection/connection.json` gebunden
 > (Abschnitt 5) — beide laut Git-Historie bereits committet, dieser Stand war
@@ -385,6 +437,20 @@ hält eine Getter-Tabelle über `String _t(String de, String en)` plus einen
   null liefern.
 - Commits/Pushes nur auf ausdrückliche Anweisung; Branch ist `main`
   (Git-User `LevelADude`).
+- **`flutter analyze`/`dart analyze` hängen in dieser Dev-Umgebung
+  wiederholt** (mehrfach beobachtet, mehrere Sessions: läuft minutenlang ohne
+  Ausgabe, `TaskStop` + Neustart hilft manchmal, manchmal auch nicht).
+  Umgebungsproblem, kein Code-Fehler — als Ersatz-Verifikation `dart format
+  --output=none --set-exit-if-changed` (schnell, zuverlässig) + `flutter test`
+  nutzen, wenn `analyze` hängt.
+- **Claude-Preview-Tool + dieses Flutter-Web (CanvasKit-Renderer):**
+  Screenshot/Accessibility-Snapshot bleiben oft leer/timeout, obwohl die App
+  laut Konsole/DOM (`#boot`-Element verschwunden, "Supabase init completed")
+  tatsächlich läuft — Flutter Web exponiert ohne aktivierte Semantics
+  (`flt-semantics-placeholder` anklicken) keine per CSS ansprechbaren
+  Elemente, und Canvas-Screenshots scheinen im Sandbox-Tooling nicht zu
+  greifen. Für zukünftige UI-Verifikation ggf. eher `preview_eval` mit
+  direkten DOM-Checks nutzen oder den Nutzer um manuellen Gegentest bitten.
 
 ---
 

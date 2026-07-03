@@ -127,6 +127,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           _SplitRow(
             categoryId: s.categoryId,
             amount: centsToInput(s.amountCents),
+            note: s.note,
           ),
         );
       }
@@ -134,9 +135,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _splitsPrefilled = true;
   }
 
-  void _addSplitRow({String? categoryId, String amount = ''}) {
+  void _addSplitRow({
+    String? categoryId,
+    String amount = '',
+    String note = '',
+  }) {
     setState(
-      () => _splitRows.add(_SplitRow(categoryId: categoryId, amount: amount)),
+      () => _splitRows.add(
+        _SplitRow(categoryId: categoryId, amount: amount, note: note),
+      ),
     );
   }
 
@@ -215,7 +222,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             (
               categoryId: r.categoryId,
               amountCents: parseToCents(r.amountCtrl.text)!,
-              note: '',
+              note: r.noteCtrl.text.trim(),
             ),
       ];
       if (splitData.isEmpty) {
@@ -491,7 +498,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       for (final r in _splitRows) {
         final c = parseToCents(r.amountCtrl.text) ?? 0;
         if (c > 0) {
-          splitData.add((categoryId: r.categoryId, amountCents: c, note: ''));
+          splitData.add((
+            categoryId: r.categoryId,
+            amountCents: c,
+            note: r.noteCtrl.text.trim(),
+          ));
         }
       }
     }
@@ -739,69 +750,84 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         for (int i = 0; i < _splitRows.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  flex: 3,
-                  child: DropdownButtonFormField<String?>(
-                    initialValue:
-                        categories.any((c) => c.id == _splitRows[i].categoryId)
-                        ? _splitRows[i].categoryId
-                        : null,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: l.category,
-                      isDense: true,
-                    ),
-                    items: [
-                      DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text(l.none),
-                      ),
-                      for (final c in categories)
-                        DropdownMenuItem<String?>(
-                          value: c.id,
-                          child: Row(
-                            children: [
-                              Icon(iconForToken(c.icon), size: 18),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  c.name,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
+                TextField(
+                  controller: _splitRows[i].noteCtrl,
+                  decoration: InputDecoration(
+                    labelText: l.splitItemNoteLabel,
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: DropdownButtonFormField<String?>(
+                        initialValue:
+                            categories.any(
+                              (c) => c.id == _splitRows[i].categoryId,
+                            )
+                            ? _splitRows[i].categoryId
+                            : null,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: l.category,
+                          isDense: true,
                         ),
-                    ],
-                    onChanged: (v) =>
-                        setState(() => _splitRows[i].categoryId = v),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: _splitRows[i].amountCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+                        items: [
+                          DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text(l.none),
+                          ),
+                          for (final c in categories)
+                            DropdownMenuItem<String?>(
+                              value: c.id,
+                              child: Row(
+                                children: [
+                                  Icon(iconForToken(c.icon), size: 18),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      c.name,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                        onChanged: (v) =>
+                            setState(() => _splitRows[i].categoryId = v),
+                      ),
                     ),
-                    textAlign: TextAlign.right,
-                    decoration: InputDecoration(
-                      labelText: l.amount,
-                      isDense: true,
-                      prefixText: '€ ',
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        controller: _splitRows[i].amountCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        textAlign: TextAlign.right,
+                        decoration: InputDecoration(
+                          labelText: l.amount,
+                          isDense: true,
+                          prefixText: '€ ',
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
                     ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-                IconButton(
-                  tooltip: l.removeRow,
-                  icon: const Icon(Icons.remove_circle_outline),
-                  onPressed: _splitRows.length <= 1
-                      ? null
-                      : () => _removeSplitRow(i),
+                    IconButton(
+                      tooltip: l.removeRow,
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: _splitRows.length <= 1
+                          ? null
+                          : () => _removeSplitRow(i),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1182,13 +1208,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 }
 
-/// Eine Zeile im Split-Editor (Kategorie + Betrag).
+/// Eine Zeile im Split-Editor (Bezeichnung + Kategorie + Betrag).
 class _SplitRow {
-  _SplitRow({this.categoryId, String amount = ''})
-    : amountCtrl = TextEditingController(text: amount);
+  _SplitRow({this.categoryId, String amount = '', String note = ''})
+    : amountCtrl = TextEditingController(text: amount),
+      noteCtrl = TextEditingController(text: note);
 
   String? categoryId;
   final TextEditingController amountCtrl;
+  final TextEditingController noteCtrl;
 
-  void dispose() => amountCtrl.dispose();
+  void dispose() {
+    amountCtrl.dispose();
+    noteCtrl.dispose();
+  }
 }

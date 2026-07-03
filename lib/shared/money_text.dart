@@ -5,7 +5,7 @@ import '../features/settings/settings_providers.dart';
 import 'money.dart';
 
 /// Zeigt einen Geldbetrag an und respektiert die Einstellung „Beträge
-/// verbergen" (dann „••••"). Reagiert sofort auf das Umschalten.
+/// verbergen" (dann „****"). Reagiert sofort auf das Umschalten.
 class MoneyText extends ConsumerWidget {
   const MoneyText(
     this.cents, {
@@ -30,7 +30,7 @@ class MoneyText extends ConsumerWidget {
     final value = currency == null
         ? formatCents(cents)
         : formatMoney(cents, currency!);
-    final text = hide ? '••••' : '$prefix$value';
+    final text = hide ? '****' : '$prefix$value';
     return Text(text, style: style, textAlign: textAlign);
   }
 }

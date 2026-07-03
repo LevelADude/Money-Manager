@@ -7,6 +7,7 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/data_refresh.dart';
+import '../../shared/hide_amounts_toggle.dart';
 import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
@@ -218,6 +219,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       appBar: AppBar(
         title: Text(l.navTransactions),
         actions: [
+          const HideAmountsToggle(),
           const ProfileSwitcher(),
           IconButton(
             tooltip: l.refresh,
@@ -438,8 +440,8 @@ class _SumBox extends StatelessWidget {
               Text(label, style: Theme.of(context).textTheme.labelSmall),
               const SizedBox(height: 2),
               FittedBox(
-                child: Text(
-                  formatCents(cents),
+                child: MoneyText(
+                  cents,
                   style: TextStyle(fontWeight: FontWeight.bold, color: color),
                 ),
               ),

@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/balances.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/data_refresh.dart';
+import '../../shared/hide_amounts_toggle.dart';
 import '../../shared/money_text.dart';
 import '../auth/auth_providers.dart';
 import '../currency/currency_providers.dart';
@@ -65,6 +66,7 @@ class AccountsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l.navAccounts),
         actions: [
+          const HideAmountsToggle(),
           const ProfileSwitcher(),
           IconButton(
             tooltip: l.refresh,

@@ -86,8 +86,9 @@ class AppLocalizations {
   String get accentColor => _t('Akzentfarbe', 'Accent color');
   String get privacy => _t('Privatsphäre', 'Privacy');
   String get hideAmounts => _t('Beträge verbergen', 'Hide amounts');
+  String get showAmounts => _t('Beträge einblenden', 'Show amounts');
   String get hideAmountsSub =>
-      _t('Zeigt „••••" statt Geldbeträgen', 'Shows "••••" instead of amounts');
+      _t('Zeigt „****" statt Geldbeträgen', 'Shows "****" instead of amounts');
   String get currency => _t('Währung', 'Currency');
   String get mainCurrency => _t('Hauptwährung', 'Main currency');
   String get mainCurrencyHelp => _t(
@@ -388,10 +389,10 @@ class AppLocalizations {
       _t('Gültigen Betrag eingeben', 'Enter a valid amount');
   String get targetAccount => _t('Zielkonto', 'Target account');
   String get chooseDash => _t('— wählen —', '— choose —');
-  String get splitMultiple => _t(
-    'Auf mehrere Kategorien aufteilen',
-    'Split across multiple categories',
-  );
+  String get splitMultiple =>
+      _t('Auf mehrere Posten aufteilen', 'Split across multiple items');
+  String get splitItemNoteLabel =>
+      _t('Bezeichnung (optional)', 'Description (optional)');
   String get category => _t('Kategorie', 'Category');
   String get noCategoryOption => _t('Keine Kategorie', 'No category');
   String get titleHintLabel =>
