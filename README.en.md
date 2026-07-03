@@ -7,10 +7,6 @@ Shared **finance bookkeeping for a small, trusted group** – a native app for
 their books separately, but every member can **see and edit** everyone else's
 books. All devices sync live via **Supabase**.
 
-> Status: **Foundation** – auth, books (create/list) and transactions
-> (record/list/delete) with realtime sync are in place. See
-> [Next steps](#status--roadmap).
-
 ## Tech stack
 
 | Area           | Choice                                                   |
@@ -25,8 +21,6 @@ Why this stack? → [`docs/ARCHITECTURE.en.md`](docs/ARCHITECTURE.en.md)
 
 ## Screenshots
 
-> Images live under [`docs/screenshots/`](docs/screenshots/) (instructions for
-> creating them are there). Once available they appear here:
 
 | Accounts | Transactions | Statistics |
 |---|---|---|
