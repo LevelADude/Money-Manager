@@ -2,17 +2,18 @@
 
 [🇩🇪 Deutsch](README.md) · 🇬🇧 **English**
 
-Shared **finance bookkeeping for a small, trusted group** – a native app for
-**Windows** and **Android** from a single codebase (Flutter). Each person keeps
-their books separately, but every member can **see and edit** everyone else's
-books. All devices sync live via **Supabase**.
+Shared **finance bookkeeping for a small, trusted group** – one Flutter
+codebase for **Windows**, **Android** and **Web (PWA)**, bilingual
+**German/English**. Each person manages their own accounts; sharing happens
+deliberately via grants and joint accounts. All devices sync live via
+**Supabase**.
 
 ## Tech stack
 
 | Area           | Choice                                                   |
 |----------------|----------------------------------------------------------|
-| UI / client    | **Flutter** (Windows + Android, one codebase)            |
-| Backend        | **Supabase** (Postgres, Auth, Realtime)                  |
+| UI / client    | **Flutter** (Windows + Android + Web, one codebase)      |
+| Backend        | **Supabase** (Postgres, Auth, Realtime, Storage, Edge Functions) |
 | Permissions    | **Row Level Security** in the database                   |
 | State mgmt     | **Riverpod**                                             |
 | Navigation     | **go_router**                                            |
@@ -25,6 +26,10 @@ Why this stack? → [`docs/ARCHITECTURE.en.md`](docs/ARCHITECTURE.en.md)
 | Accounts | Transactions | Statistics |
 |---|---|---|
 | ![Accounts](docs/screenshots/01-konten.png) | ![Transactions](docs/screenshots/02-buchungen.png) | ![Statistics](docs/screenshots/04-statistik.png) |
+
+| New transaction | Onboarding | Desktop (Windows) |
+|---|---|---|
+| ![New transaction](docs/screenshots/03-buchung-neu.png) | ![Onboarding](docs/screenshots/05-onboarding.png) | ![Desktop](docs/screenshots/06-desktop.png) |
 
 ## 🚀 Your own instance (no programming skills needed)
 
@@ -179,9 +184,8 @@ statistics/budgets. Each instance configures its **own** archive repo.
 
 ### 1. Supabase backend
 Follow [`supabase/README.en.md`](supabase/README.en.md): create a project, apply
-the schema from
-[`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql), copy
-the **Project URL** + **anon/publishable key**.
+the schema from [`supabase/setup.sql`](supabase/setup.sql) (one script,
+idempotent), copy the **Project URL** + **anon/publishable key**.
 
 ### 2. Store credentials locally
 ```powershell
@@ -219,37 +223,54 @@ flutter run -d android --dart-define-from-file=env.json
 > (credentials baked in). If you omit it, the app shows the **onboarding** on
 > first launch and asks for URL + key there (see
 > [Your own instance](#-your-own-instance-no-programming-skills-needed)).
-> `env.json` always takes precedence over values stored in the onboarding.
+> Connection resolution order (highest first): **1.** per-device connection
+> ("Change database connection"/onboarding) → **2.** committed
+> `assets/db_connection/connection.json` → **3.** `env.json` or GitHub secrets.
 
 ## Project structure
 
 ```
 Money-Manager/
 ├── lib/
-│   ├── main.dart                 # Supabase init + app start
-│   ├── app.dart                  # MaterialApp.router
-│   ├── config/                   # Supabase credentials (from env.json)
-│   ├── core/                     # Router (auth redirect) + theme
+│   ├── main.dart                 # Bootstrap: check config, Supabase init, app start
+│   ├── app.dart                  # MaterialApp.router (theme, language, app lock)
+│   ├── config/                   # Connection resolution (device override, connection.json, dart-define)
+│   ├── core/                     # Router + bottom navigation + theme
 │   ├── data/
-│   │   ├── models/               # Profile, Ledger, AppTransaction
-│   │   └── repositories/         # Supabase access + realtime streams
-│   └── features/                 # auth / ledgers / transactions (UI + providers)
+│   │   ├── models/               # Account, AppTransaction, Budget, Category, …
+│   │   ├── repositories/         # Supabase access (one repo class per domain)
+│   │   └── local/                # Offline cache (local-first)
+│   ├── features/                 # per feature: screen + Riverpod providers
+│   │   └── accounts / transactions / statistics / budgets / savings /
+│   │       recurring / planning / debts / projects / settle / insights /
+│   │       reminders / archive / export / backup / admin / settings / …
+│   ├── shared/                   # reusable widgets/helpers
+│   └── l10n/                     # DE/EN translation table (hand-maintained)
 ├── supabase/
-│   ├── migrations/0001_init.sql  # Schema + RLS + Realtime
+│   ├── setup.sql                 # Complete setup (idempotent) for new instances
+│   ├── migrations/               # Schema history 0001…
+│   ├── functions/                # Edge Functions (admin maintenance, archive proxy)
 │   └── README.md                 # Backend setup
 ├── docs/ARCHITECTURE.md
-├── tool/                         # run scripts
+├── tool/                         # run/build scripts (Windows/Android/MSIX)
 ├── env.example.json              # template for env.json
-└── ...                           # android/ · windows/ (generated by Flutter)
+└── ...                           # android/ · windows/ · web/ (generated by Flutter)
 ```
 
 ## Permission model
 
-Deliberately simple for a **small, trusted group**: every signed-in member may
-read **and** edit **all** books and transactions. Separation of the books is
-organizational (each person's own books, visible via `owner_id` / `created_by`)
-– not an access barrier. To make it stricter = only adjust the RLS policies in
-`0001_init.sql`, the app stays the same.
+Built for a **small, trusted group** – but with clear boundaries (enforced via
+RLS in the database):
+
+- **Access** only for people unlocked via the **email whitelist**; the first
+  registered person becomes the **owner** (admin, cannot be removed).
+- **Accounts and their transactions** are visible and editable only to their
+  owner – or to whom they were shared via **grants/joint accounts**.
+- **Categories, budgets, savings goals** are deliberately group-wide.
+- Receipts live **per owner** in storage.
+
+To make it stricter/looser = adjust the RLS policies in
+[`supabase/setup.sql`](supabase/setup.sql), the app stays the same.
 
 ## Release builds (install on devices)
 
@@ -292,23 +313,31 @@ A proper installer with a Start menu entry and clean (un)installation.
 
 > `windows/certs/` (private key) is in `.gitignore` and is not committed.
 
-## Status & roadmap
+## Feature set
 
-The full plan up to release is in [ROADMAP.en.md](ROADMAP.en.md).
+The app is **feature-complete** – all planned expansion stages are
+implemented:
 
-- **Foundation & core:** ✅ auth, accounts (with types/categories + net worth),
-  transactions (expense/income/transfer), categories, attribution, profile,
-  Supabase + RLS + Realtime, offline cache (local-first)
-- **Capture:** ✅ calculator field, title suggestions, receipts/photos,
-  **tags**, **split transactions** (split across multiple categories)
-- **Analysis:** ✅ transactions by **period** (day/week/month/year) with
-  prev/next + totals, statistics (category breakdown, split-aware),
-  budgets, recurring transactions, search/filter, **CSV & PDF export**
-- **Platforms:** ✅ Windows (.exe + signed MSIX), Android (APK), Web
+- **Accounts & transactions:** multiple account types, archive, sorting,
+  joint accounts/grants; income/expense/transfer, splits (incl. free-text
+  label per item), templates, tags, receipt photos (compressed), calculator
+  field, title suggestions, trash (30 days)
+- **Analysis:** statistics (browsable periods, category breakdown, charts,
+  heatmap, net-worth history), budgets, savings goals/envelopes (incl.
+  round-up saving), recurring transactions + subscription detection, planning
+  (available-to-spend, fixed costs, cashflow, what-if), debts,
+  projects/trips, settle-up ("who owes whom"), **insights** (local & private,
+  rule-based – no cloud LLM)
+- **Data:** CSV export/import, PDF export, JSON backup, **archiving of old
+  years** (encrypted to GitHub, see above), offline cache
+- **Comfort & privacy:** bilingual **DE/EN**, dark mode + accent colors,
+  app lock (PIN), **hide amounts** (quick toggle), search, activity feed,
+  reminders/streak, multi-currency with exchange rates, **receipt OCR**
+  (Android only, on-device)
+- **Platforms:** Windows (.exe + signed MSIX), Android (APK), Web
   (responsive) + **PWA** ("Add to Home Screen", iPhone/Safari too)
-- **Self-hosting:** ✅ onboarding (your own Supabase connection), `setup.sql`,
-  GitHub Pages deploy, end-user guide
-- **Quality:** ✅ unit tests + GitHub Actions CI (analyze + test)
-- **Admin:** ✅ flag in DB (1st user = admin), email whitelist, user
-  management via Edge Function
-- **Optional/future:** ⬜ multi-currency, password-reset flow, more charts
+- **Self-hosting & operations:** onboarding with your own Supabase
+  connection, idempotent `setup.sql`, GitHub Pages deploy, **auto-sync for
+  forks**, admin area (whitelist, users, roles, storage, maintenance),
+  change/reset password
+- **Quality:** unit/widget tests + GitHub Actions CI (analyze, format, test)

@@ -2,18 +2,18 @@
 
 🇩🇪 **Deutsch** · [🇬🇧 English](README.en.md)
 
-Gemeinsame **Finanz-Buchhaltung für eine kleine, vertraute Gruppe** – als
-native App für **Windows** und **Android** aus einer einzigen Codebasis
-(Flutter). Jede Person führt ihre Bücher getrennt, aber alle Mitglieder können
-die Bücher der anderen **sehen und bearbeiten**. Alle Geräte werden über
+Gemeinsame **Finanz-Buchhaltung für eine kleine, vertraute Gruppe** – eine
+Flutter-Codebasis für **Windows**, **Android** und **Web (PWA)**, zweisprachig
+**Deutsch/Englisch**. Jede Person führt ihre Konten selbst; geteilt wird
+gezielt über Freigaben und Gemeinschaftskonten. Alle Geräte werden über
 **Supabase** live synchronisiert.
 
 ## Tech-Stack
 
 | Bereich        | Wahl                                                     |
 |----------------|----------------------------------------------------------|
-| UI / Client    | **Flutter** (Windows + Android, eine Codebasis)          |
-| Backend        | **Supabase** (Postgres, Auth, Realtime)                  |
+| UI / Client    | **Flutter** (Windows + Android + Web, eine Codebasis)    |
+| Backend        | **Supabase** (Postgres, Auth, Realtime, Storage, Edge Functions) |
 | Berechtigungen | **Row Level Security** in der Datenbank                  |
 | State-Mgmt     | **Riverpod**                                             |
 | Navigation     | **go_router**                                            |
@@ -25,6 +25,10 @@ Warum dieser Stack? → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 | Konten | Buchungen | Statistik |
 |---|---|---|
 | ![Konten](docs/screenshots/01-konten.png) | ![Buchungen](docs/screenshots/02-buchungen.png) | ![Statistik](docs/screenshots/04-statistik.png) |
+
+| Neue Buchung | Onboarding | Desktop (Windows) |
+|---|---|---|
+| ![Neue Buchung](docs/screenshots/03-buchung-neu.png) | ![Onboarding](docs/screenshots/05-onboarding.png) | ![Desktop](docs/screenshots/06-desktop.png) |
 
 ## 🚀 Eigene Instanz (ohne Programmierkenntnisse)
 
@@ -185,8 +189,8 @@ Statistik/Budgets. Jede Instanz richtet ihr **eigenes** Archiv-Repo ein.
 
 ### 1. Supabase-Backend
 Folge [`supabase/README.md`](supabase/README.md): Projekt anlegen, Schema aus
-[`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql)
-einspielen, **Project URL** + **anon/publishable Key** kopieren.
+[`supabase/setup.sql`](supabase/setup.sql) einspielen (ein Skript, idempotent),
+**Project URL** + **anon/publishable Key** kopieren.
 
 ### 2. Zugangsdaten lokal hinterlegen
 ```powershell
@@ -223,38 +227,56 @@ flutter run -d android --dart-define-from-file=env.json
 > Hinweis: `env.json` ist für die **eigene Entwickler-Instanz** der bequemste
 > Weg (Zugangsdaten fest vorgegeben). Lässt man es weg, zeigt die App beim
 > ersten Start das **Onboarding** und fragt URL + Key dort ab (siehe
-> [Eigene Instanz](#-eigene-instanz-ohne-programmierkenntnisse)). `env.json` hat
-> immer Vorrang vor im Onboarding gespeicherten Werten.
+> [Eigene Instanz](#-eigene-instanz-ohne-programmierkenntnisse)).
+> Auflösungs-Reihenfolge der Verbindung (höchste zuerst): **1.** pro Gerät
+> gespeicherte Verbindung („Datenbank-Verbindung ändern"/Onboarding) →
+> **2.** committete `assets/db_connection/connection.json` → **3.** `env.json`
+> bzw. GitHub-Secrets.
 
 ## Projektstruktur
 
 ```
 Money-Manager/
 ├── lib/
-│   ├── main.dart                 # Supabase-Init + App-Start
-│   ├── app.dart                  # MaterialApp.router
-│   ├── config/                   # Supabase-Zugangsdaten (aus env.json)
-│   ├── core/                     # Router (Auth-Redirect) + Theme
+│   ├── main.dart                 # Bootstrap: Konfig prüfen, Supabase-Init, App-Start
+│   ├── app.dart                  # MaterialApp.router (Theme, Sprache, App-Sperre)
+│   ├── config/                   # Verbindungs-Auflösung (Geräte-Override, connection.json, dart-define)
+│   ├── core/                     # Router + Bottom-Navigation + Theme
 │   ├── data/
-│   │   ├── models/               # Profile, Ledger, AppTransaction
-│   │   └── repositories/         # Supabase-Zugriff + Realtime-Streams
-│   └── features/                 # auth / ledgers / transactions (UI + Provider)
+│   │   ├── models/               # Account, AppTransaction, Budget, Category, …
+│   │   ├── repositories/         # Supabase-Zugriff (eine Repo-Klasse pro Domäne)
+│   │   └── local/                # Offline-Cache (Local-First)
+│   ├── features/                 # je Feature: Screen + Riverpod-Provider
+│   │   └── accounts / transactions / statistics / budgets / savings /
+│   │       recurring / planning / debts / projects / settle / insights /
+│   │       reminders / archive / export / backup / admin / settings / …
+│   ├── shared/                   # wiederverwendbare Widgets/Helfer
+│   └── l10n/                     # Übersetzungstabelle DE/EN (hand-gepflegt)
 ├── supabase/
-│   ├── migrations/0001_init.sql  # Schema + RLS + Realtime
+│   ├── setup.sql                 # Komplett-Setup (idempotent) für neue Instanzen
+│   ├── migrations/               # Schema-Historie 0001…
+│   ├── functions/                # Edge Functions (Admin-Wartung, Archiv-Proxy)
 │   └── README.md                 # Backend-Einrichtung
 ├── docs/ARCHITECTURE.md
-├── tool/                         # run-Skripte
+├── tool/                         # run-/Build-Skripte (Windows/Android/MSIX)
 ├── env.example.json              # Vorlage für env.json
-└── ...                           # android/ · windows/ (von Flutter generiert)
+└── ...                           # android/ · windows/ · web/ (von Flutter generiert)
 ```
 
 ## Berechtigungsmodell
 
-Bewusst einfach für eine **kleine, vertrauenswürdige Gruppe**: Jedes angemeldete
-Mitglied darf **alle** Bücher und Buchungen lesen **und** bearbeiten. Die
-Trennung der Buchhaltungen ist organisatorisch (eigene Bücher je Person, sichtbar
-über `owner_id` / `created_by`) – keine Zugriffssperre. Strenger machen =
-nur die RLS-Policies in `0001_init.sql` anpassen, die App bleibt gleich.
+Gemacht für eine **kleine, vertrauenswürdige Gruppe** – aber mit klaren Grenzen
+(per RLS in der Datenbank durchgesetzt):
+
+- **Zugang** nur für per **E-Mail-Whitelist** freigeschaltete Personen; die
+  erste registrierte Person wird **Besitzer** (Admin, nicht entziehbar).
+- **Konten und ihre Buchungen** sieht und bearbeitet nur, wer sie besitzt –
+  oder wem sie per **Freigabe/Gemeinschaftskonto** geteilt wurden.
+- **Kategorien, Budgets, Sparziele** sind bewusst gruppenweit.
+- Belege liegen **pro Eigentümer** im Storage.
+
+Strenger/lockerer machen = RLS-Policies in [`supabase/setup.sql`](supabase/setup.sql)
+anpassen, die App bleibt gleich.
 
 ## Release-Builds (auf Geräten installieren)
 
@@ -297,23 +319,31 @@ Richtiger Installer mit Startmenü-Eintrag und sauberem De-/Installieren.
 
 > `windows/certs/` (privater Schlüssel) steht in `.gitignore` und wird nicht eingecheckt.
 
-## Status & Roadmap
+## Funktionsumfang
 
-Der vollständige Plan bis zum Release steht in [ROADMAP.md](ROADMAP.md).
+Die App ist **funktional vollständig** – alle geplanten Ausbaustufen sind
+umgesetzt:
 
-- **Grundgerüst & Kern:** ✅ Auth, Konten (mit Typen/Kategorien + Gesamtvermögen),
-  Buchungen (Ausgabe/Einnahme/Übertrag), Kategorien, Attribution, Profil,
-  Supabase + RLS + Realtime, Offline-Cache (Local-First)
-- **Erfassung:** ✅ Taschenrechner-Feld, Titel-Vorschläge, Belege/Fotos,
-  **Tags**, **Split-Buchungen** (Aufteilen auf mehrere Kategorien)
-- **Auswertung:** ✅ Buchungen nach **Zeitraum** (Tag/Woche/Monat/Jahr) mit
-  Vor-/Zurück + Summen, Statistik (Kategorie-Aufschlüsselung, split-bewusst),
-  Budgets, wiederkehrende Buchungen, Suche/Filter, **CSV- & PDF-Export**
-- **Plattformen:** ✅ Windows (.exe + signierte MSIX), Android (APK), Web
+- **Konten & Buchungen:** mehrere Kontotypen, Archiv, Sortierung,
+  Gemeinschaftskonten/Freigaben; Einnahme/Ausgabe/Übertrag, Splits (inkl.
+  Freitext je Posten), Vorlagen, Tags, Beleg-Fotos (komprimiert),
+  Taschenrechner-Feld, Titel-Vorschläge, Papierkorb (30 Tage)
+- **Auswertung:** Statistik (Zeiträume mit Blättern, Kategorie-Aufschlüsselung,
+  Diagramme, Heatmap, Vermögensverlauf), Budgets, Sparziele/Töpfe (inkl.
+  Rundungs-Sparen), Daueraufträge + Abo-Erkennung, Planung (Verfügbar,
+  Fixkosten, Cashflow, Was-wäre-wenn), Schulden, Projekte/Reisen, Ausgleich
+  („wer schuldet wem"), **Insights** (lokal & privat, regelbasiert – kein
+  Cloud-LLM)
+- **Daten:** CSV-Export/-Import, PDF-Export, JSON-Backup, **Archivierung
+  alter Jahre** (verschlüsselt nach GitHub, s. o.), Offline-Cache
+- **Komfort & Privatsphäre:** zweisprachig **DE/EN**, Dark Mode + Akzentfarben,
+  App-Sperre (PIN), **Beträge verbergen** (Quick-Toggle), Suche,
+  Aktivitäts-Feed, Erinnerungen/Streak, Mehrwährung mit Wechselkursen,
+  **Beleg-OCR** (nur Android, on-device)
+- **Plattformen:** Windows (.exe + signierte MSIX), Android (APK), Web
   (responsiv) + **PWA** („Zum Home-Bildschirm", auch iPhone/Safari)
-- **Self-Hosting:** ✅ Onboarding (eigene Supabase-Verbindung), `setup.sql`,
-  GitHub-Pages-Deploy, Endnutzer-Anleitung
-- **Qualität:** ✅ Unit-Tests + GitHub-Actions-CI (analyze + test)
-- **Admin:** ✅ Flag in DB (1. Nutzer = Admin), E-Mail-Whitelist,
-  Nutzerverwaltung via Edge Function
-- **Optional/künftig:** ⬜ Mehrwährung, Passwort-Reset-Flow, weitere Diagramme
+- **Self-Hosting & Betrieb:** Onboarding mit eigener Supabase-Verbindung,
+  idempotentes `setup.sql`, GitHub-Pages-Deploy, **Auto-Sync für Forks**,
+  Admin-Bereich (Whitelist, Nutzer, Rollen, Speicher, Wartung),
+  Passwort ändern/zurücksetzen
+- **Qualität:** Unit-/Widget-Tests + GitHub-Actions-CI (analyze, format, test)

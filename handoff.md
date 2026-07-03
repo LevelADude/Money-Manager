@@ -1,10 +1,13 @@
 # Money Manager — Handoff
 
-Stand: 2026-07-03 · Letzter Commit `39bf23f`; **uncommittet:** zwei neue
-Testdateien + die 4 umgesetzten Aufräum-Punkte (5 Dateien geändert) ·
-**Finalisierungs-Phase LÄUFT** — Fahrplan-Schritte 1–4 erledigt inkl.
-freigegebener Aufräumliste; **offen: Archivierungs-E2E-Test** (an
-Berechtigungs-Schranke gestoppt, Details im Block hierunter) + Commit/Push.
+Stand: 2026-07-03 · Code-Aufräumung + neue Tests committet (`1e851df`,
+Nutzer hat zusätzlich Screenshots eingecheckt + zwei README-Altlasten
+entfernt, `0ea243a`) · **uncommittet:** komplette Doku-Überarbeitung
+(READMEs/ARCHITECTURE/supabase-README DE+EN aktualisiert, alle drei
+Roadmap-Dateien gelöscht, pubspec-description) · **Finalisierungs-Phase
+LÄUFT** — Fahrplan komplett; Archivierungs-E2E-Test vom Nutzer
+**zurückgestellt** („noch keine zu archivierenden Jahre"); offen:
+Doku-Commit/Push.
 
 ## Finalisierungs-Phase — Zwischenstand (Session 2026-07-03, Nachmittag)
 
@@ -46,17 +49,37 @@ Berechtigungs-Schranke gestoppt, Details im Block hierunter) + Commit/Push.
   Verifiziert: `flutter analyze` **No issues**, `flutter test` **65/65
   grün**, `dart format` **0 geändert**. Uncommittet (zusammen mit den zwei
   neuen Testdateien).
-- **Archivierungs-E2E-Test: vorbereitet, aber an der Berechtigungs-Schranke
-  gestoppt.** Nutzer hat dem Weg „temporärer Test-Admin gegen Prod"
-  zugestimmt; Plan steht (Whitelist-Eintrag `mm-e2e-archive@example.org`,
-  Signup via REST, per SQL zum Admin, Test-Konto + eine Buchung in 2019
-  [Jahr verifiziert leer], archive-proxy write → `archive_commit_year` →
-  read/list → De-Archiv → restloses Cleanup inkl. audit_log; GitHub-Repo
-  bekommt dabei 2 Commits ins Archiv-Verzeichnis). Lesende Prod-Zugriffe
-  gingen durch, **alle schreibenden SQL-Statements blockiert der
-  Auto-Modus-Classifier** (Zugriffskontroll-Änderung/Prod-Writes brauchen
-  interaktive Freigabe). Baseline dokumentiert: 2 Buchungen (beide 2026),
-  3 Konten, 0 archivierte Jahre, archive_config vollständig.
+- **Archivierungs-E2E-Test: vom Nutzer ZURÜCKGESTELLT (2026-07-03,
+  „noch keine zu archivierenden Jahre").** Falls später gewünscht, liegt der
+  fertige Plan hier: temporärer Test-Admin (Whitelist-Eintrag
+  `mm-e2e-archive@example.org`, Signup via REST, per SQL zum Admin),
+  Test-Konto + eine Buchung in 2019 [Jahr verifiziert leer], archive-proxy
+  write → `archive_commit_year` → read/list → De-Archiv → restloses Cleanup
+  inkl. audit_log; GitHub-Archiv-Repo bekommt dabei 2 Commits. Achtung:
+  schreibende Prod-Zugriffe brauchen eine interaktive Session mit
+  Berechtigungs-Dialogen (Auto-Modus blockiert sie). Baseline 2026-07-03:
+  2 Buchungen (beide 2026), 3 Konten, 0 archivierte Jahre, archive_config
+  vollständig.
+- **Doku komplett überarbeitet (2026-07-03, DE + EN):**
+  - **Gelöscht:** `ROADMAP.md`, `ROADMAP.en.md`, `docs/ROADMAP_AUSBAU.md`
+    (alle Phasen umgesetzt; Nutzer-Freigabe „kann entfernt werden").
+  - **READMEs:** Intro/Stack um Web (PWA) + DE/EN ergänzt; „Status &
+    Roadmap"-Abschnitt durch aktuellen „Funktionsumfang" ersetzt (Roadmap-
+    Links entfernt); veraltetes Berechtigungsmodell („alle dürfen alles")
+    durch das echte Modell ersetzt (Whitelist, Besitzer, RLS auf Besitzer+
+    Freigaben seit 0018/0019); **falsche `env.json`-Vorrang-Aussage
+    korrigiert** (Geräte-Override > connection.json > dart-define);
+    Projektstruktur von Ledger-Ära auf heute gebracht; Setup verweist auf
+    `setup.sql` statt `0001_init.sql`.
+  - **docs/ARCHITECTURE(.en).md:** komplett neu geschrieben (waren noch auf
+    Ledger-Stand): aktuelle Schichten, Verbindungs-Auflösung, Cache-then-
+    Stream, Bottom-Nav-Routing, echtes Berechtigungsmodell, Web/PWA.
+  - **supabase/README.en.md:** war Jahre hinter der DE-Version (Ledger,
+    `npm i -g supabase`, 0001_init) → auf DE-Stand gebracht (setup.sql,
+    Edge-Functions-Kapitel 2b inkl. `--no-verify-jwt`-Erklärung, aktuelles
+    Datenmodell). DE-Version: hart codierter lokaler Pfad + project-ref
+    des Produktiv-Projekts durch Platzhalter ersetzt.
+  - `pubspec.yaml`-description um Web ergänzt.
 - Ideen jenseits Aufräumen (unverändert offen, Abschnitt 10):
   iPhone/Safari-Login beobachten, Benachrichtigung bei Neuregistrierung.
 
@@ -319,8 +342,8 @@ Gemeinsame Finanz-Buchhaltung für eine kleine Gruppe (Windows + Android, dazu
 Web), Daten-Sync über **Supabase**. Flutter-App, zweisprachig **DE/EN**.
 
 Dieses Dokument ist der Einstieg für eine neue Person (oder eine neue
-Session). Tieferes liegt in [README.md](README.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
-[docs/ROADMAP_AUSBAU.md](docs/ROADMAP_AUSBAU.md) und [supabase/README.md](supabase/README.md).
+Session). Tieferes liegt in [README.md](README.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+und [supabase/README.md](supabase/README.md).
 
 ---
 

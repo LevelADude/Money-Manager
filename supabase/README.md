@@ -49,7 +49,7 @@ Dashboard und NICHT in der App. Schritt für Schritt (Windows):
    öffnen. (Oder in VS Code: Menü *Terminal → New Terminal*.)
 2. **Ins Projekt wechseln** (dort liegt der `supabase/`-Ordner):
    ```powershell
-   cd "C:\Local Data\Programm\Money-Manager"
+   cd "C:\Pfad\zu\Money-Manager"
    ```
 3. **Supabase-CLI installieren** (einmalig) – am einfachsten via [Scoop](https://scoop.sh):
    ```powershell
@@ -62,7 +62,7 @@ Dashboard und NICHT in der App. Schritt für Schritt (Windows):
 4. **Anmelden + Projekt verknüpfen** (öffnet den Browser zum Login):
    ```powershell
    supabase login
-   supabase link --project-ref uaaqehspnlncjzrajfue
+   supabase link --project-ref <DEINE_PROJECT_REF>
    ```
    Die `--project-ref` ist der Teil aus deiner Projekt-URL `https://<REF>.supabase.co`.
 5. **Funktionen deployen** (im Projektordner aus Schritt 2 ausführen):
@@ -100,7 +100,7 @@ Dashboard und NICHT in der App. Schritt für Schritt (Windows):
 > Den **service_role**-Key NIEMALS in die App packen.
 
 Diese beiden Werte trägst du dann in der Flutter-App ein — siehe
-Haupt-[`README.md`](../README.md) Abschnitt „Konfiguration".
+Haupt-[`README.md`](../README.md) Abschnitt „Einrichtung".
 
 ## 5. Datenmodell (Kurzüberblick)
 
