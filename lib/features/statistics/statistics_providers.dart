@@ -154,7 +154,6 @@ class PeriodComparison {
     required this.curIncome,
     required this.prevIncome,
     required this.hasPrevious,
-    required this.prevLabel,
   });
 
   final int curExpense;
@@ -162,7 +161,6 @@ class PeriodComparison {
   final int curIncome;
   final int prevIncome;
   final bool hasPrevious;
-  final String prevLabel;
 
   /// Veränderung Ausgaben in Prozent (null wenn kein Vorwert).
   double? get expenseDeltaPct =>
@@ -198,13 +196,6 @@ final periodComparisonProvider = Provider<PeriodComparison>((ref) {
 
   final c = sums(cur);
   final pv = sums(prev);
-  final label = switch (p) {
-    StatsPeriod.thisDay => 'Vortag',
-    StatsPeriod.thisWeek => 'Vorwoche',
-    StatsPeriod.thisMonth => 'Vormonat',
-    StatsPeriod.thisYear => 'Vorjahr',
-    StatsPeriod.all => '',
-  };
 
   return PeriodComparison(
     curExpense: c.expense,
@@ -212,7 +203,6 @@ final periodComparisonProvider = Provider<PeriodComparison>((ref) {
     curIncome: c.income,
     prevIncome: pv.income,
     hasPrevious: prev != null,
-    prevLabel: label,
   );
 });
 

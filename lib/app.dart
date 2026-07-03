@@ -16,7 +16,7 @@ class MoneyManagerApp extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final seed = Color(settings.seedColor);
     return MaterialApp.router(
-      title: 'Money Manager',
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(seed),
       darkTheme: AppTheme.dark(seed),

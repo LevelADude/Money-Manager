@@ -1,9 +1,64 @@
 # Money Manager — Handoff
 
-Stand: 2026-07-03 · **Alles committet & gepusht** (`a5d2668`, Branch `main`
-up to date mit `origin/main`) · **Nächster Schritt: Finalisierungs-Phase
-FREIGEGEBEN** (Nutzer hat sie am 2026-07-03 ausdrücklich angestoßen — siehe
-Abschnitt 10).
+Stand: 2026-07-03 · Letzter Commit `39bf23f`; **uncommittet:** zwei neue
+Testdateien + die 4 umgesetzten Aufräum-Punkte (5 Dateien geändert) ·
+**Finalisierungs-Phase LÄUFT** — Fahrplan-Schritte 1–4 erledigt inkl.
+freigegebener Aufräumliste; **offen: Archivierungs-E2E-Test** (an
+Berechtigungs-Schranke gestoppt, Details im Block hierunter) + Commit/Push.
+
+## Finalisierungs-Phase — Zwischenstand (Session 2026-07-03, Nachmittag)
+
+- **`flutter analyze lib test` lief diesmal durch: „No issues found"**
+  (185 s) — der Analyzer-Hänger aus Abschnitt 9 trat nicht auf. Keine
+  einzige Warnung offen.
+- **Splits-Notiz + Beträge-Toggle verifiziert, soweit ohne Login möglich:**
+  - Preview-Browser: App bootet, Login-Screen rendert (inkl. des diskreten
+    „Datenbank-Verbindung ändern"-Links). **Durchbruch fürs Tooling:** Klick
+    auf `flt-semantics-placeholder` per `preview_eval` aktiviert Flutters
+    Semantics → beschriftete, anklickbare DOM-Knoten (Abschnitt 9 ergänzt).
+    Weiter als bis zum Login geht es aber nicht: die App hängt an der
+    Produktiv-DB, Test-Login/Signup gegen Prod verbietet sich.
+  - Als Ersatz **5 neue Tests** (jetzt 74 statt 69 — die früher notierten
+    „70" waren leicht falsch gezählt): `test/hide_amounts_test.dart`
+    (MoneyText zeigt `****`, Toggle schaltet um + persistiert in Prefs,
+    3 Widget-Tests) und `test/split_note_test.dart` (Note-Roundtrip im
+    Modell, 2 Tests). Speicher-/Prefill-Pfade der Splits-Notiz zusätzlich
+    per Code-Lektüre bestätigt (Form → `replaceForTransaction` → DB-Spalte
+    `note`). **Alle 74 Tests grün, `dart format` clean.** Der letzte Rest
+    (eingeloggt im echten Browser klicken) bleibt beim Nutzer.
+- **Toter-Code-Suche abgeschlossen** (Dateien, Provider, l10n-Getter/-
+  Funktionen, Shared-Helfer): keine toten Dateien; Funde siehe
+  Verbesserungsliste unten — bewusst **noch nichts gelöscht** (Schritt 4:
+  erst mit Nutzer priorisieren).
+- **Aufräumliste — vom Nutzer freigegeben und UMGESETZT (2026-07-03):**
+  1. ✅ `myMembershipAccountIdsProvider` gelöscht
+     ([account_member_providers.dart](lib/features/sharing/account_member_providers.dart)).
+  2. ✅ `PeriodComparison.prevLabel` + deutscher `switch` (`'Vortag'` …)
+     entfernt ([statistics_providers.dart](lib/features/statistics/statistics_providers.dart)) — damit ist der letzte
+     unlokalisierte UI-String weg.
+  3. ✅ `period_filter.dart`: `StatsPeriodX` (`label`, `contains`),
+     `labelFor`, `_statMonths` entfernt; `shifted` + Provider bleiben.
+     [period_filter_test.dart](test/period_filter_test.dart) auf die `shifted`-Gruppe reduziert
+     (9 Testfälle mit raus → jetzt 65 Tests).
+  4. ✅ l10n: `appTitle` via `onGenerateTitle` in [app.dart](lib/app.dart)
+     verdrahtet; `archivedBadge` gelöscht (Archiv-Screens haben eigene
+     Titel-/Read-only-Strings).
+  Verifiziert: `flutter analyze` **No issues**, `flutter test` **65/65
+  grün**, `dart format` **0 geändert**. Uncommittet (zusammen mit den zwei
+  neuen Testdateien).
+- **Archivierungs-E2E-Test: vorbereitet, aber an der Berechtigungs-Schranke
+  gestoppt.** Nutzer hat dem Weg „temporärer Test-Admin gegen Prod"
+  zugestimmt; Plan steht (Whitelist-Eintrag `mm-e2e-archive@example.org`,
+  Signup via REST, per SQL zum Admin, Test-Konto + eine Buchung in 2019
+  [Jahr verifiziert leer], archive-proxy write → `archive_commit_year` →
+  read/list → De-Archiv → restloses Cleanup inkl. audit_log; GitHub-Repo
+  bekommt dabei 2 Commits ins Archiv-Verzeichnis). Lesende Prod-Zugriffe
+  gingen durch, **alle schreibenden SQL-Statements blockiert der
+  Auto-Modus-Classifier** (Zugriffskontroll-Änderung/Prod-Writes brauchen
+  interaktive Freigabe). Baseline dokumentiert: 2 Buchungen (beide 2026),
+  3 Konten, 0 archivierte Jahre, archive_config vollständig.
+- Ideen jenseits Aufräumen (unverändert offen, Abschnitt 10):
+  iPhone/Safari-Login beobachten, Benachrichtigung bei Neuregistrierung.
 
 ## TL;DR — was diese Session (02.–03.07.2026) passiert ist
 
@@ -493,28 +548,22 @@ hält eine Getter-Tabelle über `String _t(String de, String en)` plus einen
 - **Claude-Preview-Tool + dieses Flutter-Web (CanvasKit-Renderer):**
   Screenshot/Accessibility-Snapshot bleiben oft leer/timeout, obwohl die App
   laut Konsole/DOM (`#boot`-Element verschwunden, "Supabase init completed")
-  tatsächlich läuft — Flutter Web exponiert ohne aktivierte Semantics
-  (`flt-semantics-placeholder` anklicken) keine per CSS ansprechbaren
-  Elemente, und Canvas-Screenshots scheinen im Sandbox-Tooling nicht zu
-  greifen. Für zukünftige UI-Verifikation ggf. eher `preview_eval` mit
-  direkten DOM-Checks nutzen oder den Nutzer um manuellen Gegentest bitten.
+  tatsächlich läuft — Flutter Web exponiert ohne aktivierte Semantics keine
+  per CSS ansprechbaren Elemente. **Funktionierender Workaround (2026-07-03
+  verifiziert):** per `preview_eval` auf dem `flt-semantics-placeholder` ein
+  `MouseEvent('click')` dispatchen, ein paar Sekunden warten, dann liefern
+  `flt-semantics`-Knoten `aria-label`s und Rollen (Login-Screen so überprüft).
+  Geduld beim Start: der Debug-Build braucht ~2–3 Min., bis `#boot`
+  verschwindet — vorher sieht es wie ein Hänger aus.
 
 ---
 
 ## 10. Offene Punkte / als Nächstes
 
-**🚀 Finalisierungs-Phase — FREIGEGEBEN (2026-07-03), jetzt der aktuelle
-Auftrag.** Aufräumen (löschen, säubern), Fehler-Check, Verbesserungsvorschläge.
-Alles bisherige ist committet/gepusht (`a5d2668`) — sauberer Ausgangspunkt.
-Empfohlener Fahrplan:
-1. Zuerst die zwei "noch nicht live gegengetesteten" Punkte unten selbst kurz
-   antesten (Splits-Notiz, Beträge-Toggle) — bevor größere Refactorings
-   draufkommen, die das erschweren würden.
-2. Codebase auf tote Dateien/Importe/ungenutzte Provider durchsuchen.
-3. `flutter analyze` versuchen (hing zuletzt wiederholt, s. Abschnitt 9) —
-   falls es diesmal durchläuft, alle Warnungen durchgehen.
-4. Verbesserungsvorschläge sammeln und mit dem Nutzer priorisieren, statt
-   ungefragt umzusetzen.
+**🚀 Finalisierungs-Phase — LÄUFT.** Schritte 1–3 (Features antesten,
+Toter-Code-Suche, `flutter analyze`) sind erledigt — Ergebnisse und die
+offene Verbesserungsliste stehen im Zwischenstand-Block ganz oben. Schritt 4:
+Liste mit dem Nutzer priorisieren, dann erst umsetzen.
 
 **Wirklich noch offen (nicht Teil der Finalisierung, eigenständige Punkte):**
 
@@ -537,10 +586,13 @@ Empfohlener Fahrplan:
 - **Archivierung:** Deployment vollständig live (Migrationen, Edge Function,
   Repo verbunden), aber **0 archivierte Jahre** — End-to-End-Test
   (archivieren → ansehen → de-archivieren) mit echten Daten steht noch aus.
-- ⭐ **Splits-Notiz + Beträge-Toggle nicht live im Browser gegengetestet**
-  (Preview-Sandbox hing beim App-Start, s. Abschnitt 9, TL;DR) — Code +
-  Tests grün, aber vor dem "als erledigt betrachten" kurz manuell
-  antesten.
+- ⭐ **Splits-Notiz + Beträge-Toggle: nur noch der eingeloggte Klick-Test
+  offen.** Beide Features sind seit 2026-07-03 per Widget-/Unit-Tests
+  abgedeckt (`test/hide_amounts_test.dart`, `test/split_note_test.dart`),
+  App-Boot + Login-Screen im Preview verifiziert — nur der Schritt hinter
+  dem Login braucht die echten Zugangsdaten des Nutzers (2 Minuten:
+  Augen-Icon auf Konten/Buchungen antippen; eine Buchung aufteilen und
+  einer Teilsumme einen Text geben, speichern, wieder öffnen).
 - `verify`/manuelles Testen auf echtem Android-Gerät (OCR, Beleg-Flow) steht
   weiterhin beim Nutzer aus (hier kein Gerät verfügbar).
 
@@ -691,17 +743,13 @@ ausdrückliche Anweisung.
 
 ## Verifikation des aktuellen Stands
 
-**Stand 2026-07-03 (alles committet/gepusht, `a5d2668`):** `dart format
---output=none --set-exit-if-changed lib test` → 0 Dateien geändert;
-`flutter test` → alle 70 Tests grün; `flutter build web --release
---pwa-strategy=none` → erfolgreich, verifiziert dass `flutter_bootstrap.js`
-danach `_flutter.loader.load()` ohne `serviceWorker`-Config aufruft (keine
-SW-Registrierung mehr). Migrationen bis 0030 live auf Prod
-(`uaaqehspnlncjzrajfue`) angewendet. `flutter analyze`/`dart analyze` liefen
-in dieser Umgebung wiederholt nicht durch (hingen minutenlang, s. Abschnitt 9)
-— `dart format` + `flutter test` als Ersatz-Verifikation genutzt.
+**Stand 2026-07-03 nachmittags (Finalisierung, Schritte 1–3):**
+`flutter analyze lib test` → **No issues found** (lief diesmal durch);
+`flutter test` → **alle 74 Tests grün** (69 alte + 5 neue); `dart format
+--output=none --set-exit-if-changed lib test` → 0 Dateien geändert.
+Migrationen bis 0030 live auf Prod (`uaaqehspnlncjzrajfue`).
+**Uncommittet:** die zwei neuen Testdateien.
 
-**Nicht verifiziert:** Splits-Notiz-Feature und Beträge-Verbergen-Toggle
-liefen nicht durch einen Live-Browser-Test (Preview-Sandbox hing beim
-App-Start). Code-Review war gründlich, aber ein kurzer manueller Test steht
-noch aus (s. Abschnitt 10).
+**Nicht verifiziert:** der eingeloggte Browser-Klick-Test der zwei Features
+(braucht Nutzer-Zugangsdaten, s. Abschnitt 10) und der Archivierungs-
+End-to-End-Test (unverändert offen).

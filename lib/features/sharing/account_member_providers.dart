@@ -24,13 +24,3 @@ final membersByAccountProvider = Provider<Map<String, Set<String>>>((ref) {
   }
   return map;
 });
-
-/// Konto-IDs, bei denen ich Mitglied bin (geteilt mit mir).
-final myMembershipAccountIdsProvider = Provider<Set<String>>((ref) {
-  final me = ref.watch(currentUserIdProvider);
-  final all = ref.watch(accountMembersProvider).asData?.value ?? const [];
-  return {
-    for (final m in all)
-      if (m.userId == me) m.accountId,
-  };
-});

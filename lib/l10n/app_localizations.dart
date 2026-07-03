@@ -1158,7 +1158,6 @@ class AppLocalizations {
   String get archivedSection => _t('Archivierte Jahre', 'Archived years');
   String get archiveNoneArchived =>
       _t('Noch keine Jahre archiviert.', 'No years archived yet.');
-  String get archivedBadge => _t('Archiviert', 'Archived');
   String get archiveView => _t('Ansehen', 'View');
   String get archiveRestore => _t('Zurückholen', 'Restore');
   String archiveRestoreConfirmTitle(int year) =>
