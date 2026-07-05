@@ -266,11 +266,44 @@ RLS in the database):
   registered person becomes the **owner** (admin, cannot be removed).
 - **Accounts and their transactions** are visible and editable only to their
   owner – or to whom they were shared via **grants/joint accounts**.
-- **Categories, budgets, savings goals** are deliberately group-wide.
+- **Categories, budgets, savings goals, templates, rules and exchange rates**
+  are likewise **separated per owner** (visible/editable only to owner +
+  grantees). **Preset categories** stay readable for everyone (shared default
+  categories); only an admin can change them.
 - Receipts live **per owner** in storage.
+- **Destructive maintenance RPCs** (wipe data, factory reset, cleanup) are
+  reachable only via the server (Edge Functions with an admin check), not with
+  the public client key.
 
 To make it stricter/looser = adjust the RLS policies in
 [`supabase/setup.sql`](supabase/setup.sql), the app stays the same.
+
+## Data security & encryption
+
+Short version: **yes, the data is protected** – not by keeping the key that is
+visible in the web build secret, but by **server-side access rules**.
+
+- **In transit:** all connections use **HTTPS/TLS** (encrypted on the wire).
+- **At rest:** Supabase (Postgres + Storage) stores data **encrypted at rest
+  (AES-256)**.
+- **What lives in the public repo/web build is only the project URL + the
+  `anon`/publishable key.** These are **public client values** – they sit in
+  *every* web app in the browser and are **not a secret**. They alone grant no
+  data access: every request is checked by **Row Level Security (RLS)** and the
+  **email whitelist** in the database. Without an unlocked, signed-in account
+  the API returns nothing.
+- **Real secrets** (Supabase `service_role` key, GitHub archive token, archive
+  encryption key) live **server-side only** in Supabase (function secrets /
+  `archive_config`) and **never** in the repo or client. Archive files on
+  GitHub are additionally **AES-256-GCM encrypted**.
+- **Can third parties reach data via the public GitHub repo?** No. The repo
+  holds only code + public client values, no financial data and no server
+  secrets.
+
+**Recommended extra hardening (in the Supabase dashboard, one-time):**
+Authentication → Policies → **enable “Leaked password protection”** (checks
+passwords against HaveIBeenPwned). Optionally also email confirmation and auth
+rate limits.
 
 ## Release builds (install on devices)
 

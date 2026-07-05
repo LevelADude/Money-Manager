@@ -272,11 +272,46 @@ Gemacht für eine **kleine, vertrauenswürdige Gruppe** – aber mit klaren Gren
   erste registrierte Person wird **Besitzer** (Admin, nicht entziehbar).
 - **Konten und ihre Buchungen** sieht und bearbeitet nur, wer sie besitzt –
   oder wem sie per **Freigabe/Gemeinschaftskonto** geteilt wurden.
-- **Kategorien, Budgets, Sparziele** sind bewusst gruppenweit.
+- **Kategorien, Budgets, Sparziele, Vorlagen, Regeln und Währungskurse** sind
+  ebenfalls **pro Besitzer** getrennt (sichtbar/änderbar nur für Besitzer +
+  Freigaben). **Preset-Kategorien** bleiben für alle lesbar (gemeinsame
+  Standard-Kategorien); ändern darf sie nur ein Admin.
 - Belege liegen **pro Eigentümer** im Storage.
+- **Zerstörerische Wartungs-RPCs** (DB leeren, Werkszustand, Aufräumen) sind
+  nur über den Server (Edge Functions mit Admin-Prüfung) erreichbar, nicht mit
+  dem öffentlichen Client-Schlüssel.
 
 Strenger/lockerer machen = RLS-Policies in [`supabase/setup.sql`](supabase/setup.sql)
 anpassen, die App bleibt gleich.
+
+## Datensicherheit & Verschlüsselung
+
+Kurz: **Ja, die Daten sind geschützt** – nicht durch Geheimhaltung des im
+Web-Build sichtbaren Schlüssels, sondern durch **serverseitige Zugriffsregeln**.
+
+- **Übertragung:** Alle Verbindungen laufen über **HTTPS/TLS** (verschlüsselt
+  unterwegs).
+- **Speicherung:** Supabase (Postgres + Storage) speichert **verschlüsselt at
+  rest (AES-256)**.
+- **Was im öffentlichen Repo/Web-Build steht, ist nur der Projekt-URL + der
+  `anon`/Publishable-Key.** Das sind **öffentliche Client-Werte** – sie stecken
+  in *jeder* Web-App im Browser und sind **kein Geheimnis**. Mit ihnen allein
+  kommt niemand an Daten: jeder Zugriff wird durch **Row Level Security (RLS)**
+  und die **E-Mail-Whitelist** in der Datenbank geprüft. Ohne freigeschalteten,
+  eingeloggten Account liefert die API nichts.
+- **Echte Geheimnisse** (Supabase `service_role`-Key, GitHub-Archiv-Token,
+  Archiv-Verschlüsselungs-Key) liegen **ausschließlich serverseitig** in
+  Supabase (Function-Secrets / `archive_config`) und **nie** im Repo oder im
+  Client. Die Archiv-Dateien auf GitHub sind zusätzlich **AES-256-GCM
+  verschlüsselt**.
+- **Können Dritte über das öffentliche GitHub-Repo an Daten?** Nein. Das Repo
+  enthält nur Code + öffentliche Client-Werte, keine Finanzdaten und keine
+  Server-Geheimnisse.
+
+**Empfohlene Zusatz-Härtung (im Supabase-Dashboard, einmalig):**
+Authentication → Policies → **„Leaked password protection" aktivieren**
+(prüft Passwörter gegen HaveIBeenPwned). Optional zusätzlich E-Mail-Bestätigung
+und Auth-Rate-Limits.
 
 ## Release-Builds (auf Geräten installieren)
 
