@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
 import '../../l10n/app_localizations.dart';
@@ -116,8 +115,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       _status = l.importing;
     });
     try {
-      final accounts =
-          ref.read(accountsProvider).asData?.value ?? const <Account>[];
+      // Import nur in verwaltbare Konten (eigene + manage-Freigaben) — Zeilen,
+      // die auf ein nur-ansehbares Fremdkonto verweisen, würden an RLS scheitern.
+      final accounts = ref.read(manageableAccountsProvider);
       final cats =
           ref.read(categoriesProvider).asData?.value ?? const <Category>[];
       final accByName = {for (final a in accounts) a.name.toLowerCase(): a.id};

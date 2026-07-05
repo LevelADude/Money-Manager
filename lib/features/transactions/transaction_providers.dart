@@ -11,6 +11,7 @@ import '../../data/repositories/receipt_storage.dart';
 import '../../data/repositories/split_repository.dart';
 import '../../data/repositories/template_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../accounts/account_providers.dart';
 import '../auth/auth_providers.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
@@ -119,13 +120,21 @@ final recentActivityProvider = FutureProvider<List<AuditEntry>>((ref) {
 });
 
 /// Papierkorb: gelöschte Buchungen (räumt zugleich Tombstones > 30 Tage auf).
+/// Zeigt bewusst NUR gelöschte Buchungen aus verwaltbaren Konten (eigene +
+/// manage-Freigaben) — der Papierkorb und das Wiederherstellen sind
+/// Verwaltungsaktionen; nur-ansehbare Fremdkonten (view-Freigabe) gehören
+/// nicht dazu (und ein Restore würde dort ohnehin an RLS scheitern).
 final deletedTransactionsProvider =
     FutureProvider<List<({AppTransaction tx, DateTime deletedAt})>>((
       ref,
     ) async {
       final repo = ref.watch(transactionRepositoryProvider);
       await repo.purgeOlderThan(const Duration(days: 30));
-      return repo.deletedTransactions();
+      final all = await repo.deletedTransactions();
+      final manageable = {
+        for (final a in ref.watch(manageableAccountsProvider)) a.id,
+      };
+      return all.where((e) => manageable.contains(e.tx.accountId)).toList();
     });
 
 /// Alle bisher vergebenen Tags (alphabetisch, eindeutig) – für Vorschläge

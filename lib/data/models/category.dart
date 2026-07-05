@@ -20,6 +20,7 @@ class Category {
     required this.color,
     required this.isPreset,
     required this.active,
+    this.ownerId,
     this.sortOrder = 0,
   });
 
@@ -31,6 +32,9 @@ class Category {
   final int? color;
   final bool isPreset;
   final bool active;
+
+  /// Besitzer der Kategorie (`null` bei globalen Preset-Kategorien).
+  final String? ownerId;
   final int sortOrder;
 
   /// Passt diese Kategorie zur gegebenen Buchungsrichtung?
@@ -46,6 +50,7 @@ class Category {
     color: (json['color'] as num?)?.toInt(),
     isPreset: (json['is_preset'] as bool?) ?? false,
     active: (json['active'] as bool?) ?? true,
+    ownerId: json['owner_id'] as String?,
     sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
   );
 }

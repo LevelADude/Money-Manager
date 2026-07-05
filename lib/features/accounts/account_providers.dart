@@ -8,6 +8,7 @@ import '../../shared/balances.dart';
 import '../archive/archive_providers.dart';
 import '../auth/auth_providers.dart';
 import '../currency/currency_providers.dart';
+import '../sharing/access_grant_providers.dart';
 import '../transactions/transaction_providers.dart';
 
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
@@ -17,9 +18,23 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   );
 });
 
-/// Live-Liste aller Konten.
+/// Live-Liste aller Konten (inkl. nur-ansehbarer Fremdkonten aus Freigaben).
 final accountsProvider = StreamProvider<List<Account>>((ref) {
   return ref.watch(accountRepositoryProvider).watchAccounts();
+});
+
+/// Konten, die der aktuelle Nutzer verwalten (bebuchen) darf: eigene Konten +
+/// Konten von Besitzern mit „manage"-Freigabe. Nur-ansehbare Fremdkonten sind
+/// bewusst ausgeschlossen — man kann keine Buchung in einem Konto anlegen, das
+/// man nur sehen darf (RLS `can_manage_account` würde das Speichern ohnehin
+/// ablehnen). Dient als Quelle für alle Konto-Auswahlen beim Anlegen/Bearbeiten.
+final manageableAccountsProvider = Provider<List<Account>>((ref) {
+  final accounts =
+      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  final owners = ref.watch(manageableOwnersProvider);
+  return accounts
+      .where((a) => a.ownerId != null && owners.contains(a.ownerId))
+      .toList();
 });
 
 /// Saldo (Cent) eines Kontos = Anfangssaldo + alle Buchungen (inkl. Überträge).

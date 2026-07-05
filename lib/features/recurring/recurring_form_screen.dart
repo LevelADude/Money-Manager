@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
 import '../../data/models/recurring_rule.dart';
@@ -182,10 +181,12 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
     final isTransfer = _type == TransactionType.transfer;
-    final accounts =
-        (ref.watch(accountsProvider).asData?.value ?? const <Account>[])
-            .where((a) => !a.archived)
-            .toList();
+    // Nur verwaltbare Konten (eigene + manage-Freigaben) — ein nur-ansehbares
+    // Fremdkonto ließe keinen Dauerauftrag zu (RLS).
+    final accounts = ref
+        .watch(manageableAccountsProvider)
+        .where((a) => !a.archived)
+        .toList();
     _accountId ??= accounts.isNotEmpty ? accounts.first.id : null;
 
     final categories =

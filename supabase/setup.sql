@@ -169,7 +169,7 @@ drop trigger if exists accounts_set_updated_at on public.accounts;
 create trigger accounts_set_updated_at before update on public.accounts
   for each row execute function public.set_updated_at();
 
--- 3) categories (gruppenweit) -------------------------------------------
+-- 3) categories: Presets global, eigene pro Besitzer (owner_id) --------
 create table if not exists public.categories (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
@@ -178,12 +178,14 @@ create table if not exists public.categories (
   icon       text,
   color      integer,
   is_preset  boolean not null default false,
+  owner_id   uuid references public.profiles(id) on delete set null default auth.uid(),
   active     boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   deleted_at timestamptz
 );
 create index if not exists categories_kind_idx    on public.categories(kind);
+create index if not exists categories_owner_idx   on public.categories(owner_id);
 create index if not exists categories_updated_idx on public.categories(updated_at);
 
 drop trigger if exists categories_set_updated_at on public.categories;
@@ -1133,6 +1135,13 @@ declare
   v_audit bigint;
   v_trash bigint;
 begin
+  -- Eingeloggte Nicht-Admins abweisen. service_role/pg_cron (auth.uid() null)
+  -- bleiben erlaubt (der Aufrufer wird dort serverseitig bzw. vom Scheduler
+  -- geprüft).
+  if auth.uid() is not null and not public.is_admin() then
+    raise exception 'Keine Admin-Rechte';
+  end if;
+
   -- 1) Alte Audit-Log-Einträge entfernen.
   delete from public.audit_log
    where at < now() - make_interval(days => audit_keep_days);
@@ -1152,7 +1161,10 @@ end;
 $$;
 
 -- Nur Owner/Scheduler dürfen das aufrufen, nicht normale (authenticated) Nutzer.
-revoke all on function public.cleanup_old_data(integer, integer) from public;
+-- ACHTUNG: `revoke ... from public` allein reicht NICHT — Supabase vergibt per
+-- ALTER DEFAULT PRIVILEGES direkte EXECUTE-Grants an anon + authenticated.
+revoke execute on function public.cleanup_old_data(integer, integer) from anon, authenticated, public;
+grant execute on function public.cleanup_old_data(integer, integer) to service_role;
 
 -- Täglicher Lauf um 03:00 UTC – nur wenn pg_cron installiert ist. Der benannte
 -- cron.schedule-Aufruf ersetzt einen evtl. vorhandenen Job gleichen Namens
@@ -1245,7 +1257,7 @@ language sql stable security definer set search_path = public as $$
       (select sum((metadata->>'size')::bigint) from storage.objects), 0
     )::bigint as storage_bytes;
 $$;
-revoke all on function public.get_storage_stats() from public;
+revoke execute on function public.get_storage_stats() from anon, public;
 grant execute on function public.get_storage_stats() to authenticated;
 
 create or replace function public.admin_wipe_data()
@@ -1590,7 +1602,7 @@ begin
   end if;
 end;
 $$;
-revoke all on function public._seed_preset_categories() from public;
+revoke execute on function public._seed_preset_categories() from anon, authenticated, public;
 grant execute on function public._seed_preset_categories() to service_role;
 
 -- --- Nur Daten leeren (Nutzer/Whitelist bleiben) -------------------------
@@ -1601,6 +1613,12 @@ security definer
 set search_path = public
 as $$
 begin
+  -- Eingeloggte Nicht-Admins abweisen. Die Edge Function ruft via service_role
+  -- auf (auth.uid() null) und prüft den Aufrufer selbst -> bleibt erlaubt.
+  if auth.uid() is not null and not public.is_admin() then
+    raise exception 'Keine Admin-Rechte';
+  end if;
+
   truncate table
     public.transaction_comments,
     public.transaction_splits,
@@ -1620,7 +1638,9 @@ begin
   perform public._seed_preset_categories();
 end;
 $$;
-revoke all on function public.admin_wipe_data() from public;
+-- `from public` allein reicht NICHT (Supabase-Default-Privileges an anon +
+-- authenticated) -> beide Rollen explizit ausschließen.
+revoke execute on function public.admin_wipe_data() from anon, authenticated, public;
 grant execute on function public.admin_wipe_data() to service_role;
 
 -- --- Werkszustand (alles weg, auch Profile + Whitelist) ------------------
@@ -1631,6 +1651,10 @@ security definer
 set search_path = public
 as $$
 begin
+  if auth.uid() is not null and not public.is_admin() then
+    raise exception 'Keine Admin-Rechte';
+  end if;
+
   truncate table
     public.transaction_comments,
     public.transaction_splits,
@@ -1652,7 +1676,7 @@ begin
   perform public._seed_preset_categories();
 end;
 $$;
-revoke all on function public.admin_factory_reset() from public;
+revoke execute on function public.admin_factory_reset() from anon, authenticated, public;
 grant execute on function public.admin_factory_reset() to service_role;
 
 
@@ -1673,4 +1697,90 @@ end;
 $$;
 revoke all on function public.admin_list_user_emails() from public;
 grant execute on function public.admin_list_user_emails() to authenticated;
+
+
+-- ## Migration: 0032_per_owner_planning_data.sql
+
+-- Kategorien/Budgets/Sparziele/Vorlagen/Regeln pro Besitzer trennen (vorher
+-- gruppenweit `using (true)`). Presets bleiben global lesbar. owner_id der
+-- categories-Tabelle ist oben bereits Teil der Tabellendefinition; hier die
+-- Datenkorrektur (Presets global halten) + die granularen Policies, die die
+-- frühen `*_all`-Policies ersetzen.
+update public.categories set owner_id = null where is_preset;
+create index if not exists categories_owner_idx on public.categories(owner_id);
+
+drop policy if exists categories_all    on public.categories;
+drop policy if exists categories_select on public.categories;
+drop policy if exists categories_insert on public.categories;
+drop policy if exists categories_update on public.categories;
+drop policy if exists categories_delete on public.categories;
+create policy categories_select on public.categories for select
+  using (is_preset or public.can_view_owner(owner_id));
+create policy categories_insert on public.categories for insert
+  with check (not is_preset and owner_id = auth.uid());
+create policy categories_update on public.categories for update
+  using ((is_preset and public.is_admin()) or public.can_manage_owner(owner_id))
+  with check ((is_preset and public.is_admin()) or public.can_manage_owner(owner_id));
+create policy categories_delete on public.categories for delete
+  using ((is_preset and public.is_admin()) or public.can_manage_owner(owner_id));
+
+drop policy if exists budgets_all    on public.budgets;
+drop policy if exists budgets_select on public.budgets;
+drop policy if exists budgets_insert on public.budgets;
+drop policy if exists budgets_update on public.budgets;
+drop policy if exists budgets_delete on public.budgets;
+create policy budgets_select on public.budgets for select
+  using (public.can_view_owner(created_by));
+create policy budgets_insert on public.budgets for insert
+  with check (created_by = auth.uid());
+create policy budgets_update on public.budgets for update
+  using (public.can_manage_owner(created_by))
+  with check (public.can_manage_owner(created_by));
+create policy budgets_delete on public.budgets for delete
+  using (public.can_manage_owner(created_by));
+
+drop policy if exists savings_goals_all    on public.savings_goals;
+drop policy if exists savings_goals_select on public.savings_goals;
+drop policy if exists savings_goals_insert on public.savings_goals;
+drop policy if exists savings_goals_update on public.savings_goals;
+drop policy if exists savings_goals_delete on public.savings_goals;
+create policy savings_goals_select on public.savings_goals for select
+  using (public.can_view_owner(created_by));
+create policy savings_goals_insert on public.savings_goals for insert
+  with check (created_by = auth.uid());
+create policy savings_goals_update on public.savings_goals for update
+  using (public.can_manage_owner(created_by))
+  with check (public.can_manage_owner(created_by));
+create policy savings_goals_delete on public.savings_goals for delete
+  using (public.can_manage_owner(created_by));
+
+drop policy if exists transaction_templates_all    on public.transaction_templates;
+drop policy if exists transaction_templates_select on public.transaction_templates;
+drop policy if exists transaction_templates_insert on public.transaction_templates;
+drop policy if exists transaction_templates_update on public.transaction_templates;
+drop policy if exists transaction_templates_delete on public.transaction_templates;
+create policy transaction_templates_select on public.transaction_templates for select
+  using (public.can_view_owner(created_by));
+create policy transaction_templates_insert on public.transaction_templates for insert
+  with check (created_by = auth.uid());
+create policy transaction_templates_update on public.transaction_templates for update
+  using (public.can_manage_owner(created_by))
+  with check (public.can_manage_owner(created_by));
+create policy transaction_templates_delete on public.transaction_templates for delete
+  using (public.can_manage_owner(created_by));
+
+drop policy if exists category_rules_all    on public.category_rules;
+drop policy if exists category_rules_select on public.category_rules;
+drop policy if exists category_rules_insert on public.category_rules;
+drop policy if exists category_rules_update on public.category_rules;
+drop policy if exists category_rules_delete on public.category_rules;
+create policy category_rules_select on public.category_rules for select
+  using (public.can_view_owner(created_by));
+create policy category_rules_insert on public.category_rules for insert
+  with check (created_by = auth.uid());
+create policy category_rules_update on public.category_rules for update
+  using (public.can_manage_owner(created_by))
+  with check (public.can_manage_owner(created_by));
+create policy category_rules_delete on public.category_rules for delete
+  using (public.can_manage_owner(created_by));
 

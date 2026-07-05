@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/audit_entry.dart';
 import '../../data/models/category.dart';
@@ -877,10 +876,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final df = DateFormat('dd.MM.yyyy');
     final isTransfer = _type == TransactionType.transfer;
 
-    final accounts =
-        (ref.watch(accountsProvider).asData?.value ?? const <Account>[])
-            .where((a) => !a.archived)
-            .toList();
+    // Nur verwaltbare Konten (eigene + manage-Freigaben) anbieten — ein
+    // nur-ansehbares Fremdkonto ließe sich nicht bebuchen (RLS).
+    final accounts = ref
+        .watch(manageableAccountsProvider)
+        .where((a) => !a.archived)
+        .toList();
     _accountId ??= accounts.isNotEmpty ? accounts.first.id : null;
     if (_accountId != null && !accounts.any((a) => a.id == _accountId)) {
       _accountId = accounts.isNotEmpty ? accounts.first.id : null;
