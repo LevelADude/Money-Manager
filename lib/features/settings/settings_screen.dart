@@ -130,7 +130,10 @@ class SettingsScreen extends ConsumerWidget {
                 onPressed: () async {
                   final code = await showAddCurrencyDialog(context);
                   if (code != null) {
-                    await ref.read(customCurrenciesProvider.notifier).add(code);
+                    await ref
+                        .read(currencyRepositoryProvider)
+                        .upsert(code, null);
+                    ref.invalidate(dbCurrenciesProvider);
                   }
                 },
               ),

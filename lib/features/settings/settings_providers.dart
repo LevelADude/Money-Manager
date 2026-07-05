@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/app_cache.dart';
+import '../../data/repositories/currency_repository.dart';
 import '../../shared/money.dart' show gBaseCurrency;
+import '../auth/auth_providers.dart';
 
 /// App-Einstellungen (Theme-Modus + Akzentfarbe), lokal gespeichert.
 class AppSettings {
@@ -101,6 +103,13 @@ class SettingsNotifier extends Notifier<AppSettings> {
     await ref.read(sharedPrefsProvider).setString(_kBaseCur, code);
     gBaseCurrency = code;
     state = state.copyWith(baseCurrency: code);
+    // Basiswährung ins Profil spiegeln, damit andere Nutzer die eigenen Kurse
+    // korrekt deuten können (fehlerresistent: Offline/kein Login egal).
+    try {
+      await CurrencyRepository(
+        ref.read(supabaseClientProvider),
+      ).setMyBaseCurrency(code);
+    } catch (_) {}
   }
 
   Future<void> setHideAmounts(bool hide) async {

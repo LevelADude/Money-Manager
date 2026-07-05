@@ -667,6 +667,15 @@ class AppLocalizations {
   String get noRateSet =>
       _t('Kein Kurs gesetzt (wird 1:1 gerechnet)', 'No rate set (counted 1:1)');
   String get customEllipsis => _t('Eigene…', 'Custom…');
+  String get deleteCurrency => _t('Währung löschen', 'Delete currency');
+  String currencyInUse(String code) => _t(
+    'Währung $code wird noch von einem Konto verwendet und kann nicht gelöscht werden.',
+    'Currency $code is still used by an account and cannot be deleted.',
+  );
+  String get foreignAccountsRatesNote => _t(
+    'Konten anderer Personen werden mit deren eigenen Kursen umgerechnet.',
+    "Other people's accounts are converted using their own rates.",
+  );
 
   // ---- Schulden & Kredite ----
   String get noDebtAccounts => _t(

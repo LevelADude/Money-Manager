@@ -211,8 +211,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                           final code = await showAddCurrencyDialog(context);
                           if (code != null) {
                             await ref
-                                .read(customCurrenciesProvider.notifier)
-                                .add(code);
+                                .read(currencyRepositoryProvider)
+                                .upsert(code, null);
+                            ref.invalidate(dbCurrenciesProvider);
                             setState(() => _currency = code);
                           }
                         },

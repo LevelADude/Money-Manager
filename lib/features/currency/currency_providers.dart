@@ -4,7 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/app_cache.dart';
 import '../../data/models/account.dart';
+import '../../data/models/user_currency.dart';
+import '../../data/repositories/currency_repository.dart';
 import '../accounts/account_providers.dart';
+import '../auth/auth_providers.dart';
+import '../profile/profile_providers.dart';
 import '../settings/settings_providers.dart';
 
 const supportedCurrencies = <String>[
@@ -24,97 +28,129 @@ const supportedCurrencies = <String>[
   'USDT',
 ];
 
-/// Vom Nutzer hinzugefügte eigene Währungscodes (lokal gespeichert).
-class CustomCurrenciesNotifier extends Notifier<List<String>> {
-  static const _k = 'settings_custom_currencies';
+final currencyRepositoryProvider = Provider<CurrencyRepository>((ref) {
+  return CurrencyRepository(ref.watch(supabaseClientProvider));
+});
 
-  @override
-  List<String> build() =>
-      ref.watch(sharedPrefsProvider).getStringList(_k) ?? const [];
+/// Einmaliger Umzug der früher lokal (SharedPreferences) gespeicherten eigenen
+/// Währungscodes + Wechselkurse in die DB. Läuft genau einmal pro Installation
+/// nach dem Login und spiegelt zugleich die Basiswährung ins Profil.
+final _currencyImportProvider = FutureProvider<void>((ref) async {
+  final prefs = ref.watch(sharedPrefsProvider);
+  if (prefs.getBool('currencies_migrated_v1') ?? false) return;
+  final uid = ref.watch(currentUserIdProvider);
+  if (uid == null) return; // erst nach Login migrieren
+  final repo = ref.watch(currencyRepositoryProvider);
 
-  Future<void> add(String code) async {
-    final c = code.trim().toUpperCase();
-    if (c.isEmpty || supportedCurrencies.contains(c) || state.contains(c)) {
-      return;
-    }
-    final next = [...state, c];
-    await ref.read(sharedPrefsProvider).setStringList(_k, next);
-    state = next;
+  await repo.setMyBaseCurrency(ref.read(settingsProvider).baseCurrency);
+
+  final codes =
+      prefs.getStringList('settings_custom_currencies') ?? const <String>[];
+  var rates = <String, dynamic>{};
+  final raw = prefs.getString('settings_fx_rates');
+  if (raw != null) {
+    try {
+      rates = jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {}
   }
-}
+  for (final code in {...codes, ...rates.keys}) {
+    final r = rates[code];
+    await repo.upsert(code, r is num ? r.toDouble() : null);
+  }
+  await prefs.setBool('currencies_migrated_v1', true);
+});
 
-final customCurrenciesProvider =
-    NotifierProvider<CustomCurrenciesNotifier, List<String>>(
-      CustomCurrenciesNotifier.new,
-    );
+/// Alle sichtbaren Währungen aus der DB (eigene + die freigegebener Besitzer),
+/// nach dem Einmal-Import.
+final dbCurrenciesProvider = FutureProvider<List<UserCurrency>>((ref) async {
+  await ref.watch(_currencyImportProvider.future);
+  return ref.watch(currencyRepositoryProvider).fetchAll();
+});
 
-/// Alle wählbaren Währungen: Standard + eigene + in Konten benutzte.
+/// Meine eigenen Währungen.
+final myCurrenciesProvider = Provider<List<UserCurrency>>((ref) {
+  final me = ref.watch(currentUserIdProvider);
+  final all = ref.watch(dbCurrenciesProvider).asData?.value ?? const [];
+  return [
+    for (final c in all)
+      if (c.ownerId == me) c,
+  ];
+});
+
+/// Meine Kurse (Code -> Kurs zur Basiswährung) für den Kurs-Screen.
+final myRatesProvider = Provider<Map<String, double>>((ref) {
+  return {
+    for (final c in ref.watch(myCurrenciesProvider))
+      if (c.rateToBase != null) c.code: c.rateToBase!,
+  };
+});
+
+/// Wählbare Währungen für die EIGENE Auswahl (Konto/Kurs anlegen): Standard +
+/// eigene DB-Währungen + Währungen der EIGENEN Konten. Fremde (nur ansehbare)
+/// Kontowährungen erscheinen hier bewusst NICHT.
 final allCurrenciesProvider = Provider<List<String>>((ref) {
-  final custom = ref.watch(customCurrenciesProvider);
+  final me = ref.watch(currentUserIdProvider);
+  final mine = ref.watch(myCurrenciesProvider).map((c) => c.code);
   final accs = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
-  final extras = <String>{...custom, for (final a in accs) a.currency}
-    ..removeAll(supportedCurrencies);
+  final extras = <String>{
+    ...mine,
+    for (final a in accs)
+      if (a.ownerId == me) a.currency,
+  }..removeAll(supportedCurrencies);
   return [...supportedCurrencies, ...(extras.toList()..sort())];
 });
 
-/// Wechselkurse: wie viele Einheiten der Hauptwährung 1 Einheit der Währung
-/// wert ist (Hauptwährung selbst = 1.0). Lokal in shared_preferences.
-class ExchangeRatesNotifier extends Notifier<Map<String, double>> {
-  static const _k = 'settings_fx_rates';
-
-  @override
-  Map<String, double> build() {
-    final raw = ref.watch(sharedPrefsProvider).getString(_k);
-    if (raw == null) return const {};
-    try {
-      final m = jsonDecode(raw) as Map<String, dynamic>;
-      return {for (final e in m.entries) e.key: (e.value as num).toDouble()};
-    } catch (_) {
-      return const {};
+/// Wirksame Kurse für die Umrechnung in die eigene Basiswährung: meine Kurse
+/// (Vorrang) + Kurse fremder, sichtbarer Besitzer, sofern deren Basiswährung
+/// mit meiner übereinstimmt. So werden freigegebene fremde Konten mit den
+/// Kursen IHRES Besitzers angezeigt statt 1:1.
+final effectiveRatesProvider = Provider<Map<String, double>>((ref) {
+  final me = ref.watch(currentUserIdProvider);
+  final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
+  final all = ref.watch(dbCurrenciesProvider).asData?.value ?? const [];
+  final ownerBases =
+      ref.watch(profileBaseCurrenciesProvider).asData?.value ??
+      const <String, String>{};
+  final result = <String, double>{};
+  for (final c in all) {
+    if (c.ownerId == me && c.rateToBase != null) result[c.code] = c.rateToBase!;
+  }
+  for (final c in all) {
+    if (c.ownerId == me || c.rateToBase == null) continue;
+    if (result.containsKey(c.code)) continue;
+    if ((ownerBases[c.ownerId] ?? 'EUR') == base) {
+      result[c.code] = c.rateToBase!;
     }
   }
+  return result;
+});
 
-  Future<void> setRate(String code, double rate) async {
-    final next = {...state, code: rate};
-    await ref.read(sharedPrefsProvider).setString(_k, jsonEncode(next));
-    state = next;
-  }
-
-  Future<void> removeRate(String code) async {
-    final next = {...state}..remove(code);
-    await ref.read(sharedPrefsProvider).setString(_k, jsonEncode(next));
-    state = next;
-  }
-}
-
-final exchangeRatesProvider =
-    NotifierProvider<ExchangeRatesNotifier, Map<String, double>>(
-      ExchangeRatesNotifier.new,
-    );
-
-/// Funktion: rechnet Cent einer Währung in die Hauptwährung um.
+/// Funktion: rechnet Cent einer Währung in die eigene Hauptwährung um.
 final converterProvider = Provider<int Function(int cents, String code)>((ref) {
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
-  final rates = ref.watch(exchangeRatesProvider);
+  final rates = ref.watch(effectiveRatesProvider);
   return (cents, code) {
     if (code == base) return cents;
-    final r =
-        rates[code] ?? 1.0; // unbekannt -> 1:1 (Nutzer sollte Kurs setzen)
+    final r = rates[code];
+    if (r == null) return cents; // unbekannt -> 1:1 (Nutzer sollte Kurs setzen)
     return (cents * r).round();
   };
 });
 
-/// Map: Konto-ID -> Währungscode.
+/// Map: Konto-ID -> Währungscode (alle sichtbaren Konten).
 final accountCurrencyProvider = Provider<Map<String, String>>((ref) {
   final accs = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
   return {for (final a in accs) a.id: a.currency};
 });
 
-/// Währungen, die tatsächlich in Konten verwendet werden (ohne Hauptwährung).
+/// Währungen MEINER Konten (ohne Hauptwährung) — dafür setze ich eigene Kurse.
 final usedForeignCurrenciesProvider = Provider<List<String>>((ref) {
+  final me = ref.watch(currentUserIdProvider);
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
   final accs = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
-  final set = {for (final a in accs) a.currency}..remove(base);
-  final list = set.toList()..sort();
-  return list;
+  final set = <String>{
+    for (final a in accs)
+      if (a.ownerId == me) a.currency,
+  }..remove(base);
+  return set.toList()..sort();
 });

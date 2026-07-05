@@ -7,6 +7,7 @@ class Profile {
     required this.createdAt,
     this.readOnly = false,
     this.isOwner = false,
+    this.baseCurrency = 'EUR',
   });
 
   final String id;
@@ -19,6 +20,10 @@ class Profile {
   /// degradierbar/löschbar). Genau einer pro Datenbank.
   final bool isOwner;
 
+  /// Basiswährung dieses Nutzers – zur korrekten Deutung seiner Wechselkurse
+  /// beim Anzeigen freigegebener Konten.
+  final String baseCurrency;
+
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
     id: json['id'] as String,
     displayName: (json['display_name'] as String?) ?? '',
@@ -28,5 +33,6 @@ class Profile {
         : DateTime.tryParse(json['created_at'] as String),
     readOnly: (json['read_only'] as bool?) ?? false,
     isOwner: (json['is_owner'] as bool?) ?? false,
+    baseCurrency: (json['base_currency'] as String?) ?? 'EUR',
   );
 }

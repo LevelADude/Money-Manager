@@ -8,7 +8,8 @@ import 'add_currency.dart';
 import 'currency_providers.dart';
 
 /// Wechselkurse verwalten: wie viele Einheiten der Hauptwährung 1 Einheit einer
-/// Fremdwährung wert ist (z. B. 1 USD = 0,92 EUR).
+/// Fremdwährung wert ist (z. B. 1 USD = 0,92 EUR). Nur eigene Währungen/Kurse;
+/// Konten anderer Personen werden mit deren eigenen Kursen umgerechnet.
 class ExchangeRatesScreen extends ConsumerWidget {
   const ExchangeRatesScreen({super.key});
 
@@ -49,19 +50,59 @@ class ExchangeRatesScreen extends ConsumerWidget {
     if (ok == true) {
       final v = double.tryParse(ctrl.text.trim().replaceAll(',', '.'));
       if (v != null && v > 0) {
-        await ref.read(exchangeRatesProvider.notifier).setRate(code, v);
+        await ref.read(currencyRepositoryProvider).upsert(code, v);
+        ref.invalidate(dbCurrenciesProvider);
       }
+    }
+  }
+
+  Future<void> _deleteCurrency(
+    BuildContext context,
+    WidgetRef ref,
+    String code,
+  ) async {
+    final l = AppLocalizations.of(context);
+    // Von einem eigenen Konto benutzte Währung nicht löschbar.
+    final used = ref.read(usedForeignCurrenciesProvider).contains(code);
+    if (used) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.currencyInUse(code))));
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.deleteCurrency),
+        content: Text('$code (${currencySymbol(code)})'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.delete),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await ref.read(currencyRepositoryProvider).remove(code);
+      ref.invalidate(dbCurrenciesProvider);
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
-    final rates = ref.watch(exchangeRatesProvider);
+    final rates = ref.watch(myRatesProvider);
     final used = ref.watch(usedForeignCurrenciesProvider);
+    final mine = ref.watch(myCurrenciesProvider).map((c) => c.code);
     final l = AppLocalizations.of(context);
-    // Alle Fremdwährungen anzeigen, für die es einen Kurs gibt oder die genutzt werden.
-    final codes = <String>{...used, ...rates.keys}..remove(base);
+    // Alle eigenen Fremdwährungen: benutzt in eigenen Konten oder selbst
+    // angelegt / mit Kurs versehen.
+    final codes = <String>{...used, ...mine, ...rates.keys}..remove(base);
     final list = codes.toList()..sort();
 
     return Scaffold(
@@ -81,6 +122,11 @@ class ExchangeRatesScreen extends ConsumerWidget {
             l.exchangeRatesIntro(base),
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          const SizedBox(height: 4),
+          Text(
+            l.foreignAccountsRatesNote,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
           const SizedBox(height: 8),
           if (list.isEmpty)
             Padding(
@@ -97,7 +143,17 @@ class ExchangeRatesScreen extends ConsumerWidget {
                       ? l.noRateSet
                       : '= ${rates[code].toString().replaceAll('.', ',')} $base',
                 ),
-                trailing: const Icon(Icons.edit_outlined),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: l.deleteCurrency,
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => _deleteCurrency(context, ref, code),
+                    ),
+                    const Icon(Icons.edit_outlined),
+                  ],
+                ),
                 onTap: () => _editRate(context, ref, code, rates[code] ?? 0),
               ),
           const Divider(height: 24),
@@ -117,7 +173,8 @@ class ExchangeRatesScreen extends ConsumerWidget {
                 onPressed: () async {
                   final code = await showAddCurrencyDialog(context);
                   if (code == null) return;
-                  await ref.read(customCurrenciesProvider.notifier).add(code);
+                  await ref.read(currencyRepositoryProvider).upsert(code, null);
+                  ref.invalidate(dbCurrenciesProvider);
                   if (context.mounted) await _editRate(context, ref, code, 0);
                 },
               ),

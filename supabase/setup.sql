@@ -1784,3 +1784,35 @@ create policy category_rules_update on public.category_rules for update
 create policy category_rules_delete on public.category_rules for delete
   using (public.can_manage_owner(created_by));
 
+
+-- ## Migration: 0033_currencies_per_owner.sql
+
+-- Eigene Währungen + Wechselkurse pro Besitzer in der DB (vorher lokal pro
+-- Gerät). Basiswährung je Nutzer in profiles.base_currency, damit ein Kurs
+-- korrekt gedeutet werden kann.
+alter table public.profiles
+  add column if not exists base_currency text not null default 'EUR';
+
+create table if not exists public.currencies (
+  owner_id     uuid not null references public.profiles(id) on delete cascade
+                 default auth.uid(),
+  code         text not null,
+  rate_to_base numeric,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  primary key (owner_id, code)
+);
+alter table public.currencies enable row level security;
+
+drop policy if exists currencies_select on public.currencies;
+drop policy if exists currencies_modify on public.currencies;
+create policy currencies_select on public.currencies for select
+  using (public.can_view_owner(owner_id));
+create policy currencies_modify on public.currencies for all
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+
+drop trigger if exists currencies_set_updated_at on public.currencies;
+create trigger currencies_set_updated_at before update on public.currencies
+  for each row execute function public.set_updated_at();
+
