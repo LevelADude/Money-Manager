@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../data/models/account.dart';
 import '../data/models/app_transaction.dart';
+import '../data/models/category.dart';
 import '../data/models/recurring_rule.dart';
 
 /// Leichtgewichtige, hand-gepflegte Lokalisierung (DE/EN).
@@ -550,6 +551,12 @@ class AppLocalizations {
   String get incomeSingular => _t('Einnahme', 'Income');
   String get preset => _t('Vorlage', 'Preset');
   String get custom => _t('Eigene', 'Custom');
+  String get editCategory => _t('Kategorie bearbeiten', 'Edit category');
+  String get iconLabel => _t('Symbol', 'Icon');
+  String get presetNotEditable => _t(
+    'Vorlagen-Kategorien können nicht bearbeitet werden.',
+    'Preset categories cannot be edited.',
+  );
 
   // ---- Daueraufträge ----
   String get recurringFab => _t('Dauerauftrag', 'Standing order');
@@ -676,6 +683,51 @@ class AppLocalizations {
     'Konten anderer Personen werden mit deren eigenen Kursen umgerechnet.',
     "Other people's accounts are converted using their own rates.",
   );
+
+  /// Englische Namen der Preset-Kategorien (in der DB deutsch gespeichert).
+  static const Map<String, String> _presetCategoryEn = {
+    // Ausgaben
+    'Lebensmittel': 'Groceries',
+    'Restaurant & Café': 'Restaurant & Café',
+    'Haushalt': 'Household',
+    'Wohnen & Miete': 'Housing & Rent',
+    'Nebenkosten (Strom/Gas/Wasser)': 'Utilities (electricity/gas/water)',
+    'Internet & Telefon': 'Internet & Phone',
+    'Auto & Tanken': 'Car & Fuel',
+    'ÖPNV & Transport': 'Public Transport',
+    'Versicherungen': 'Insurance',
+    'Gesundheit & Apotheke': 'Health & Pharmacy',
+    'Kleidung': 'Clothing',
+    'Freizeit & Hobby': 'Leisure & Hobby',
+    'Abos & Streaming': 'Subscriptions & Streaming',
+    'Reisen & Urlaub': 'Travel & Holidays',
+    'Geschenke': 'Gifts',
+    'Bildung': 'Education',
+    'Haustier': 'Pet',
+    'Kinder': 'Children',
+    'Spenden': 'Donations',
+    'Steuern & Gebühren': 'Taxes & Fees',
+    'Sparen & Investieren': 'Saving & Investing',
+    'Sonstiges': 'Other',
+    // Einnahmen
+    'Gehalt & Lohn': 'Salary & Wages',
+    'Bonus': 'Bonus',
+    'Selbstständigkeit': 'Self-employment',
+    'Zinsen & Dividenden': 'Interest & Dividends',
+    'Erstattung': 'Reimbursement',
+    'Verkauf': 'Sale',
+    'Geschenk erhalten': 'Gift Received',
+    'Kindergeld': 'Child Benefit',
+  };
+
+  /// Übersetzt den (deutschen) Namen einer Preset-Kategorie ins Englische;
+  /// unbekannte/eigene Namen bleiben unverändert.
+  String presetCategoryName(String germanName) =>
+      _en ? (_presetCategoryEn[germanName] ?? germanName) : germanName;
+
+  /// Anzeigename einer Kategorie: Presets werden übersetzt, eigene nicht.
+  String categoryName(Category category) =>
+      category.isPreset ? presetCategoryName(category.name) : category.name;
 
   // ---- Schulden & Kredite ----
   String get noDebtAccounts => _t(

@@ -54,7 +54,7 @@ class CategoryRulesScreen extends ConsumerWidget {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              c.name,
+                              l.categoryName(c),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),

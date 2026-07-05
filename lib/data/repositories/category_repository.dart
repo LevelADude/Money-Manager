@@ -77,6 +77,21 @@ class CategoryRepository {
     return _client.from('categories').update({'active': active}).eq('id', id);
   }
 
+  /// Ändert Name, Icon und/oder Art einer (eigenen) Kategorie.
+  Future<void> updateCategory({
+    required String id,
+    String? name,
+    String? icon,
+    CategoryKind? kind,
+  }) {
+    final patch = <String, dynamic>{};
+    if (name != null) patch['name'] = name;
+    if (icon != null) patch['icon'] = icon;
+    if (kind != null) patch['kind'] = categoryKindToDb(kind);
+    if (patch.isEmpty) return Future.value();
+    return _client.from('categories').update(patch).eq('id', id);
+  }
+
   // ----- Auto-Kategorisierungs-Regeln -----
 
   Stream<List<CategoryRule>> watchRules() async* {

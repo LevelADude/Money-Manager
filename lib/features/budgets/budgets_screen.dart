@@ -26,7 +26,7 @@ class BudgetsScreen extends ConsumerWidget {
     final cents = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l.budgetDialogTitle(cat.name)),
+        title: Text(l.budgetDialogTitle(l.categoryName(cat))),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -233,7 +233,7 @@ class _BudgetTile extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    category.name,
+                    l.categoryName(category),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),

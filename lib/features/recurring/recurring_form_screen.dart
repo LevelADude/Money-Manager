@@ -333,7 +333,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                           for (final c in categories)
                             DropdownMenuItem<String?>(
                               value: c.id,
-                              child: Text(c.name),
+                              child: Text(l.categoryName(c)),
                             ),
                         ],
                         onChanged: (v) => setState(() => _categoryId = v),

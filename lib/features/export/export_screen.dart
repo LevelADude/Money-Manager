@@ -42,7 +42,8 @@ class ExportScreen extends ConsumerWidget {
     final accounts =
         ref.watch(accountsProvider).asData?.value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
-    final catNames = ref.watch(categoryNamesProvider);
+    // CSV bewusst mit ROHEN (deutschen) Kategorienamen -> Round-Trip-Import.
+    final catNames = ref.watch(categoryRawNamesProvider);
     final memberNames =
         ref.watch(profileNamesProvider).asData?.value ??
         const <String, String>{};

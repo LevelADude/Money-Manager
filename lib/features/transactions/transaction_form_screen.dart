@@ -790,7 +790,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                   const SizedBox(width: 6),
                                   Flexible(
                                     child: Text(
-                                      c.name,
+                                      l.categoryName(c),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -1112,7 +1112,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     const SizedBox(width: 8),
                                     Flexible(
                                       child: Text(
-                                        c.name,
+                                        l.categoryName(c),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),

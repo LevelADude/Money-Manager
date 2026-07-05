@@ -1,5 +1,38 @@
 import 'package:flutter/material.dart';
 
+/// Auswählbare Icon-Tokens für eigene Kategorien (Reihenfolge = Anzeige im
+/// Picker). Deckt die Preset-Icons ab.
+const categoryIconTokens = <String>[
+  'cart',
+  'restaurant',
+  'home_supplies',
+  'home',
+  'bolt',
+  'wifi',
+  'car',
+  'bus',
+  'shield',
+  'health',
+  'shirt',
+  'sports',
+  'subscription',
+  'flight',
+  'gift',
+  'school',
+  'pet',
+  'child',
+  'donate',
+  'tax',
+  'savings',
+  'salary',
+  'star',
+  'work',
+  'invest',
+  'refund',
+  'sale',
+  'more',
+];
+
 /// Bildet die in der DB gespeicherten Icon-Tokens (z. B. 'cart') auf
 /// Flutter-Icons ab. Unbekannte Tokens -> neutrales Label-Icon.
 IconData iconForToken(String? token) {

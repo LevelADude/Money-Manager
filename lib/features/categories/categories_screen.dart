@@ -6,67 +6,11 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
 import 'category_providers.dart';
 
-/// Gruppenweite Kategorien verwalten (anlegen / aktiv schalten / löschen /
-/// Reihenfolge per Drag&Drop festlegen).
+/// Kategorien verwalten (anlegen / bearbeiten / aktiv schalten / löschen /
+/// Reihenfolge per Drag&Drop). Preset-Kategorien sind global und read-only;
+/// eigene Kategorien lassen sich mit Name, Art und Symbol bearbeiten.
 class CategoriesScreen extends ConsumerWidget {
   const CategoriesScreen({super.key});
-
-  Future<void> _addDialog(BuildContext context, WidgetRef ref) async {
-    final l = AppLocalizations.of(context);
-    final controller = TextEditingController();
-    var kind = CategoryKind.expense;
-    final result = await showDialog<({String name, CategoryKind kind})>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: Text(l.newCategory),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                autofocus: true,
-                decoration: InputDecoration(labelText: l.name),
-              ),
-              const SizedBox(height: 16),
-              SegmentedButton<CategoryKind>(
-                segments: [
-                  ButtonSegment(
-                    value: CategoryKind.expense,
-                    label: Text(l.expenseSingular),
-                  ),
-                  ButtonSegment(
-                    value: CategoryKind.income,
-                    label: Text(l.incomeSingular),
-                  ),
-                ],
-                selected: {kind},
-                onSelectionChanged: (s) => setState(() => kind = s.first),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(l.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, (
-                name: controller.text.trim(),
-                kind: kind,
-              )),
-              child: Text(l.create),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (result != null && result.name.isNotEmpty) {
-      await ref
-          .read(categoryRepositoryProvider)
-          .addCategory(name: result.name, kind: result.kind, icon: 'more');
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -75,7 +19,7 @@ class CategoriesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.moreCategories)),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _addDialog(context, ref),
+        onPressed: () => showCategoryEditor(context, ref),
         icon: const Icon(Icons.add),
         label: Text(l.category),
       ),
@@ -100,6 +44,116 @@ class CategoriesScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Dialog zum Anlegen (existing == null) oder Bearbeiten einer eigenen
+/// Kategorie. Speichert selbst über das Repository.
+Future<void> showCategoryEditor(
+  BuildContext context,
+  WidgetRef ref, {
+  Category? existing,
+}) async {
+  final l = AppLocalizations.of(context);
+  final controller = TextEditingController(text: existing?.name ?? '');
+  var kind = existing?.kind ?? CategoryKind.expense;
+  var icon = existing?.icon ?? 'more';
+
+  final saved = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: Text(existing == null ? l.newCategory : l.editCategory),
+        content: SizedBox(
+          width: 320,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  decoration: InputDecoration(labelText: l.name),
+                ),
+                const SizedBox(height: 16),
+                SegmentedButton<CategoryKind>(
+                  segments: [
+                    ButtonSegment(
+                      value: CategoryKind.expense,
+                      label: Text(l.expenseSingular),
+                    ),
+                    ButtonSegment(
+                      value: CategoryKind.income,
+                      label: Text(l.incomeSingular),
+                    ),
+                  ],
+                  selected: {kind},
+                  onSelectionChanged: (s) => setState(() => kind = s.first),
+                ),
+                const SizedBox(height: 16),
+                Text(l.iconLabel, style: Theme.of(ctx).textTheme.labelMedium),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final token in categoryIconTokens)
+                      InkWell(
+                        onTap: () => setState(() => icon = token),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: icon == token
+                                  ? Theme.of(ctx).colorScheme.primary
+                                  : Theme.of(ctx).dividerColor,
+                              width: icon == token ? 2 : 1,
+                            ),
+                            color: icon == token
+                                ? Theme.of(
+                                    ctx,
+                                  ).colorScheme.primary.withValues(alpha: 0.12)
+                                : null,
+                          ),
+                          child: Icon(iconForToken(token), size: 22),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(existing == null ? l.create : l.save),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  if (saved != true) return;
+  final name = controller.text.trim();
+  if (name.isEmpty) return;
+  final repo = ref.read(categoryRepositoryProvider);
+  if (existing == null) {
+    await repo.addCategory(name: name, kind: kind, icon: icon);
+  } else {
+    await repo.updateCategory(
+      id: existing.id,
+      name: name,
+      kind: kind,
+      icon: icon,
     );
   }
 }
@@ -198,10 +252,14 @@ class _CategoryTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final editable = !category.isPreset;
     return ListTile(
       leading: Icon(iconForToken(category.icon)),
-      title: Text(category.name),
+      title: Text(l.categoryName(category)),
       subtitle: Text(category.isPreset ? l.preset : l.custom),
+      onTap: editable
+          ? () => showCategoryEditor(context, ref, existing: category)
+          : null,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
