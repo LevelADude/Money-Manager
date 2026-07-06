@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
 import '../../data/models/recurring_rule.dart';
@@ -36,6 +37,10 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   TransactionType _type = TransactionType.expense;
   String? _categoryId;
   String? _transferTargetId;
+  // Zwischenspeicher, damit ein kurzes Neuladen (App-Resume -> invalidate) das
+  // Formular nicht auf leer springen lässt (offenes Dropdown bliebe offen).
+  List<Account> _accountsCache = const [];
+  List<Category> _allCatsCache = const [];
   IntervalUnit _unit = IntervalUnit.month;
   DateTime _nextDue = DateTime.now();
   DateTime? _endDate;
@@ -182,17 +187,22 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     final df = DateFormat('dd.MM.yyyy');
     final isTransfer = _type == TransactionType.transfer;
     // Nur verwaltbare Konten (eigene + manage-Freigaben) — ein nur-ansehbares
-    // Fremdkonto ließe keinen Dauerauftrag zu (RLS).
-    final accounts = ref
-        .watch(manageableAccountsProvider)
-        .where((a) => !a.archived)
-        .toList();
+    // Fremdkonto ließe keinen Dauerauftrag zu (RLS). Cache nur bei geladenen
+    // Daten aktualisieren (kein Leer-Flackern bei kurzem Neuladen).
+    if (ref.watch(accountsProvider).hasValue) {
+      _accountsCache = ref
+          .watch(manageableAccountsProvider)
+          .where((a) => !a.archived)
+          .toList();
+    }
+    final accounts = _accountsCache;
     _accountId ??= accounts.isNotEmpty ? accounts.first.id : null;
 
-    final categories =
-        (ref.watch(categoriesProvider).asData?.value ?? const <Category>[])
-            .where((c) => c.active && c.matches(_type))
-            .toList();
+    final catsAsync = ref.watch(categoriesProvider);
+    if (catsAsync.hasValue) _allCatsCache = catsAsync.value!;
+    final categories = _allCatsCache
+        .where((c) => c.active && c.matches(_type))
+        .toList();
     if (_categoryId != null && !categories.any((c) => c.id == _categoryId)) {
       _categoryId = null;
     }

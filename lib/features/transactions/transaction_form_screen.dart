@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/audit_entry.dart';
 import '../../data/models/category.dart';
@@ -63,6 +64,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   bool _splitMode = false;
   final List<_SplitRow> _splitRows = [];
   bool _splitsPrefilled = false;
+
+  // Zwischenspeicher für Konten/Kategorien: werden nur aktualisiert, wenn die
+  // Provider tatsächlich Daten haben. So springt das Formular bei einem kurzen
+  // Neuladen (z. B. App-Resume -> refreshAllData -> invalidate) NICHT auf leer
+  // (sonst blitzt der „Konto anlegen"-Screen auf und ein offenes Dropdown wird
+  // geschlossen).
+  List<Account> _accountsCache = const [];
+  List<Category> _allCatsCache = const [];
 
   @override
   void initState() {
@@ -877,20 +886,26 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final isTransfer = _type == TransactionType.transfer;
 
     // Nur verwaltbare Konten (eigene + manage-Freigaben) anbieten — ein
-    // nur-ansehbares Fremdkonto ließe sich nicht bebuchen (RLS).
-    final accounts = ref
-        .watch(manageableAccountsProvider)
-        .where((a) => !a.archived)
-        .toList();
+    // nur-ansehbares Fremdkonto ließe sich nicht bebuchen (RLS). Den Cache nur
+    // bei tatsächlich geladenen Daten aktualisieren, damit ein kurzes Neuladen
+    // das Formular nicht auf leer springen lässt.
+    if (ref.watch(accountsProvider).hasValue) {
+      _accountsCache = ref
+          .watch(manageableAccountsProvider)
+          .where((a) => !a.archived)
+          .toList();
+    }
+    final accounts = _accountsCache;
     _accountId ??= accounts.isNotEmpty ? accounts.first.id : null;
     if (_accountId != null && !accounts.any((a) => a.id == _accountId)) {
       _accountId = accounts.isNotEmpty ? accounts.first.id : null;
     }
 
-    final categories =
-        (ref.watch(categoriesProvider).asData?.value ?? const <Category>[])
-            .where((c) => c.active && c.matches(_type))
-            .toList();
+    final catsAsync = ref.watch(categoriesProvider);
+    if (catsAsync.hasValue) _allCatsCache = catsAsync.value!;
+    final categories = _allCatsCache
+        .where((c) => c.active && c.matches(_type))
+        .toList();
     if (_categoryId != null && !categories.any((c) => c.id == _categoryId)) {
       _categoryId = null;
     }
