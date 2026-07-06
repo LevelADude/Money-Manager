@@ -13,6 +13,16 @@ import 'currency_providers.dart';
 class ExchangeRatesScreen extends ConsumerWidget {
   const ExchangeRatesScreen({super.key});
 
+  /// Formatiert einen Kurs kompakt (bis 8 Nachkommastellen, ohne unnötige
+  /// Nullen, Komma als Dezimaltrenner).
+  static String _fmtRate(double v) {
+    var s = v.toStringAsFixed(8);
+    if (s.contains('.')) {
+      s = s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+    }
+    return s.replaceAll('.', ',');
+  }
+
   Future<void> _editRate(
     BuildContext context,
     WidgetRef ref,
@@ -20,37 +30,75 @@ class ExchangeRatesScreen extends ConsumerWidget {
     double current,
   ) async {
     final l = AppLocalizations.of(context);
+    final base = ref.read(settingsProvider).baseCurrency;
+    // `current` ist der Kurs zur Basiswährung (1 code = current base).
     final ctrl = TextEditingController(
-      text: current == 0 ? '' : current.toString().replaceAll('.', ','),
+      text: current == 0 ? '' : _fmtRate(current),
     );
+    // false: „1 code = ? base"; true: umgekehrt „1 base = ? code".
+    var inverse = false;
+
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.rateForCode(code)),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: '1 $code = ? ${ref.read(settingsProvider).baseCurrency}',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.save),
-          ),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) {
+          void switchTo(bool inv) {
+            if (inv == inverse) return;
+            final v = double.tryParse(ctrl.text.trim().replaceAll(',', '.'));
+            setState(() {
+              inverse = inv;
+              if (v != null && v > 0) ctrl.text = _fmtRate(1 / v);
+            });
+          }
+
+          return AlertDialog(
+            title: Text(l.rateForCode(code)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment(value: false, label: Text('$code → $base')),
+                    ButtonSegment(value: true, label: Text('$base → $code')),
+                  ],
+                  selected: {inverse},
+                  onSelectionChanged: (s) => switchTo(s.first),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: ctrl,
+                  autofocus: true,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: inverse
+                        ? '1 $base = ? $code'
+                        : '1 $code = ? $base',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l.save),
+              ),
+            ],
+          );
+        },
       ),
     );
     if (ok == true) {
       final v = double.tryParse(ctrl.text.trim().replaceAll(',', '.'));
       if (v != null && v > 0) {
-        await ref.read(currencyRepositoryProvider).upsert(code, v);
+        // Immer als Kurs zur Basiswährung speichern (rate_to_base).
+        final rate = inverse ? 1 / v : v;
+        await ref.read(currencyRepositoryProvider).upsert(code, rate);
         ref.invalidate(dbCurrenciesProvider);
       }
     }
