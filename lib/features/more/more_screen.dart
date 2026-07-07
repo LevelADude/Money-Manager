@@ -37,6 +37,7 @@ class MoreScreen extends ConsumerWidget {
           ),
           tile(Icons.history, l.moreActivity, '/more/activity'),
           tile(Icons.savings_outlined, l.moreBudgets, '/more/budgets'),
+          tile(Icons.functions, l.customSums, '/account/groups'),
           tile(Icons.calculate_outlined, l.morePlanning, '/more/planning'),
           tile(Icons.tune, l.moreSimulator, '/more/simulator'),
           tile(Icons.luggage_outlined, l.moreProjects, '/more/projects'),

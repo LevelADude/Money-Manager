@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/app_cache.dart';
 import '../../data/models/account.dart';
+import '../../data/models/account_group.dart';
 import '../../data/models/app_transaction.dart';
+import '../../data/repositories/account_group_repository.dart';
 import '../../data/repositories/account_repository.dart';
 import '../../shared/balances.dart';
 import '../archive/archive_providers.dart';
@@ -57,6 +59,42 @@ final accountBalanceProvider = Provider.family<int, String>((ref, accountId) {
   final carryover = ref.watch(archivedCarryoverProvider);
   return accountBalanceCents(account, txs, carryover);
 });
+
+final accountGroupRepositoryProvider = Provider<AccountGroupRepository>((ref) {
+  return AccountGroupRepository(ref.watch(supabaseClientProvider));
+});
+
+/// Eigene Konten-Gruppen (für Custom-Summen).
+final accountGroupsProvider = FutureProvider<List<AccountGroup>>((ref) {
+  return ref.watch(accountGroupRepositoryProvider).fetchAll();
+});
+
+/// Summe (in Hauptwährung) je eigener Konten-Gruppe. Nicht gefundene bzw.
+/// gelöschte Konten werden übersprungen.
+final accountGroupTotalsProvider =
+    Provider<List<({AccountGroup group, int cents})>>((ref) {
+      final groups = ref.watch(accountGroupsProvider).asData?.value ?? const [];
+      final accounts =
+          ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+      final txs =
+          ref.watch(allTransactionsProvider).asData?.value ??
+          const <AppTransaction>[];
+      final convert = ref.watch(converterProvider);
+      final carryover = ref.watch(archivedCarryoverProvider);
+      final byId = {for (final a in accounts) a.id: a};
+      return [
+        for (final g in groups)
+          (
+            group: g,
+            cents: g.accountIds.fold<int>(0, (s, id) {
+              final a = byId[id];
+              if (a == null) return s;
+              return s +
+                  convert(accountBalanceCents(a, txs, carryover), a.currency);
+            }),
+          ),
+      ];
+    });
 
 /// Gesamtvermögen (Cent) über alle Konten mit `include_in_net_worth`,
 /// optional nur für eine Person (`ownerId`). Verbindlichkeiten sind negativ.

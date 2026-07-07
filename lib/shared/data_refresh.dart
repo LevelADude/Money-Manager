@@ -15,6 +15,7 @@ import '../features/transactions/transaction_providers.dart';
 /// auch wenn die Realtime-Verbindung beim Start kurz hängt.
 void refreshAllData(WidgetRef ref) {
   ref.invalidate(accountsProvider);
+  ref.invalidate(accountGroupsProvider);
   ref.invalidate(allTransactionsProvider);
   ref.invalidate(allSplitsProvider);
   ref.invalidate(categoriesProvider);

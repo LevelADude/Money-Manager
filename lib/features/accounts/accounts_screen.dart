@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models/account.dart';
+import '../../data/models/account_group.dart';
 import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/balances.dart';
@@ -149,6 +150,15 @@ class AccountsScreen extends ConsumerWidget {
             ]..sort((a, b) => b.cents.compareTo(a.cents));
             children.add(_PerPersonCard(entries: entries));
           }
+
+          // Eigene Custom-Summen (nur in der Eigen-/Gesamtansicht).
+          if (personFilter == null || personFilter == myId) {
+            final groupTotals = ref.watch(accountGroupTotalsProvider);
+            if (groupTotals.isNotEmpty) {
+              children.add(_CustomSumsCard(entries: groupTotals));
+            }
+          }
+
           for (final type in _order) {
             final group = byType[type];
             if (group == null || group.isEmpty) continue;
@@ -295,6 +305,72 @@ class _PerPersonCard extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomSumsCard extends StatelessWidget {
+  const _CustomSumsCard({required this.entries});
+
+  final List<({AccountGroup group, int cents})> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: InkWell(
+        onTap: () => context.go('/account/groups'),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l.customSums,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.tune,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              for (final e in entries)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          e.group.name,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      MoneyText(
+                        e.cents,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: e.cents < 0 ? Colors.red.shade700 : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

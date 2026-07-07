@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/local/app_cache.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/audit_entry.dart';
@@ -45,6 +46,7 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
 }
 
 class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
+  static const _kLastAccountKey = 'last_account_id';
   final _formKey = GlobalKey<FormState>();
   final _amount = TextEditingController();
   final _note = TextEditingController();
@@ -290,6 +292,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       } else if (widget.isEditing) {
         await splitRepo.deleteForTransaction(txId);
       }
+      // Zuletzt genutztes Konto merken -> Vorauswahl bei der nächsten neuen
+      // Buchung (statt immer dem ersten Konto).
+      await ref
+          .read(sharedPrefsProvider)
+          .setString(_kLastAccountKey, _accountId!);
       ref.invalidate(allTransactionsProvider);
       ref.invalidate(allSplitsProvider);
       if (mounted) context.go(_backTarget);
@@ -896,7 +903,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           .toList();
     }
     final accounts = _accountsCache;
-    _accountId ??= accounts.isNotEmpty ? accounts.first.id : null;
+    // Vorauswahl: zuletzt genutztes Konto (falls noch vorhanden), sonst erstes.
+    if (_accountId == null && accounts.isNotEmpty) {
+      final last = ref.read(sharedPrefsProvider).getString(_kLastAccountKey);
+      _accountId = (last != null && accounts.any((a) => a.id == last))
+          ? last
+          : accounts.first.id;
+    }
     if (_accountId != null && !accounts.any((a) => a.id == _accountId)) {
       _accountId = accounts.isNotEmpty ? accounts.first.id : null;
     }

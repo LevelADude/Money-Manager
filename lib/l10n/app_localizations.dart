@@ -183,6 +183,24 @@ class AppLocalizations {
   );
   String get netWorth => _t('Gesamtvermögen', 'Net worth');
   String get wealthPerPerson => _t('Vermögen je Person', 'Wealth per person');
+  // ---- Eigene Konten-Gruppen (Custom-Summen) ----
+  String get customSums => _t('Meine Summen', 'My totals');
+  String get manageGroups => _t('Gruppen verwalten', 'Manage groups');
+  String get newGroup => _t('Neue Gruppe', 'New group');
+  String get editGroup => _t('Gruppe bearbeiten', 'Edit group');
+  String get groupName => _t('Gruppenname', 'Group name');
+  String get selectAccounts => _t('Konten auswählen', 'Select accounts');
+  String get deleteGroup => _t('Gruppe löschen', 'Delete group');
+  String get noGroupsYet => _t(
+    'Noch keine Gruppen. Lege eine an, um Salden mehrerer Konten zu einer Summe zu bündeln (z. B. „Sparkonten").',
+    'No groups yet. Create one to combine several accounts into a single total (e.g. “Savings”).',
+  );
+  String get groupNeedsAccounts => _t(
+    'Bitte Name eingeben und mindestens ein Konto wählen.',
+    'Please enter a name and pick at least one account.',
+  );
+  String groupAccountCount(int n) =>
+      _t('$n Konten', n == 1 ? '$n account' : '$n accounts');
   String get unknownPerson => _t('Unbekannt', 'Unknown');
   String get sharedLabel => _t('geteilt', 'shared');
   String get archivedLabel => _t('archiviert', 'archived');
