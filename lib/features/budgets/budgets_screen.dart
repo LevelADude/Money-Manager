@@ -51,7 +51,85 @@ class BudgetsScreen extends ConsumerWidget {
     if (cents != null && cents > 0) {
       await ref
           .read(budgetRepositoryProvider)
-          .setBudget(categoryId: cat.id, amountCents: cents);
+          .setCategoryBudget(
+            categoryId: cat.id,
+            amountCents: cents,
+            existingId: ref.read(budgetsByCategoryProvider)[cat.id]?.id,
+          );
+    }
+  }
+
+  /// Gesamtbudget (kategorieunabhängig) festlegen – Betrag + Zeitraum.
+  Future<void> _editOverall(
+    BuildContext context,
+    WidgetRef ref,
+    Budget? existing,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final ctrl = TextEditingController(
+      text: existing == null ? '' : centsToInput(existing.amountCents),
+    );
+    var period = existing?.period ?? BudgetPeriod.month;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: Text(l.overallBudget),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SegmentedButton<BudgetPeriod>(
+                segments: [
+                  ButtonSegment(
+                    value: BudgetPeriod.month,
+                    label: Text(l.periodMonth),
+                  ),
+                  ButtonSegment(
+                    value: BudgetPeriod.week,
+                    label: Text(l.periodWeek),
+                  ),
+                ],
+                selected: {period},
+                onSelectionChanged: (s) => setState(() => period = s.first),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: l.overallBudget,
+                  prefixIcon: const Icon(Icons.euro),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.save),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok == true) {
+      final cents = parseToCents(ctrl.text);
+      if (cents != null && cents > 0) {
+        await ref
+            .read(budgetRepositoryProvider)
+            .setOverallBudget(
+              period: period,
+              amountCents: cents,
+              existingId: existing?.id,
+            );
+      }
     }
   }
 
@@ -67,18 +145,14 @@ class BudgetsScreen extends ConsumerWidget {
     final budgets = ref.watch(budgetsByCategoryProvider);
     final spent = ref.watch(monthlySpentByCategoryProvider);
 
-    final totalBudget = budgets.values.fold<int>(
-      0,
-      (s, b) => s + b.amountCents,
-    );
-    final totalSpent = budgets.keys.fold<int>(
-      0,
-      (s, id) => s + (spent[id] ?? 0),
-    );
-
+    // Eigenständiges Gesamtbudget (kategorieunabhängig, Monat/Woche).
+    final overall = ref.watch(overallBudgetProvider);
+    final period = overall?.period ?? BudgetPeriod.month;
+    final overallSpent = ref.watch(periodExpenseTotalProvider(period));
     final now = DateTime.now();
-    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
-    final daysLeft = daysInMonth - now.day + 1;
+    final today = DateTime(now.year, now.month, now.day);
+    final (_, periodEnd) = budgetPeriodWindow(period, now);
+    final daysLeft = periodEnd.difference(today).inDays;
 
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context).moreBudgets)),
@@ -86,9 +160,16 @@ class BudgetsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(12),
         children: [
           _OverallBudgetCard(
-            totalSpent: totalSpent,
-            totalBudget: totalBudget,
+            budget: overall,
+            spent: overallSpent,
+            period: period,
             daysLeft: daysLeft,
+            onEdit: () => _editOverall(context, ref, overall),
+            onRemove: overall == null
+                ? null
+                : () => ref
+                      .read(budgetRepositoryProvider)
+                      .deleteBudget(overall.id),
           ),
           const SizedBox(height: 8),
           for (final cat in cats)
@@ -112,27 +193,37 @@ class BudgetsScreen extends ConsumerWidget {
 
 class _OverallBudgetCard extends StatelessWidget {
   const _OverallBudgetCard({
-    required this.totalSpent,
-    required this.totalBudget,
+    required this.budget,
+    required this.spent,
+    required this.period,
     required this.daysLeft,
+    required this.onEdit,
+    required this.onRemove,
   });
 
-  final int totalSpent;
-  final int totalBudget;
+  final Budget? budget;
+  final int spent;
+  final BudgetPeriod period;
   final int daysLeft;
+  final VoidCallback onEdit;
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final hasBudget = totalBudget > 0;
-    final frac = hasBudget ? (totalSpent / totalBudget).clamp(0.0, 1.0) : 0.0;
-    final pct = hasBudget ? (totalSpent / totalBudget * 100).round() : 0;
-    final remaining = totalBudget - totalSpent;
-    final over = remaining < 0;
+    final hasBudget = budget != null;
+    final amount = budget?.amountCents ?? 0;
+    final frac = (hasBudget && amount > 0)
+        ? (spent / amount).clamp(0.0, 1.0)
+        : 0.0;
+    final pct = (hasBudget && amount > 0) ? (spent / amount * 100).round() : 0;
+    final remaining = amount - spent;
+    final over = hasBudget && remaining < 0;
     final color = over
         ? Colors.red.shade600
         : (pct >= 90 ? Colors.orange.shade700 : Colors.green.shade600);
     final perDay = (!over && daysLeft > 0) ? remaining ~/ daysLeft : 0;
+    final periodLabel = period == BudgetPeriod.week ? l.thisWeek : l.thisMonth;
 
     return Card(
       child: Padding(
@@ -144,30 +235,43 @@ class _OverallBudgetCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    l.thisMonthWithBudget,
+                    hasBudget
+                        ? '${l.overallBudget} · $periodLabel'
+                        : l.overallBudget,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                if (hasBudget)
+                if (hasBudget) ...[
                   Text(
                     '$pct %',
                     style: TextStyle(fontWeight: FontWeight.bold, color: color),
                   ),
+                  IconButton(
+                    tooltip: l.edit,
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: onEdit,
+                  ),
+                  IconButton(
+                    tooltip: l.remove,
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: onRemove,
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: LinearProgressIndicator(
-                value: frac,
-                minHeight: 10,
-                color: color,
-                backgroundColor: color.withValues(alpha: 0.15),
+            if (hasBudget) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: LinearProgressIndicator(
+                  value: frac,
+                  minHeight: 10,
+                  color: color,
+                  backgroundColor: color.withValues(alpha: 0.15),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(l.amountOf(formatCents(totalSpent), formatCents(totalBudget))),
-            if (hasBudget)
+              const SizedBox(height: 8),
+              Text(l.amountOf(formatCents(spent), formatCents(amount))),
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
@@ -183,6 +287,25 @@ class _OverallBudgetCard extends StatelessWidget {
                   ),
                 ),
               ),
+            ] else ...[
+              const SizedBox(height: 6),
+              Text(
+                l.overallBudgetHint,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('${l.thisMonth}: ${formatCents(spent)}'),
+                  ),
+                  FilledButton.tonal(
+                    onPressed: onEdit,
+                    child: Text(l.setOverallBudget),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

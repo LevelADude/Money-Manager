@@ -1844,3 +1844,21 @@ drop trigger if exists account_groups_set_updated_at on public.account_groups;
 create trigger account_groups_set_updated_at before update on public.account_groups
   for each row execute function public.set_updated_at();
 
+
+-- ## Migration: 0035_overall_budget.sql
+
+-- Kategorie-unabhängiges Gesamtbudget (category_id NULL) + Periode Monat/Woche;
+-- Eindeutigkeit pro Besitzer statt global.
+alter table public.budgets alter column category_id drop not null;
+alter table public.budgets add column if not exists period text not null default 'month';
+alter table public.budgets drop constraint if exists budgets_category_unique;
+alter table public.budgets drop constraint if exists budgets_period_chk;
+alter table public.budgets
+  add constraint budgets_period_chk check (period in ('week', 'month'));
+create unique index if not exists budgets_cat_owner_uq
+  on public.budgets (created_by, category_id)
+  where category_id is not null and deleted_at is null;
+create unique index if not exists budgets_overall_owner_uq
+  on public.budgets (created_by)
+  where category_id is null and deleted_at is null;
+

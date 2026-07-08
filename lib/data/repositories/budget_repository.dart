@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../local/app_cache.dart';
-import '../models/budget.dart';
+import '../models/budget.dart' show Budget, BudgetPeriod, budgetPeriodToDb;
 
 /// Zugriff auf die Tabelle `budgets` inkl. Stream + Offline-Cache.
 class BudgetRepository {
@@ -32,16 +32,47 @@ class BudgetRepository {
     }
   }
 
-  /// Setzt/aktualisiert das Budget einer Kategorie (ein Budget je Kategorie).
-  Future<void> setBudget({
+  /// Setzt/aktualisiert das Monatsbudget einer Kategorie. Vorhandenes Budget
+  /// wird über [existingId] aktualisiert, sonst neu angelegt.
+  Future<void> setCategoryBudget({
     required String categoryId,
     required int amountCents,
+    String? existingId,
   }) {
-    return _client.from('budgets').upsert({
+    if (existingId != null) {
+      return _client
+          .from('budgets')
+          .update({'amount_cents': amountCents, 'deleted_at': null})
+          .eq('id', existingId);
+    }
+    return _client.from('budgets').insert({
       'category_id': categoryId,
       'amount_cents': amountCents,
-      'deleted_at': null,
-    }, onConflict: 'category_id');
+      'period': budgetPeriodToDb(BudgetPeriod.month),
+    });
+  }
+
+  /// Setzt/aktualisiert das kategorieunabhängige Gesamtbudget (Monat/Woche).
+  Future<void> setOverallBudget({
+    required BudgetPeriod period,
+    required int amountCents,
+    String? existingId,
+  }) {
+    if (existingId != null) {
+      return _client
+          .from('budgets')
+          .update({
+            'amount_cents': amountCents,
+            'period': budgetPeriodToDb(period),
+            'deleted_at': null,
+          })
+          .eq('id', existingId);
+    }
+    return _client.from('budgets').insert({
+      'category_id': null,
+      'amount_cents': amountCents,
+      'period': budgetPeriodToDb(period),
+    });
   }
 
   Future<void> deleteBudget(String id) {

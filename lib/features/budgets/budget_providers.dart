@@ -20,10 +20,58 @@ final budgetsProvider = StreamProvider<List<Budget>>((ref) {
   return ref.watch(budgetRepositoryProvider).watchBudgets();
 });
 
-/// Map: Kategorie-ID -> Budget (für schnellen Zugriff inkl. Budget-ID).
+/// Map: Kategorie-ID -> Budget (nur Kategorie-Budgets, Gesamtbudget ausgenommen).
 final budgetsByCategoryProvider = Provider<Map<String, Budget>>((ref) {
   final budgets = ref.watch(budgetsProvider).asData?.value ?? const <Budget>[];
-  return {for (final b in budgets) b.categoryId: b};
+  return {
+    for (final b in budgets)
+      if (b.categoryId != null) b.categoryId!: b,
+  };
+});
+
+/// Das kategorieunabhängige Gesamtbudget (oder null).
+final overallBudgetProvider = Provider<Budget?>((ref) {
+  final budgets = ref.watch(budgetsProvider).asData?.value ?? const <Budget>[];
+  for (final b in budgets) {
+    if (b.isOverall) return b;
+  }
+  return null;
+});
+
+/// Fenster [Start, Ende) der aktuellen Periode (Woche = Mo–So, Monat).
+(DateTime, DateTime) budgetPeriodWindow(BudgetPeriod period, DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  if (period == BudgetPeriod.week) {
+    final start = today.subtract(Duration(days: today.weekday - 1));
+    return (start, start.add(const Duration(days: 7)));
+  }
+  return (
+    DateTime(now.year, now.month, 1),
+    DateTime(now.year, now.month + 1, 1),
+  );
+}
+
+/// Gesamt-Ausgaben (Cent, Hauptwährung) in der aktuellen Periode über ALLE
+/// Kategorien hinweg (auch nicht kategorisierte). Für das Gesamtbudget.
+final periodExpenseTotalProvider = Provider.family<int, BudgetPeriod>((
+  ref,
+  period,
+) {
+  final txs =
+      ref.watch(allTransactionsProvider).asData?.value ??
+      const <AppTransaction>[];
+  final convert = ref.watch(converterProvider);
+  final curOf = ref.watch(accountCurrencyProvider);
+  final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
+  final (start, end) = budgetPeriodWindow(period, DateTime.now());
+  var total = 0;
+  for (final t in txs) {
+    if (t.type != TransactionType.expense) continue;
+    final d = DateTime(t.occurredOn.year, t.occurredOn.month, t.occurredOn.day);
+    if (d.isBefore(start) || !d.isBefore(end)) continue; // [start, end)
+    total += convert(t.amountCents, curOf[t.accountId] ?? base);
+  }
+  return total;
 });
 
 /// Ausgaben des laufenden Monats je Kategorie (Cent). Split-bewusst: bei

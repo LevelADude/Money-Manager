@@ -526,6 +526,16 @@ class AppLocalizations {
   String amountLeft(String x) => _t('noch $x', '$x left');
   String noBudgetThisMonth(String x) =>
       _t('Kein Budget · diesen Monat $x', 'No budget · this month $x');
+  // ---- Gesamtbudget (kategorieunabhängig, Monat/Woche) ----
+  String get overallBudget => _t('Gesamtbudget', 'Overall budget');
+  String get overallBudgetHint => _t(
+    'Ein Budget über alle Kategorien hinweg – pro Monat oder Woche.',
+    'A budget across all categories – per month or week.',
+  );
+  String get setOverallBudget =>
+      _t('Gesamtbudget festlegen', 'Set overall budget');
+  String get budgetPeriodLabel => _t('Zeitraum', 'Period');
+  String get thisWeek => _t('Diese Woche', 'This week');
 
   // ---- Sparziele ----
   String get roundupSaving => _t('Rundungs-Sparen', 'Round-up saving');
