@@ -127,9 +127,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (_splitsPrefilled) return;
     final splits = ref.read(allSplitsProvider).value;
     if (splits == null) return; // noch nicht geladen → später erneut
-    final mine = splits.where(
-      (s) => s.transactionId == widget.transactionId,
-    );
+    final mine = splits.where((s) => s.transactionId == widget.transactionId);
     if (mine.isNotEmpty) {
       _splitMode = true;
       for (final s in mine) {
@@ -345,8 +343,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final l = AppLocalizations.of(context);
     final repo = ref.read(transactionRepositoryProvider);
     final names =
-        ref.read(profileNamesProvider).value ??
-        const <String, String>{};
+        ref.read(profileNamesProvider).value ?? const <String, String>{};
     final df = DateFormat('dd.MM.yyyy HH:mm');
     await showModalBottomSheet<void>(
       context: context,
@@ -449,8 +446,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       context: context,
       builder: (ctx) => Consumer(
         builder: (ctx, ref2, _) {
-          final templates =
-              ref2.watch(templatesProvider).value ?? const [];
+          final templates = ref2.watch(templatesProvider).value ?? const [];
           return SafeArea(
             child: ListView(
               shrinkWrap: true,

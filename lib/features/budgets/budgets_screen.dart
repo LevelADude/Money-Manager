@@ -120,7 +120,10 @@ class BudgetsScreen extends ConsumerWidget {
   }
 
   /// Schreibt und zeigt Fehler an, statt sie stumm zu verschlucken.
-  Future<void> _run(BuildContext context, Future<void> Function() action) async {
+  Future<void> _run(
+    BuildContext context,
+    Future<void> Function() action,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
     final l = AppLocalizations.of(context);
     try {

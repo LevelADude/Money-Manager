@@ -90,16 +90,13 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
   final localeCode = ref.watch(settingsProvider.select((s) => s.localeCode));
   final l = AppLocalizations(Locale(localeCode));
-  final cats =
-      ref.watch(categoriesProvider).value ?? const <Category>[];
+  final cats = ref.watch(categoriesProvider).value ?? const <Category>[];
   final catName = {for (final c in cats) c.id: c.name};
   final budgets = ref.watch(budgetsByCategoryProvider);
   final spentByCat = ref.watch(monthlySpentByCategoryProvider);
   final rules =
-      ref.watch(recurringRulesProvider).value ??
-      const <RecurringRule>[];
-  final goals =
-      ref.watch(savingsGoalsProvider).value ?? const <SavingsGoal>[];
+      ref.watch(recurringRulesProvider).value ?? const <RecurringRule>[];
+  final goals = ref.watch(savingsGoalsProvider).value ?? const <SavingsGoal>[];
   final splitsByTx = ref.watch(splitsByTransactionProvider);
 
   int amt(AppTransaction t) =>

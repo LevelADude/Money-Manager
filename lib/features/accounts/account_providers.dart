@@ -31,8 +31,7 @@ final accountsProvider = StreamProvider<List<Account>>((ref) {
 /// man nur sehen darf (RLS `can_manage_account` würde das Speichern ohnehin
 /// ablehnen). Dient als Quelle für alle Konto-Auswahlen beim Anlegen/Bearbeiten.
 final manageableAccountsProvider = Provider<List<Account>>((ref) {
-  final accounts =
-      ref.watch(accountsProvider).value ?? const <Account>[];
+  final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
   final owners = ref.watch(manageableOwnersProvider);
   return accounts
       .where((a) => a.ownerId != null && owners.contains(a.ownerId))
@@ -48,11 +47,9 @@ final manageableAccountsProvider = Provider<List<Account>>((ref) {
 /// O(Personen x Konten x Buchungen) bei **jedem** Rebuild. Das war die
 /// spürbare Ruckelquelle auf dem Handy.
 final accountBalancesProvider = Provider<Map<String, int>>((ref) {
-  final accounts =
-      ref.watch(accountsProvider).value ?? const <Account>[];
+  final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
   final txs =
-      ref.watch(allTransactionsProvider).value ??
-      const <AppTransaction>[];
+      ref.watch(allTransactionsProvider).value ?? const <AppTransaction>[];
   // Carry-over archivierter Jahre: deren Buchungen sind aus der DB entfernt,
   // ihr Netto-Beitrag steckt im Carry-over, damit der Saldo korrekt bleibt.
   final carryover = ref.watch(archivedCarryoverProvider);
@@ -78,8 +75,7 @@ final accountGroupsProvider = FutureProvider<List<AccountGroup>>((ref) {
 final accountGroupTotalsProvider =
     Provider<List<({AccountGroup group, int cents})>>((ref) {
       final groups = ref.watch(accountGroupsProvider).value ?? const [];
-      final accounts =
-          ref.watch(accountsProvider).value ?? const <Account>[];
+      final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
       final convert = ref.watch(converterProvider);
       final balances = ref.watch(accountBalancesProvider);
       final byId = {for (final a in accounts) a.id: a};
@@ -99,8 +95,7 @@ final accountGroupTotalsProvider =
 /// Gesamtvermögen (Cent) über alle Konten mit `include_in_net_worth`,
 /// optional nur für eine Person (`ownerId`). Verbindlichkeiten sind negativ.
 final netWorthProvider = Provider.family<int, String?>((ref, ownerId) {
-  final accounts =
-      ref.watch(accountsProvider).value ?? const <Account>[];
+  final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
   final convert = ref.watch(converterProvider);
   final balances = ref.watch(accountBalancesProvider);
   var total = 0;

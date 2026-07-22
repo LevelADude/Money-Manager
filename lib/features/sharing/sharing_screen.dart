@@ -29,8 +29,7 @@ class SharingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final myId = ref.watch(currentUserIdProvider);
     final names =
-        ref.watch(profileNamesProvider).value ??
-        const <String, String>{};
+        ref.watch(profileNamesProvider).value ?? const <String, String>{};
     final iGave = ref.watch(grantsIGaveProvider);
     final iReceived = ref.watch(grantsIReceivedProvider);
     final l = AppLocalizations.of(context);

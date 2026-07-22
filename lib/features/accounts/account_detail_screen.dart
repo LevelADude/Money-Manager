@@ -21,8 +21,7 @@ class AccountDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final accounts =
-        ref.watch(accountsProvider).value ?? const <Account>[];
+    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     String accountName = l.accountLabel;
     for (final a in accounts) {
@@ -35,8 +34,7 @@ class AccountDetailScreen extends ConsumerWidget {
     final txs = ref.watch(accountTransactionsProvider(accountId));
     final categoryNames = ref.watch(categoryNamesProvider);
     final memberNames =
-        ref.watch(profileNamesProvider).value ??
-        const <String, String>{};
+        ref.watch(profileNamesProvider).value ?? const <String, String>{};
 
     return Scaffold(
       appBar: AppBar(

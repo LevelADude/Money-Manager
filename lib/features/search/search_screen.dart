@@ -33,10 +33,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final q = _query.text.trim().toLowerCase();
     final txs =
-        ref.watch(allTransactionsProvider).value ??
-        const <AppTransaction>[];
-    final accounts =
-        ref.watch(accountsProvider).value ?? const <Account>[];
+        ref.watch(allTransactionsProvider).value ?? const <AppTransaction>[];
+    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final l = AppLocalizations.of(context);

@@ -100,8 +100,7 @@ final periodExpenseTotalProvider = Provider.family<int, BudgetPeriod>((
   period,
 ) {
   final txs =
-      ref.watch(allTransactionsProvider).value ??
-      const <AppTransaction>[];
+      ref.watch(allTransactionsProvider).value ?? const <AppTransaction>[];
   final convert = ref.watch(converterProvider);
   final curOf = ref.watch(accountCurrencyProvider);
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
@@ -118,40 +117,42 @@ final periodExpenseTotalProvider = Provider.family<int, BudgetPeriod>((
 
 /// Ausgaben der laufenden Periode je Kategorie (Cent). Split-bewusst: bei
 /// aufgeteilten Buchungen zählen die einzelnen Split-Beträge je Kategorie.
-final spentByCategoryProvider = Provider.family<Map<String, int>, BudgetPeriod>((
-  ref,
-  period,
-) {
-  final txs =
-      ref.watch(allTransactionsProvider).value ??
-      const <AppTransaction>[];
-  final splitsByTx = ref.watch(splitsByTransactionProvider);
-  final convert = ref.watch(converterProvider);
-  final curOf = ref.watch(accountCurrencyProvider);
-  final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
-  final (start, end) = budgetPeriodWindow(period, DateTime.now());
-  final map = <String, int>{};
-  for (final t in txs) {
-    if (t.type != TransactionType.expense) continue;
-    final d = DateTime(t.occurredOn.year, t.occurredOn.month, t.occurredOn.day);
-    if (d.isBefore(start) || !d.isBefore(end)) continue; // [start, end)
-    final code = curOf[t.accountId] ?? base;
-    final splits = splitsByTx[t.id];
-    if (splits != null && splits.isNotEmpty) {
-      for (final s in splits) {
-        if (s.categoryId == null) continue;
-        final v = convert(s.amountCents, code);
-        map.update(s.categoryId!, (x) => x + v, ifAbsent: () => v);
+final spentByCategoryProvider = Provider.family<Map<String, int>, BudgetPeriod>(
+  (ref, period) {
+    final txs =
+        ref.watch(allTransactionsProvider).value ?? const <AppTransaction>[];
+    final splitsByTx = ref.watch(splitsByTransactionProvider);
+    final convert = ref.watch(converterProvider);
+    final curOf = ref.watch(accountCurrencyProvider);
+    final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
+    final (start, end) = budgetPeriodWindow(period, DateTime.now());
+    final map = <String, int>{};
+    for (final t in txs) {
+      if (t.type != TransactionType.expense) continue;
+      final d = DateTime(
+        t.occurredOn.year,
+        t.occurredOn.month,
+        t.occurredOn.day,
+      );
+      if (d.isBefore(start) || !d.isBefore(end)) continue; // [start, end)
+      final code = curOf[t.accountId] ?? base;
+      final splits = splitsByTx[t.id];
+      if (splits != null && splits.isNotEmpty) {
+        for (final s in splits) {
+          if (s.categoryId == null) continue;
+          final v = convert(s.amountCents, code);
+          map.update(s.categoryId!, (x) => x + v, ifAbsent: () => v);
+        }
+      } else {
+        final cat = t.categoryId;
+        if (cat == null) continue;
+        final v = convert(t.amountCents, code);
+        map.update(cat, (x) => x + v, ifAbsent: () => v);
       }
-    } else {
-      final cat = t.categoryId;
-      if (cat == null) continue;
-      final v = convert(t.amountCents, code);
-      map.update(cat, (x) => x + v, ifAbsent: () => v);
     }
-  }
-  return map;
-});
+    return map;
+  },
+);
 
 /// Ausgaben des laufenden Monats je Kategorie – für die Monats-Auswertungen
 /// (Insights), die unabhängig vom gewählten Budget-Zeitraum monatlich denken.

@@ -34,16 +34,19 @@ void main() {
       expect(r.overBy, 10000);
     });
 
-    test('Erhöhen eines bestehenden Budgets rechnet ohne dessen alten Wert', () {
-      // Essen von 200 € auf 400 € -> verplant 700 + 400 = 1100 €.
-      final r = checkAllocation(
-        overallCents: overall,
-        allocatedOtherCents: miete, // eigenes altes Budget ist abgezogen
-        newCents: 40000,
-      );
-      expect(r.exceeds, isTrue);
-      expect(r.overBy, 10000);
-    });
+    test(
+      'Erhöhen eines bestehenden Budgets rechnet ohne dessen alten Wert',
+      () {
+        // Essen von 200 € auf 400 € -> verplant 700 + 400 = 1100 €.
+        final r = checkAllocation(
+          overallCents: overall,
+          allocatedOtherCents: miete, // eigenes altes Budget ist abgezogen
+          newCents: 40000,
+        );
+        expect(r.exceeds, isTrue);
+        expect(r.overBy, 10000);
+      },
+    );
 
     test('ohne Gesamtbudget gibt es keine Obergrenze', () {
       final r = checkAllocation(

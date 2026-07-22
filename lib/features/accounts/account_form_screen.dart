@@ -136,8 +136,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       _membersInit = true;
     }
     final profileNames =
-        ref.watch(profileNamesProvider).value ??
-        const <String, String>{};
+        ref.watch(profileNamesProvider).value ?? const <String, String>{};
     final others = profileNames.keys.where((id) => id != myId).toList()
       ..sort(
         (a, b) => (profileNames[a] ?? '').toLowerCase().compareTo(

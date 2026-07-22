@@ -35,8 +35,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     final theme = Theme.of(context);
     final isAdmin = ref.watch(isAdminProvider).value ?? false;
     final txs =
-        ref.watch(allTransactionsProvider).value ??
-        const <AppTransaction>[];
+        ref.watch(allTransactionsProvider).value ?? const <AppTransaction>[];
     final archivedSet = ref.watch(archivedYearSetProvider);
     final archivedAsync = ref.watch(archivedYearsProvider);
     final configAsync = ref.watch(archiveConfigStatusProvider);
@@ -278,8 +277,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     );
     if (!ok) return;
 
-    final accounts =
-        ref.read(accountsProvider).value ?? const <Account>[];
+    final accounts = ref.read(accountsProvider).value ?? const <Account>[];
     setState(() => _busy = true);
     try {
       for (final y in years) {

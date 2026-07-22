@@ -153,8 +153,7 @@ class SavingsScreen extends ConsumerWidget {
   Future<void> _roundupSweep(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
     final txs =
-        ref.read(allTransactionsProvider).value ??
-        const <AppTransaction>[];
+        ref.read(allTransactionsProvider).value ?? const <AppTransaction>[];
     final now = DateTime.now();
     var roundup = 0;
     for (final t in txs) {

@@ -161,8 +161,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     // Buchen nur in der Gesamtansicht oder bei Personen, die man verwalten darf.
     final canAdd =
         personFilter == null || manageableOwners.contains(personFilter);
-    final accounts =
-        ref.watch(accountsProvider).value ?? const <Account>[];
+    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final allTags = ref.watch(allTagsProvider);

@@ -42,8 +42,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
   Widget build(BuildContext context) {
     final async = ref.watch(commentsProvider(widget.transactionId));
     final names =
-        ref.watch(profileNamesProvider).value ??
-        const <String, String>{};
+        ref.watch(profileNamesProvider).value ?? const <String, String>{};
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy HH:mm');
 

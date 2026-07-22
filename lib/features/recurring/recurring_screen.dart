@@ -18,8 +18,7 @@ class RecurringScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rulesAsync = ref.watch(recurringRulesProvider);
-    final accounts =
-        ref.watch(accountsProvider).value ?? const <Account>[];
+    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final l = AppLocalizations.of(context);

@@ -143,11 +143,7 @@ void main() {
     test('Übertrag ohne Zielkonto belastet nur das Quellkonto', () {
       final accounts = [_acc('A', opening: 500)];
       final txs = [
-        _tx(
-          type: TransactionType.transfer,
-          accountId: 'A',
-          amountCents: 200,
-        ),
+        _tx(type: TransactionType.transfer, accountId: 'A', amountCents: 200),
       ];
       expect(accountBalancesCents(accounts, txs, const {})['A'], 300);
     });

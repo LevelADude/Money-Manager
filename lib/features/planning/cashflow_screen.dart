@@ -19,11 +19,9 @@ class CashflowScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accounts =
-        ref.watch(accountsProvider).value ?? const <Account>[];
+    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final rules =
-        ref.watch(recurringRulesProvider).value ??
-        const <RecurringRule>[];
+        ref.watch(recurringRulesProvider).value ?? const <RecurringRule>[];
     final l = AppLocalizations.of(context);
     final df = DateFormat('EEEE, dd.MM.yyyy', 'de');
 

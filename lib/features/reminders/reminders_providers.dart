@@ -42,8 +42,7 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
 
   // Fällige / bald fällige Daueraufträge.
   final rules =
-      ref.watch(recurringRulesProvider).value ??
-      const <RecurringRule>[];
+      ref.watch(recurringRulesProvider).value ?? const <RecurringRule>[];
   for (final r in rules.where((r) => r.active)) {
     final due = DateTime(r.nextDue.year, r.nextDue.month, r.nextDue.day);
     final diff = due.difference(today).inDays;
@@ -95,8 +94,7 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
   });
 
   // Sparziele mit nahem Termin.
-  final goals =
-      ref.watch(savingsGoalsProvider).value ?? const <SavingsGoal>[];
+  final goals = ref.watch(savingsGoalsProvider).value ?? const <SavingsGoal>[];
   for (final g in goals) {
     if (g.reached || g.targetDate == null || g.targetCents <= 0) continue;
     final td = DateTime(
@@ -131,8 +129,7 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
 /// Erfassungs-Streak: aufeinanderfolgende Tage mit mindestens einer Buchung.
 final streakProvider = Provider<({int days, bool bookedToday})>((ref) {
   final txs =
-      ref.watch(allTransactionsProvider).value ??
-      const <AppTransaction>[];
+      ref.watch(allTransactionsProvider).value ?? const <AppTransaction>[];
   final daySet = <DateTime>{
     for (final t in txs)
       DateTime(t.occurredOn.year, t.occurredOn.month, t.occurredOn.day),

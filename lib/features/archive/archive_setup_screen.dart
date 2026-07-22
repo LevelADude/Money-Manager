@@ -109,8 +109,7 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
     final l = AppLocalizations.of(context);
     final repo = _repo.text.trim();
     final token = _token.text.trim();
-    final hasKey =
-        ref.read(archiveConfigStatusProvider).value?.hasKey ?? false;
+    final hasKey = ref.read(archiveConfigStatusProvider).value?.hasKey ?? false;
 
     // Erst-Einrichtung braucht Repo + Token; spätere Änderung braucht nur Repo.
     if (repo.isEmpty || (!hasKey && token.isEmpty)) {

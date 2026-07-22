@@ -14,8 +14,7 @@ class ProjectsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final txs =
-        ref.watch(allTransactionsProvider).value ??
-        const <AppTransaction>[];
+        ref.watch(allTransactionsProvider).value ?? const <AppTransaction>[];
     final tags = ref.watch(allTagsProvider);
     final l = AppLocalizations.of(context);
 

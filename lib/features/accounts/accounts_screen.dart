@@ -53,8 +53,7 @@ class AccountsScreen extends ConsumerWidget {
     // gecacht) statt pro Konto erneut über sämtliche Buchungen zu laufen.
     final balances = ref.watch(accountBalancesProvider);
     final memberNames =
-        ref.watch(profileNamesProvider).value ??
-        const <String, String>{};
+        ref.watch(profileNamesProvider).value ?? const <String, String>{};
     final l = AppLocalizations.of(context);
 
     int balanceOf(Account a) => balances[a.id] ?? 0;

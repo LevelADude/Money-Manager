@@ -24,8 +24,7 @@ class ActivityScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(recentActivityProvider);
     final names =
-        ref.watch(profileNamesProvider).value ??
-        const <String, String>{};
+        ref.watch(profileNamesProvider).value ?? const <String, String>{};
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy HH:mm');
 

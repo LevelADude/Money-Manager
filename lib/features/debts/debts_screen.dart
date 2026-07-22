@@ -19,11 +19,9 @@ class DebtsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accounts =
-        ref.watch(accountsProvider).value ?? const <Account>[];
+    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final txs =
-        ref.watch(allTransactionsProvider).value ??
-        const <AppTransaction>[];
+        ref.watch(allTransactionsProvider).value ?? const <AppTransaction>[];
     final carryover = ref.watch(archivedCarryoverProvider);
     // Salden aller Konten in einem Durchlauf (gecacht) statt pro Konto erneut.
     final balances = ref.watch(accountBalancesProvider);

@@ -18,14 +18,11 @@ class SettleScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accounts =
-        ref.watch(accountsProvider).value ?? const <Account>[];
+    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final txs =
-        ref.watch(allTransactionsProvider).value ??
-        const <AppTransaction>[];
+        ref.watch(allTransactionsProvider).value ?? const <AppTransaction>[];
     final names =
-        ref.watch(profileNamesProvider).value ??
-        const <String, String>{};
+        ref.watch(profileNamesProvider).value ?? const <String, String>{};
     final l = AppLocalizations.of(context);
 
     String nameOf(String id) =>
