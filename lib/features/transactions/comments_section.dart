@@ -42,7 +42,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
   Widget build(BuildContext context) {
     final async = ref.watch(commentsProvider(widget.transactionId));
     final names =
-        ref.watch(profileNamesProvider).asData?.value ??
+        ref.watch(profileNamesProvider).value ??
         const <String, String>{};
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy HH:mm');
@@ -59,6 +59,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
         ),
         const SizedBox(height: 4),
         async.when(
+          skipLoadingOnReload: true,
           loading: () => const Padding(
             padding: EdgeInsets.all(8),
             child: Center(child: CircularProgressIndicator()),

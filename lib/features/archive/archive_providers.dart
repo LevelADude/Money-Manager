@@ -30,7 +30,7 @@ final archivedYearsProvider = StreamProvider<List<ArchivedYear>>((ref) {
 /// addiert, damit die Kontostände nach dem Archivieren korrekt bleiben.
 final archivedCarryoverProvider = Provider<Map<String, int>>((ref) {
   final years =
-      ref.watch(archivedYearsProvider).asData?.value ?? const <ArchivedYear>[];
+      ref.watch(archivedYearsProvider).value ?? const <ArchivedYear>[];
   final map = <String, int>{};
   for (final y in years) {
     y.carryoverByAccount.forEach((acc, cents) {
@@ -43,7 +43,7 @@ final archivedCarryoverProvider = Provider<Map<String, int>>((ref) {
 /// Menge der bereits archivierten Jahre (für die Jahres-Auswahl in der UI).
 final archivedYearSetProvider = Provider<Set<int>>((ref) {
   final years =
-      ref.watch(archivedYearsProvider).asData?.value ?? const <ArchivedYear>[];
+      ref.watch(archivedYearsProvider).value ?? const <ArchivedYear>[];
   return {for (final y in years) y.year};
 });
 

@@ -70,7 +70,7 @@ final dbCurrenciesProvider = FutureProvider<List<UserCurrency>>((ref) async {
 /// Meine eigenen Währungen.
 final myCurrenciesProvider = Provider<List<UserCurrency>>((ref) {
   final me = ref.watch(currentUserIdProvider);
-  final all = ref.watch(dbCurrenciesProvider).asData?.value ?? const [];
+  final all = ref.watch(dbCurrenciesProvider).value ?? const [];
   return [
     for (final c in all)
       if (c.ownerId == me) c,
@@ -91,7 +91,7 @@ final myRatesProvider = Provider<Map<String, double>>((ref) {
 final allCurrenciesProvider = Provider<List<String>>((ref) {
   final me = ref.watch(currentUserIdProvider);
   final mine = ref.watch(myCurrenciesProvider).map((c) => c.code);
-  final accs = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  final accs = ref.watch(accountsProvider).value ?? const <Account>[];
   final extras = <String>{
     ...mine,
     for (final a in accs)
@@ -107,9 +107,9 @@ final allCurrenciesProvider = Provider<List<String>>((ref) {
 final effectiveRatesProvider = Provider<Map<String, double>>((ref) {
   final me = ref.watch(currentUserIdProvider);
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
-  final all = ref.watch(dbCurrenciesProvider).asData?.value ?? const [];
+  final all = ref.watch(dbCurrenciesProvider).value ?? const [];
   final ownerBases =
-      ref.watch(profileBaseCurrenciesProvider).asData?.value ??
+      ref.watch(profileBaseCurrenciesProvider).value ??
       const <String, String>{};
   final result = <String, double>{};
   for (final c in all) {
@@ -139,7 +139,7 @@ final converterProvider = Provider<int Function(int cents, String code)>((ref) {
 
 /// Map: Konto-ID -> Währungscode (alle sichtbaren Konten).
 final accountCurrencyProvider = Provider<Map<String, String>>((ref) {
-  final accs = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  final accs = ref.watch(accountsProvider).value ?? const <Account>[];
   return {for (final a in accs) a.id: a.currency};
 });
 
@@ -147,7 +147,7 @@ final accountCurrencyProvider = Provider<Map<String, String>>((ref) {
 final usedForeignCurrenciesProvider = Provider<List<String>>((ref) {
   final me = ref.watch(currentUserIdProvider);
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
-  final accs = ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+  final accs = ref.watch(accountsProvider).value ?? const <Account>[];
   final set = <String>{
     for (final a in accs)
       if (a.ownerId == me) a.currency,

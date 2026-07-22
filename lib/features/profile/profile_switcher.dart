@@ -21,7 +21,7 @@ class ProfileSwitcher extends ConsumerWidget {
     final myId = ref.watch(currentUserIdProvider);
     final options = ref.watch(ownerOptionsProvider);
     final names =
-        ref.watch(profileNamesProvider).asData?.value ??
+        ref.watch(profileNamesProvider).value ??
         const <String, String>{};
     final selected = ref.watch(personFilterProvider);
     final l = AppLocalizations.of(context);

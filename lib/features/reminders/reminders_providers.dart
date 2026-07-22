@@ -42,7 +42,7 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
 
   // Fällige / bald fällige Daueraufträge.
   final rules =
-      ref.watch(recurringRulesProvider).asData?.value ??
+      ref.watch(recurringRulesProvider).value ??
       const <RecurringRule>[];
   for (final r in rules.where((r) => r.active)) {
     final due = DateTime(r.nextDue.year, r.nextDue.month, r.nextDue.day);
@@ -66,7 +66,9 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
 
   // Budget-Warnungen (>= 90 %).
   final budgets = ref.watch(budgetsByCategoryProvider);
-  final spent = ref.watch(monthlySpentByCategoryProvider);
+  final spent = ref.watch(
+    spentByCategoryProvider(ref.watch(budgetPeriodProvider)),
+  );
   final catNames = ref.watch(categoryNamesProvider);
   budgets.forEach((catId, b) {
     if (b.amountCents <= 0) return;
@@ -94,7 +96,7 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
 
   // Sparziele mit nahem Termin.
   final goals =
-      ref.watch(savingsGoalsProvider).asData?.value ?? const <SavingsGoal>[];
+      ref.watch(savingsGoalsProvider).value ?? const <SavingsGoal>[];
   for (final g in goals) {
     if (g.reached || g.targetDate == null || g.targetCents <= 0) continue;
     final td = DateTime(
@@ -129,7 +131,7 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
 /// Erfassungs-Streak: aufeinanderfolgende Tage mit mindestens einer Buchung.
 final streakProvider = Provider<({int days, bool bookedToday})>((ref) {
   final txs =
-      ref.watch(allTransactionsProvider).asData?.value ??
+      ref.watch(allTransactionsProvider).value ??
       const <AppTransaction>[];
   final daySet = <DateTime>{
     for (final t in txs)

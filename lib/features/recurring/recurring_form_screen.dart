@@ -58,7 +58,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
 
   void _prefill() {
     if (_prefilled || !widget.isEditing) return;
-    final rules = ref.read(recurringRulesProvider).asData?.value ?? const [];
+    final rules = ref.read(recurringRulesProvider).value ?? const [];
     for (final r in rules) {
       if (r.id == widget.ruleId) {
         _amount.text = centsToInput(r.amountCents);

@@ -32,7 +32,7 @@ final accountsProvider = StreamProvider<List<Account>>((ref) {
 /// ablehnen). Dient als Quelle für alle Konto-Auswahlen beim Anlegen/Bearbeiten.
 final manageableAccountsProvider = Provider<List<Account>>((ref) {
   final accounts =
-      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+      ref.watch(accountsProvider).value ?? const <Account>[];
   final owners = ref.watch(manageableOwnersProvider);
   return accounts
       .where((a) => a.ownerId != null && owners.contains(a.ownerId))
@@ -42,7 +42,7 @@ final manageableAccountsProvider = Provider<List<Account>>((ref) {
 /// Saldo (Cent) eines Kontos = Anfangssaldo + alle Buchungen (inkl. Überträge).
 final accountBalanceProvider = Provider.family<int, String>((ref, accountId) {
   final accounts =
-      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+      ref.watch(accountsProvider).value ?? const <Account>[];
   Account? account;
   for (final a in accounts) {
     if (a.id == accountId) {
@@ -52,7 +52,7 @@ final accountBalanceProvider = Provider.family<int, String>((ref, accountId) {
   }
   if (account == null) return 0;
   final txs =
-      ref.watch(allTransactionsProvider).asData?.value ??
+      ref.watch(allTransactionsProvider).value ??
       const <AppTransaction>[];
   // Carry-over archivierter Jahre: deren Buchungen sind aus der DB entfernt,
   // ihr Netto-Beitrag steckt im Carry-over, damit der Saldo korrekt bleibt.
@@ -73,11 +73,11 @@ final accountGroupsProvider = FutureProvider<List<AccountGroup>>((ref) {
 /// gelöschte Konten werden übersprungen.
 final accountGroupTotalsProvider =
     Provider<List<({AccountGroup group, int cents})>>((ref) {
-      final groups = ref.watch(accountGroupsProvider).asData?.value ?? const [];
+      final groups = ref.watch(accountGroupsProvider).value ?? const [];
       final accounts =
-          ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+          ref.watch(accountsProvider).value ?? const <Account>[];
       final txs =
-          ref.watch(allTransactionsProvider).asData?.value ??
+          ref.watch(allTransactionsProvider).value ??
           const <AppTransaction>[];
       final convert = ref.watch(converterProvider);
       final carryover = ref.watch(archivedCarryoverProvider);
@@ -100,9 +100,9 @@ final accountGroupTotalsProvider =
 /// optional nur für eine Person (`ownerId`). Verbindlichkeiten sind negativ.
 final netWorthProvider = Provider.family<int, String?>((ref, ownerId) {
   final accounts =
-      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+      ref.watch(accountsProvider).value ?? const <Account>[];
   final txs =
-      ref.watch(allTransactionsProvider).asData?.value ??
+      ref.watch(allTransactionsProvider).value ??
       const <AppTransaction>[];
   final convert = ref.watch(converterProvider);
   final carryover = ref.watch(archivedCarryoverProvider);

@@ -49,7 +49,7 @@ final allSplitsProvider = StreamProvider<List<TransactionSplit>>((ref) {
 final splitsByTransactionProvider =
     Provider<Map<String, List<TransactionSplit>>>((ref) {
       final splits =
-          ref.watch(allSplitsProvider).asData?.value ??
+          ref.watch(allSplitsProvider).value ??
           const <TransactionSplit>[];
       final map = <String, List<TransactionSplit>>{};
       for (final s in splits) {
@@ -73,7 +73,7 @@ final allTransactionsProvider = StreamProvider<List<AppTransaction>>((ref) {
 final accountTransactionsProvider =
     Provider.family<List<AppTransaction>, String>((ref, accountId) {
       final txs =
-          ref.watch(allTransactionsProvider).asData?.value ??
+          ref.watch(allTransactionsProvider).value ??
           const <AppTransaction>[];
       final list =
           txs
@@ -91,7 +91,7 @@ final accountTransactionsProvider =
 /// geladenen Buchungen abgeleitet (kein zusätzlicher Netzwerk-Traffic).
 final titleSuggestionsProvider = Provider<List<String>>((ref) {
   final txs =
-      ref.watch(allTransactionsProvider).asData?.value ??
+      ref.watch(allTransactionsProvider).value ??
       const <AppTransaction>[];
   final ordered = [...txs]
     ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
@@ -141,7 +141,7 @@ final deletedTransactionsProvider =
 /// im Formular und den Tag-Filter in „Buchungen".
 final allTagsProvider = Provider<List<String>>((ref) {
   final txs =
-      ref.watch(allTransactionsProvider).asData?.value ??
+      ref.watch(allTransactionsProvider).value ??
       const <AppTransaction>[];
   final seen = <String, String>{}; // kleingeschrieben -> Originalschreibweise
   for (final t in txs) {
@@ -159,7 +159,7 @@ final allTagsProvider = Provider<List<String>>((ref) {
 /// Für den Kategorie-Vorschlag, wenn ein bekannter Titel gewählt wird.
 final titleCategoryProvider = Provider<Map<String, String>>((ref) {
   final txs =
-      ref.watch(allTransactionsProvider).asData?.value ??
+      ref.watch(allTransactionsProvider).value ??
       const <AppTransaction>[];
   final ordered = [...txs]
     ..sort((a, b) => a.occurredOn.compareTo(b.occurredOn)); // alt -> neu

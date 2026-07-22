@@ -24,7 +24,7 @@ class ActivityScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(recentActivityProvider);
     final names =
-        ref.watch(profileNamesProvider).asData?.value ??
+        ref.watch(profileNamesProvider).value ??
         const <String, String>{};
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy HH:mm');
@@ -34,6 +34,7 @@ class ActivityScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(recentActivityProvider),
         child: async.when(
+          skipLoadingOnReload: true,
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => ListView(
             children: [

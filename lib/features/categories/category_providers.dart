@@ -25,7 +25,7 @@ final categoriesProvider = StreamProvider<List<Category>>((ref) {
 /// werden gemäß eingestellter Sprache übersetzt.
 final categoryNamesProvider = Provider<Map<String, String>>((ref) {
   final cats =
-      ref.watch(categoriesProvider).asData?.value ?? const <Category>[];
+      ref.watch(categoriesProvider).value ?? const <Category>[];
   final l = AppLocalizations(
     Locale(ref.watch(settingsProvider.select((s) => s.localeCode))),
   );
@@ -36,7 +36,7 @@ final categoryNamesProvider = Provider<Map<String, String>>((ref) {
 /// dessen Format bewusst deutsch bleibt (Round-Trip-Abgleich nach Name).
 final categoryRawNamesProvider = Provider<Map<String, String>>((ref) {
   final cats =
-      ref.watch(categoriesProvider).asData?.value ?? const <Category>[];
+      ref.watch(categoriesProvider).value ?? const <Category>[];
   return {for (final c in cats) c.id: c.name};
 });
 

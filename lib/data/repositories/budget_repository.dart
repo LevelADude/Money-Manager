@@ -32,24 +32,44 @@ class BudgetRepository {
     }
   }
 
-  /// Setzt/aktualisiert das Monatsbudget einer Kategorie. Vorhandenes Budget
-  /// wird über [existingId] aktualisiert, sonst neu angelegt.
+  /// Setzt/aktualisiert das Budget einer Kategorie. Vorhandenes Budget wird
+  /// über [existingId] aktualisiert, sonst neu angelegt. [period] ist immer der
+  /// Zeitraum des Gesamtbudgets – nur mit einem gemeinsamen Zeitraum lassen
+  /// sich die Kategorie-Budgets gegen das Gesamtbudget rechnen.
   Future<void> setCategoryBudget({
     required String categoryId,
     required int amountCents,
+    required BudgetPeriod period,
     String? existingId,
   }) {
     if (existingId != null) {
       return _client
           .from('budgets')
-          .update({'amount_cents': amountCents, 'deleted_at': null})
+          .update({
+            'amount_cents': amountCents,
+            'period': budgetPeriodToDb(period),
+            'deleted_at': null,
+          })
           .eq('id', existingId);
     }
     return _client.from('budgets').insert({
       'category_id': categoryId,
       'amount_cents': amountCents,
-      'period': budgetPeriodToDb(BudgetPeriod.month),
+      'period': budgetPeriodToDb(period),
     });
+  }
+
+  /// Zieht alle eigenen Kategorie-Budgets auf [period] nach – wird aufgerufen,
+  /// wenn der Zeitraum des Gesamtbudgets gewechselt wird.
+  Future<void> setPeriodForAllCategoryBudgets(BudgetPeriod period) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return;
+    await _client
+        .from('budgets')
+        .update({'period': budgetPeriodToDb(period)})
+        .eq('created_by', uid)
+        .isFilter('deleted_at', null)
+        .not('category_id', 'is', null);
   }
 
   /// Setzt/aktualisiert das kategorieunabhängige Gesamtbudget (Monat/Woche).

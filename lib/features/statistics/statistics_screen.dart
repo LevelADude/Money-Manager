@@ -90,7 +90,7 @@ class StatisticsScreen extends ConsumerWidget {
   ) {
     final items = categoryDrilldown(ref, categoryId: catId, expense: expense);
     final catNames = ref.read(categoryNamesProvider);
-    final accounts = ref.read(accountsProvider).asData?.value ?? const [];
+    final accounts = ref.read(accountsProvider).value ?? const [];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
@@ -1418,7 +1418,7 @@ class _TopExpensesCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accounts = ref.watch(accountsProvider).asData?.value ?? const [];
+    final accounts = ref.watch(accountsProvider).value ?? const [];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final l = AppLocalizations.of(context);

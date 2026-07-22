@@ -14,7 +14,7 @@ class MoreScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final email =
         ref.watch(supabaseClientProvider).auth.currentUser?.email ?? '';
-    final isAdmin = ref.watch(isAdminProvider).asData?.value ?? false;
+    final isAdmin = ref.watch(isAdminProvider).value ?? false;
     final l = AppLocalizations.of(context);
 
     Widget tile(IconData icon, String title, String route) => ListTile(

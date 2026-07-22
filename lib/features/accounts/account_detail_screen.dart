@@ -22,7 +22,7 @@ class AccountDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final accounts =
-        ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+        ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     String accountName = l.accountLabel;
     for (final a in accounts) {
@@ -35,7 +35,7 @@ class AccountDetailScreen extends ConsumerWidget {
     final txs = ref.watch(accountTransactionsProvider(accountId));
     final categoryNames = ref.watch(categoryNamesProvider);
     final memberNames =
-        ref.watch(profileNamesProvider).asData?.value ??
+        ref.watch(profileNamesProvider).value ??
         const <String, String>{};
 
     return Scaffold(

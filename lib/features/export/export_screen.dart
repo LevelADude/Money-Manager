@@ -37,15 +37,15 @@ class ExportScreen extends ConsumerWidget {
 
   String _buildCsv(WidgetRef ref) {
     final txs =
-        ref.watch(allTransactionsProvider).asData?.value ??
+        ref.watch(allTransactionsProvider).value ??
         const <AppTransaction>[];
     final accounts =
-        ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+        ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     // CSV bewusst mit ROHEN (deutschen) Kategorienamen -> Round-Trip-Import.
     final catNames = ref.watch(categoryRawNamesProvider);
     final memberNames =
-        ref.watch(profileNamesProvider).asData?.value ??
+        ref.watch(profileNamesProvider).value ??
         const <String, String>{};
     final df = DateFormat('dd.MM.yyyy');
 
@@ -81,10 +81,10 @@ class ExportScreen extends ConsumerWidget {
   Future<void> _exportPdf(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
     final txs =
-        ref.read(allTransactionsProvider).asData?.value ??
+        ref.read(allTransactionsProvider).value ??
         const <AppTransaction>[];
     final accounts =
-        ref.read(accountsProvider).asData?.value ?? const <Account>[];
+        ref.read(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.read(categoryNamesProvider);
     final df = DateFormat('dd.MM.yyyy');
@@ -148,7 +148,7 @@ class ExportScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final txCount =
-        ref.watch(allTransactionsProvider).asData?.value.length ?? 0;
+        ref.watch(allTransactionsProvider).value?.length ?? 0;
     final csv = _buildCsv(ref);
     final previewLines = const LineSplitter().convert(csv).take(40).join('\n');
     final l = AppLocalizations.of(context);

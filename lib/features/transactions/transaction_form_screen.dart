@@ -97,7 +97,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   void _prefill() {
     if (_prefilled || !widget.isEditing) return;
-    final list = ref.read(allTransactionsProvider).asData?.value;
+    final list = ref.read(allTransactionsProvider).value;
     if (list == null) return;
     for (final t in list) {
       if (t.id == widget.transactionId) {
@@ -125,9 +125,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   /// Beim Bearbeiten vorhandene Aufteilungen laden (sobald der Stream da ist).
   void _prefillSplits() {
     if (_splitsPrefilled) return;
-    final data = ref.read(allSplitsProvider).asData;
-    if (data == null) return; // noch nicht geladen → später erneut
-    final mine = data.value.where(
+    final splits = ref.read(allSplitsProvider).value;
+    if (splits == null) return; // noch nicht geladen → später erneut
+    final mine = splits.where(
       (s) => s.transactionId == widget.transactionId,
     );
     if (mine.isNotEmpty) {
@@ -177,7 +177,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (_type == TransactionType.transfer || _categoryId != null) return;
     final t = title.trim().toLowerCase();
     if (t.isEmpty) return;
-    final rules = ref.read(categoryRulesProvider).asData?.value ?? const [];
+    final rules = ref.read(categoryRulesProvider).value ?? const [];
     for (final r in rules) {
       if (r.keyword.isNotEmpty && t.contains(r.keyword.toLowerCase())) {
         setState(() => _categoryId = r.categoryId);
@@ -345,7 +345,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final l = AppLocalizations.of(context);
     final repo = ref.read(transactionRepositoryProvider);
     final names =
-        ref.read(profileNamesProvider).asData?.value ??
+        ref.read(profileNamesProvider).value ??
         const <String, String>{};
     final df = DateFormat('dd.MM.yyyy HH:mm');
     await showModalBottomSheet<void>(
@@ -450,7 +450,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       builder: (ctx) => Consumer(
         builder: (ctx, ref2, _) {
           final templates =
-              ref2.watch(templatesProvider).asData?.value ?? const [];
+              ref2.watch(templatesProvider).value ?? const [];
           return SafeArea(
             child: ListView(
               shrinkWrap: true,

@@ -79,7 +79,7 @@ class AdminScreen extends ConsumerWidget {
         }
       }
       if (matchedId != null) {
-        final profiles = ref.read(allProfilesProvider).asData?.value ?? [];
+        final profiles = ref.read(allProfilesProvider).value ?? [];
         Profile? match;
         for (final p in profiles) {
           if (p.id == matchedId) {
@@ -176,7 +176,7 @@ class AdminScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final isAdmin = ref.watch(isAdminProvider).asData?.value ?? false;
+    final isAdmin = ref.watch(isAdminProvider).value ?? false;
     if (!isAdmin) {
       return Scaffold(
         appBar: AppBar(title: Text(l.adminTitle)),
@@ -184,10 +184,10 @@ class AdminScreen extends ConsumerWidget {
       );
     }
 
-    final isOwner = ref.watch(isOwnerProvider).asData?.value ?? false;
+    final isOwner = ref.watch(isOwnerProvider).value ?? false;
     final emails = ref.watch(allowedEmailsProvider);
     final profiles = ref.watch(allProfilesProvider);
-    final userEmails = ref.watch(userEmailsProvider).asData?.value ?? const {};
+    final userEmails = ref.watch(userEmailsProvider).value ?? const {};
     final myId = ref.watch(supabaseClientProvider).auth.currentUser?.id;
     final df = DateFormat('dd.MM.yyyy');
 
@@ -214,6 +214,7 @@ class AdminScreen extends ConsumerWidget {
             ),
           ),
           emails.when(
+            skipLoadingOnReload: true,
             loading: () => const ListTile(title: LinearProgressIndicator()),
             error: (e, _) => ListTile(title: Text(l.errorWith(e))),
             data: (list) => list.isEmpty
@@ -237,6 +238,7 @@ class AdminScreen extends ConsumerWidget {
           const Divider(height: 24),
           _sectionTitle(context, l.usersSection),
           profiles.when(
+            skipLoadingOnReload: true,
             loading: () => const ListTile(title: LinearProgressIndicator()),
             error: (e, _) => ListTile(title: Text(l.errorWith(e))),
             data: (list) => Column(
@@ -261,6 +263,7 @@ class AdminScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final stats = ref.watch(storageStatsProvider);
     return stats.when(
+      skipLoadingOnReload: true,
       loading: () => const Padding(
         padding: EdgeInsets.all(16),
         child: LinearProgressIndicator(),

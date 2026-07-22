@@ -20,6 +20,14 @@ class BudgetsScreen extends ConsumerWidget {
     int? currentCents,
   ) async {
     final l = AppLocalizations.of(context);
+    final period = ref.read(budgetPeriodProvider);
+    final overall = ref.read(overallBudgetProvider);
+    // Was ohne DIESE Kategorie bereits verplant ist – dagegen wird geprüft.
+    final allocatedOthers =
+        ref.read(allocatedBudgetCentsProvider) - (currentCents ?? 0);
+    final freeForThis = overall == null
+        ? null
+        : overall.amountCents - allocatedOthers;
     final controller = TextEditingController(
       text: currentCents == null ? '' : centsToInput(currentCents),
     );
@@ -32,8 +40,13 @@ class BudgetsScreen extends ConsumerWidget {
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            labelText: l.monthlyBudget,
+            labelText: period == BudgetPeriod.week
+                ? l.weeklyBudget
+                : l.monthlyBudget,
             prefixIcon: const Icon(Icons.euro),
+            helperText: freeForThis == null
+                ? null
+                : l.budgetFreeToAllocate(formatCents(freeForThis)),
           ),
         ),
         actions: [
@@ -48,14 +61,74 @@ class BudgetsScreen extends ConsumerWidget {
         ],
       ),
     );
-    if (cents != null && cents > 0) {
-      await ref
+    if (cents == null || cents <= 0) return;
+
+    // Warnung, wenn die Summe der Kategorie-Budgets das Gesamtbudget sprengt.
+    final check = checkAllocation(
+      overallCents: overall?.amountCents,
+      allocatedOtherCents: allocatedOthers,
+      newCents: cents,
+    );
+    if (check.exceeds) {
+      if (!context.mounted) return;
+      final ok = await _confirmOverAllocation(
+        context,
+        l.budgetExceedsOverallBody(
+          formatCents(check.planned),
+          formatCents(overall!.amountCents),
+          formatCents(check.overBy),
+        ),
+      );
+      if (ok != true) return;
+    }
+
+    if (!context.mounted) return;
+    await _run(
+      context,
+      () => ref
           .read(budgetRepositoryProvider)
           .setCategoryBudget(
             categoryId: cat.id,
             amountCents: cents,
+            period: period,
             existingId: ref.read(budgetsByCategoryProvider)[cat.id]?.id,
-          );
+          ),
+    );
+  }
+
+  /// Rückfrage bei Überschreitung – Speichern bleibt bewusst möglich.
+  Future<bool?> _confirmOverAllocation(BuildContext context, String body) {
+    final l = AppLocalizations.of(context);
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded),
+        title: Text(l.budgetExceedsOverallTitle),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.saveAnyway),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Schreibt und zeigt Fehler an, statt sie stumm zu verschlucken.
+  Future<void> _run(BuildContext context, Future<void> Function() action) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l = AppLocalizations.of(context);
+    try {
+      await action();
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('${l.budgetSaveFailed}: $e')),
+      );
     }
   }
 
@@ -102,6 +175,8 @@ class BudgetsScreen extends ConsumerWidget {
                 decoration: InputDecoration(
                   labelText: l.overallBudget,
                   prefixIcon: const Icon(Icons.euro),
+                  helperText: l.budgetPeriodAppliesToAll,
+                  helperMaxLines: 2,
                 ),
               ),
             ],
@@ -119,36 +194,63 @@ class BudgetsScreen extends ConsumerWidget {
         ),
       ),
     );
-    if (ok == true) {
-      final cents = parseToCents(ctrl.text);
-      if (cents != null && cents > 0) {
+    if (ok != true) return;
+    final cents = parseToCents(ctrl.text);
+    if (cents == null || cents <= 0) return;
+
+    // Hinweis, wenn das neue Gesamtbudget unter dem liegt, was bereits auf
+    // Kategorien verteilt ist – speichern bleibt möglich.
+    final allocated = ref.read(allocatedBudgetCentsProvider);
+    if (allocated > cents) {
+      if (!context.mounted) return;
+      final go = await _confirmOverAllocation(
+        context,
+        l.budgetBelowAllocatedBody(
+          formatCents(allocated),
+          formatCents(allocated - cents),
+        ),
+      );
+      if (go != true) return;
+    }
+
+    if (!context.mounted) return;
+    final periodChanged = existing != null && existing.period != period;
+    await _run(context, () async {
+      await ref
+          .read(budgetRepositoryProvider)
+          .setOverallBudget(
+            period: period,
+            amountCents: cents,
+            existingId: existing?.id,
+          );
+      // Kategorie-Budgets ziehen mit, damit Teil- und Gesamtbudget denselben
+      // Zeitraum meinen (sonst wäre die Aufteilung nicht vergleichbar).
+      if (periodChanged || existing == null) {
         await ref
             .read(budgetRepositoryProvider)
-            .setOverallBudget(
-              period: period,
-              amountCents: cents,
-              existingId: existing?.id,
-            );
+            .setPeriodForAllCategoryBudgets(period);
       }
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cats =
-        (ref.watch(categoriesProvider).asData?.value ?? const <Category>[])
+        (ref.watch(categoriesProvider).value ?? const <Category>[])
             .where((c) => c.kind == CategoryKind.expense && c.active)
             .toList()
           ..sort(
             (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
           );
     final budgets = ref.watch(budgetsByCategoryProvider);
-    final spent = ref.watch(monthlySpentByCategoryProvider);
 
-    // Eigenständiges Gesamtbudget (kategorieunabhängig, Monat/Woche).
+    // Eigenständiges Gesamtbudget (kategorieunabhängig, Monat/Woche). Sein
+    // Zeitraum gilt für alle Budgets – auch für die Ausgaben-Fenster.
     final overall = ref.watch(overallBudgetProvider);
-    final period = overall?.period ?? BudgetPeriod.month;
+    final period = ref.watch(budgetPeriodProvider);
+    final spent = ref.watch(spentByCategoryProvider(period));
     final overallSpent = ref.watch(periodExpenseTotalProvider(period));
+    final allocated = ref.watch(allocatedBudgetCentsProvider);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final (_, periodEnd) = budgetPeriodWindow(period, now);
@@ -162,6 +264,7 @@ class BudgetsScreen extends ConsumerWidget {
           _OverallBudgetCard(
             budget: overall,
             spent: overallSpent,
+            allocated: allocated,
             period: period,
             daysLeft: daysLeft,
             onEdit: () => _editOverall(context, ref, overall),
@@ -176,6 +279,7 @@ class BudgetsScreen extends ConsumerWidget {
             _BudgetTile(
               category: cat,
               budget: budgets[cat.id],
+              period: period,
               spentCents: spent[cat.id] ?? 0,
               onEdit: () =>
                   _edit(context, ref, cat, budgets[cat.id]?.amountCents),
@@ -195,6 +299,7 @@ class _OverallBudgetCard extends StatelessWidget {
   const _OverallBudgetCard({
     required this.budget,
     required this.spent,
+    required this.allocated,
     required this.period,
     required this.daysLeft,
     required this.onEdit,
@@ -203,6 +308,9 @@ class _OverallBudgetCard extends StatelessWidget {
 
   final Budget? budget;
   final int spent;
+
+  /// Summe der auf Kategorien verteilten Budgets.
+  final int allocated;
   final BudgetPeriod period;
   final int daysLeft;
   final VoidCallback onEdit;
@@ -287,6 +395,8 @@ class _OverallBudgetCard extends StatelessWidget {
                   ),
                 ),
               ),
+              const Divider(height: 24),
+              _AllocationBlock(overallCents: amount, allocatedCents: allocated),
             ] else ...[
               const SizedBox(height: 6),
               Text(
@@ -313,10 +423,80 @@ class _OverallBudgetCard extends StatelessWidget {
   }
 }
 
+/// Zeigt, wie viel des Gesamtbudgets schon auf Kategorie-Budgets verteilt ist
+/// und wie viel noch frei verplant werden kann.
+class _AllocationBlock extends StatelessWidget {
+  const _AllocationBlock({
+    required this.overallCents,
+    required this.allocatedCents,
+  });
+
+  final int overallCents;
+  final int allocatedCents;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final free = overallCents - allocatedCents;
+    final overAllocated = free < 0;
+    final frac = overallCents > 0
+        ? (allocatedCents / overallCents).clamp(0.0, 1.0)
+        : 0.0;
+    final color = overAllocated
+        ? Colors.red.shade600
+        : theme.colorScheme.primary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                l.budgetAllocationTitle,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Text(
+              l.budgetAllocatedOf(
+                formatCents(allocatedCents),
+                formatCents(overallCents),
+              ),
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: frac,
+            minHeight: 8,
+            color: color,
+            backgroundColor: color.withValues(alpha: 0.15),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          overAllocated
+              ? l.budgetOverAllocatedBy(formatCents(-free))
+              : l.budgetFreeToAllocate(formatCents(free)),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: overAllocated ? Colors.red.shade700 : null,
+            fontWeight: overAllocated ? FontWeight.bold : null,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _BudgetTile extends StatelessWidget {
   const _BudgetTile({
     required this.category,
     required this.budget,
+    required this.period,
     required this.spentCents,
     required this.onEdit,
     required this.onRemove,
@@ -324,6 +504,7 @@ class _BudgetTile extends StatelessWidget {
 
   final Category category;
   final Budget? budget;
+  final BudgetPeriod period;
   final int spentCents;
   final VoidCallback onEdit;
   final VoidCallback? onRemove;
@@ -410,7 +591,9 @@ class _BudgetTile extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  l.noBudgetThisMonth(formatCents(spentCents)),
+                  period == BudgetPeriod.week
+                      ? l.noBudgetThisWeek(formatCents(spentCents))
+                      : l.noBudgetThisMonth(formatCents(spentCents)),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),

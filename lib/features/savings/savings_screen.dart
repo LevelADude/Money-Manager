@@ -153,7 +153,7 @@ class SavingsScreen extends ConsumerWidget {
   Future<void> _roundupSweep(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
     final txs =
-        ref.read(allTransactionsProvider).asData?.value ??
+        ref.read(allTransactionsProvider).value ??
         const <AppTransaction>[];
     final now = DateTime.now();
     var roundup = 0;
@@ -164,7 +164,7 @@ class SavingsScreen extends ConsumerWidget {
       }
       roundup += (100 - t.amountCents % 100) % 100;
     }
-    final goals = ref.read(savingsGoalsProvider).asData?.value ?? const [];
+    final goals = ref.read(savingsGoalsProvider).value ?? const [];
     if (roundup == 0) {
       ScaffoldMessenger.of(
         context,
@@ -248,6 +248,7 @@ class SavingsScreen extends ConsumerWidget {
         label: Text(l.newItem),
       ),
       body: goalsAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (goals) {

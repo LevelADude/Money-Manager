@@ -25,9 +25,9 @@ final personFilterProvider = NotifierProvider<PersonFilterNotifier, String?>(
 /// Auswahloptionen: (ownerId, Anzeigename) für alle Konto-Besitzer.
 final ownerOptionsProvider = Provider<List<({String id, String name})>>((ref) {
   final accounts =
-      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+      ref.watch(accountsProvider).value ?? const <Account>[];
   final names =
-      ref.watch(profileNamesProvider).asData?.value ?? const <String, String>{};
+      ref.watch(profileNamesProvider).value ?? const <String, String>{};
   final ids = <String>{
     for (final a in accounts)
       if (a.ownerId != null) a.ownerId!,
@@ -45,7 +45,7 @@ final _personAccountIdsProvider = Provider<Set<String>?>((ref) {
   final person = ref.watch(personFilterProvider);
   if (person == null) return null;
   final accounts =
-      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+      ref.watch(accountsProvider).value ?? const <Account>[];
   final membersByAccount = ref.watch(membersByAccountProvider);
   return {
     for (final a in accounts)
@@ -60,7 +60,7 @@ final personFilteredTransactionsProvider = Provider<List<AppTransaction>>((
   ref,
 ) {
   final txs =
-      ref.watch(allTransactionsProvider).asData?.value ??
+      ref.watch(allTransactionsProvider).value ??
       const <AppTransaction>[];
   final ids = ref.watch(_personAccountIdsProvider);
   if (ids == null) return txs;
@@ -70,7 +70,7 @@ final personFilteredTransactionsProvider = Provider<List<AppTransaction>>((
 /// Konten, gefiltert auf die gewählte Person (eigene + geteilte Konten).
 final personFilteredAccountsProvider = Provider<List<Account>>((ref) {
   final accounts =
-      ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+      ref.watch(accountsProvider).value ?? const <Account>[];
   final ids = ref.watch(_personAccountIdsProvider);
   if (ids == null) return accounts;
   return accounts.where((a) => ids.contains(a.id)).toList();

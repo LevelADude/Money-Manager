@@ -54,10 +54,10 @@ final subscriptionSuggestionsProvider = Provider<List<SubscriptionCandidate>>((
   ref,
 ) {
   final txs =
-      ref.watch(allTransactionsProvider).asData?.value ??
+      ref.watch(allTransactionsProvider).value ??
       const <AppTransaction>[];
   final rules =
-      ref.watch(recurringRulesProvider).asData?.value ??
+      ref.watch(recurringRulesProvider).value ??
       const <RecurringRule>[];
   final existing = {
     for (final r in rules)

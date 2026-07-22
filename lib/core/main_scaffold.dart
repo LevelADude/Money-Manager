@@ -35,11 +35,27 @@ class _MainScaffoldState extends ConsumerState<MainScaffold>
     super.dispose();
   }
 
+  /// Zeitpunkt, an dem die App zuletzt in den Hintergrund ging.
+  DateTime? _leftAt;
+
+  /// Erst ab dieser Abwesenheit lohnt ein Neuladen. Kurze Fokuswechsel (Datei-
+  /// /Bildauswahl, Tab-Wechsel im Browser, Alt-Tab unter Windows) lösen sonst
+  /// mitten im Tippen ein Neuladen aus — genau das soll nicht passieren.
+  static const _minAwayForRefresh = Duration(seconds: 20);
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      refreshAllData(ref);
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      _leftAt ??= DateTime.now();
+      return;
     }
+    if (state != AppLifecycleState.resumed) return;
+    final away = _leftAt;
+    _leftAt = null;
+    if (away == null) return; // nur „inactive" dazwischen → nichts tun
+    if (DateTime.now().difference(away) < _minAwayForRefresh) return;
+    refreshAllData(ref);
   }
 
   void _goBranch(int index) {

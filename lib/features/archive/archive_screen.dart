@@ -33,9 +33,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final isAdmin = ref.watch(isAdminProvider).asData?.value ?? false;
+    final isAdmin = ref.watch(isAdminProvider).value ?? false;
     final txs =
-        ref.watch(allTransactionsProvider).asData?.value ??
+        ref.watch(allTransactionsProvider).value ??
         const <AppTransaction>[];
     final archivedSet = ref.watch(archivedYearSetProvider);
     final archivedAsync = ref.watch(archivedYearsProvider);
@@ -49,7 +49,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
         body: const Center(child: CircularProgressIndicator()),
       );
     }
-    final config = configAsync.asData?.value;
+    final config = configAsync.value;
     final configured = config?.configured ?? false;
 
     // Noch kein Archiv-Repo verbunden -> Einrichtungs-Hinweis.
@@ -172,6 +172,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           const Divider(height: 32),
           _sectionTitle(context, l.archivedSection),
           archivedAsync.when(
+            skipLoadingOnReload: true,
             loading: () => const ListTile(title: LinearProgressIndicator()),
             error: (e, _) => ListTile(title: Text(l.archiveError(e))),
             data: (list) => list.isEmpty
@@ -278,7 +279,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     if (!ok) return;
 
     final accounts =
-        ref.read(accountsProvider).asData?.value ?? const <Account>[];
+        ref.read(accountsProvider).value ?? const <Account>[];
     setState(() => _busy = true);
     try {
       for (final y in years) {

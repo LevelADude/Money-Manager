@@ -13,6 +13,13 @@ import '../features/transactions/transaction_providers.dart';
 /// Wird vom Aktualisieren-Knopf, von Pull-to-Refresh und beim Wiederöffnen der
 /// App (Lifecycle „resumed") genutzt – so sieht man immer die neuesten Daten,
 /// auch wenn die Realtime-Verbindung beim Start kurz hängt.
+///
+/// WICHTIG: Das ist ein *stiller* Refresh im Hintergrund. Die Oberfläche zeigt
+/// währenddessen weiter die bisherigen Daten und tauscht nur das aus, was sich
+/// wirklich geändert hat – kein Spinner, kein Zurückspringen von Formularen.
+/// Dafür müssen Provider-Werte immer über `AsyncValue.value` gelesen werden
+/// (behält den letzten Stand beim Neuladen) und NIE über `asData?.value`
+/// (wird beim Neuladen kurz `null` → die ganze Seite blitzt leer auf).
 void refreshAllData(WidgetRef ref) {
   ref.invalidate(accountsProvider);
   ref.invalidate(accountGroupsProvider);

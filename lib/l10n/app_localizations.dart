@@ -526,6 +526,8 @@ class AppLocalizations {
   String amountLeft(String x) => _t('noch $x', '$x left');
   String noBudgetThisMonth(String x) =>
       _t('Kein Budget · diesen Monat $x', 'No budget · this month $x');
+  String noBudgetThisWeek(String x) =>
+      _t('Kein Budget · diese Woche $x', 'No budget · this week $x');
   // ---- Gesamtbudget (kategorieunabhängig, Monat/Woche) ----
   String get overallBudget => _t('Gesamtbudget', 'Overall budget');
   String get overallBudgetHint => _t(
@@ -536,6 +538,38 @@ class AppLocalizations {
       _t('Gesamtbudget festlegen', 'Set overall budget');
   String get budgetPeriodLabel => _t('Zeitraum', 'Period');
   String get thisWeek => _t('Diese Woche', 'This week');
+  String get weeklyBudget => _t('Wochenbudget', 'Weekly budget');
+  // ---- Aufteilung des Gesamtbudgets auf Kategorie-Budgets ----
+  String get budgetAllocationTitle => _t('Verplant', 'Allocated');
+  String budgetAllocatedOf(String used, String total) => _t(
+    '$used von $total auf Kategorien verteilt',
+    '$used of $total allocated to categories',
+  );
+  String budgetFreeToAllocate(String x) =>
+      _t('Noch frei verteilbar: $x', 'Free to allocate: $x');
+  String budgetOverAllocatedBy(String x) =>
+      _t('$x mehr verplant als vorhanden', '$x more allocated than available');
+  String get budgetExceedsOverallTitle =>
+      _t('Gesamtbudget überschritten', 'Overall budget exceeded');
+  String budgetExceedsOverallBody(
+    String planned,
+    String overall,
+    String diff,
+  ) => _t(
+    'Damit wären $planned von $overall verplant – $diff zu viel.',
+    'That would allocate $planned of $overall – $diff too much.',
+  );
+  String budgetBelowAllocatedBody(String allocated, String diff) => _t(
+    'Auf Kategorien sind bereits $allocated verteilt – $diff mehr als das neue Gesamtbudget.',
+    '$allocated is already allocated to categories – $diff more than the new overall budget.',
+  );
+  String get saveAnyway => _t('Trotzdem speichern', 'Save anyway');
+  String get budgetPeriodAppliesToAll => _t(
+    'Der Zeitraum gilt auch für alle Kategorie-Budgets.',
+    'The period applies to all category budgets as well.',
+  );
+  String get budgetSaveFailed =>
+      _t('Budget konnte nicht gespeichert werden', 'Could not save the budget');
 
   // ---- Sparziele ----
   String get roundupSaving => _t('Rundungs-Sparen', 'Round-up saving');

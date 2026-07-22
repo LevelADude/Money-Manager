@@ -159,12 +159,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final canAdd =
         personFilter == null || manageableOwners.contains(personFilter);
     final accounts =
-        ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+        ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final allTags = ref.watch(allTagsProvider);
     final splitTxIds = ref.watch(splitsByTransactionProvider).keys.toSet();
-    final readOnly = ref.watch(isReadOnlyProvider).asData?.value ?? false;
+    final readOnly = ref.watch(isReadOnlyProvider).value ?? false;
     final convert = ref.watch(converterProvider);
     final baseCur = ref.watch(settingsProvider.select((s) => s.baseCurrency));
     final curOf = {for (final a in accounts) a.id: a.currency};

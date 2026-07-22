@@ -48,7 +48,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
 
   void _prefill() {
     if (_prefilled || !widget.isEditing) return;
-    final accounts = ref.read(accountsProvider).asData?.value ?? const [];
+    final accounts = ref.read(accountsProvider).value ?? const [];
     for (final a in accounts) {
       if (a.id == widget.accountId) {
         _name.text = a.name;
@@ -136,7 +136,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
       _membersInit = true;
     }
     final profileNames =
-        ref.watch(profileNamesProvider).asData?.value ??
+        ref.watch(profileNamesProvider).value ??
         const <String, String>{};
     final others = profileNames.keys.where((id) => id != myId).toList()
       ..sort(

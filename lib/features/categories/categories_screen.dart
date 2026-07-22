@@ -24,6 +24,7 @@ class CategoriesScreen extends ConsumerWidget {
         label: Text(l.category),
       ),
       body: catsAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (items) {

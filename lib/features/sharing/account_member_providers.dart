@@ -17,7 +17,7 @@ final accountMembersProvider = FutureProvider<List<AccountMember>>((ref) async {
 
 /// Konto-ID -> Menge der Mitglieder-User-IDs (ohne Besitzer).
 final membersByAccountProvider = Provider<Map<String, Set<String>>>((ref) {
-  final all = ref.watch(accountMembersProvider).asData?.value ?? const [];
+  final all = ref.watch(accountMembersProvider).value ?? const [];
   final map = <String, Set<String>>{};
   for (final m in all) {
     map.putIfAbsent(m.accountId, () => <String>{}).add(m.userId);

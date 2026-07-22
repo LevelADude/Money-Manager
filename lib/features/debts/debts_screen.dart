@@ -20,9 +20,9 @@ class DebtsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts =
-        ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+        ref.watch(accountsProvider).value ?? const <Account>[];
     final txs =
-        ref.watch(allTransactionsProvider).asData?.value ??
+        ref.watch(allTransactionsProvider).value ??
         const <AppTransaction>[];
     final carryover = ref.watch(archivedCarryoverProvider);
     final liabilities = accounts

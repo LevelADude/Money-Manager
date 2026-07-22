@@ -23,6 +23,7 @@ class TrashScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.moreTrash)),
       body: async.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (items) {

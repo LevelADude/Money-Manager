@@ -30,10 +30,10 @@ class PlanningScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final txs =
-        ref.watch(allTransactionsProvider).asData?.value ??
+        ref.watch(allTransactionsProvider).value ??
         const <AppTransaction>[];
     final rules =
-        ref.watch(recurringRulesProvider).asData?.value ??
+        ref.watch(recurringRulesProvider).value ??
         const <RecurringRule>[];
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');

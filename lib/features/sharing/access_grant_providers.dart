@@ -16,7 +16,7 @@ final accessGrantsProvider = FutureProvider<List<AccessGrant>>((ref) async {
 /// Freigaben, die ICH anderen gegeben habe (granteeId -> level).
 final grantsIGaveProvider = Provider<Map<String, GrantLevel>>((ref) {
   final me = ref.watch(currentUserIdProvider);
-  final all = ref.watch(accessGrantsProvider).asData?.value ?? const [];
+  final all = ref.watch(accessGrantsProvider).value ?? const [];
   return {
     for (final g in all)
       if (g.ownerId == me) g.granteeId: g.level,
@@ -26,7 +26,7 @@ final grantsIGaveProvider = Provider<Map<String, GrantLevel>>((ref) {
 /// Freigaben, die ICH bekommen habe (ownerId -> level).
 final grantsIReceivedProvider = Provider<Map<String, GrantLevel>>((ref) {
   final me = ref.watch(currentUserIdProvider);
-  final all = ref.watch(accessGrantsProvider).asData?.value ?? const [];
+  final all = ref.watch(accessGrantsProvider).value ?? const [];
   return {
     for (final g in all)
       if (g.granteeId == me) g.ownerId: g.level,

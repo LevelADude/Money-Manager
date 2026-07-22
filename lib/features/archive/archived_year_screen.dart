@@ -45,6 +45,7 @@ class ArchivedYearScreen extends ConsumerWidget {
           ),
           Expanded(
             child: async.when(
+              skipLoadingOnReload: true,
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Padding(

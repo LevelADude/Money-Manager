@@ -21,13 +21,13 @@ class ProjectDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lt = tag.toLowerCase();
     final txs =
-        (ref.watch(allTransactionsProvider).asData?.value ??
+        (ref.watch(allTransactionsProvider).value ??
                 const <AppTransaction>[])
             .where((t) => t.tags.any((x) => x.toLowerCase() == lt))
             .toList()
           ..sort((a, b) => b.occurredOn.compareTo(a.occurredOn));
     final accounts =
-        ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+        ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final l = AppLocalizations.of(context);

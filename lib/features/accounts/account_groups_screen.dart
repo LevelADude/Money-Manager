@@ -125,7 +125,7 @@ class AccountGroupsScreen extends ConsumerWidget {
     final me = ref.read(currentUserIdProvider);
     // Nur eigene Konten zur Auswahl (Custom-Summen bündeln die eigenen Konten).
     final myAccounts =
-        (ref.read(accountsProvider).asData?.value ?? const <Account>[])
+        (ref.read(accountsProvider).value ?? const <Account>[])
             .where((a) => a.ownerId == me)
             .toList();
     final nameCtrl = TextEditingController(text: existing?.name ?? '');

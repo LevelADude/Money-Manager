@@ -33,7 +33,7 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final statusAsync = ref.watch(archiveConfigStatusProvider);
-    final status = statusAsync.asData?.value;
+    final status = statusAsync.value;
 
     // Repo-Feld einmalig mit dem gespeicherten Wert vorbelegen.
     if (!_prefilled && status != null) {
@@ -110,7 +110,7 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
     final repo = _repo.text.trim();
     final token = _token.text.trim();
     final hasKey =
-        ref.read(archiveConfigStatusProvider).asData?.value.hasKey ?? false;
+        ref.read(archiveConfigStatusProvider).value?.hasKey ?? false;
 
     // Erst-Einrichtung braucht Repo + Token; spätere Änderung braucht nur Repo.
     if (repo.isEmpty || (!hasKey && token.isEmpty)) {

@@ -36,6 +36,7 @@ class _AccountsReorderScreenState extends ConsumerState<AccountsReorderScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.sortAccounts)),
       body: accountsAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (accounts) {

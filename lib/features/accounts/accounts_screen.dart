@@ -50,14 +50,14 @@ class AccountsScreen extends ConsumerWidget {
     final myId = ref.watch(currentUserIdProvider);
     // Eigene Konten kann man nur in der Eigen-/Gesamtansicht anlegen.
     final canAddAccount = personFilter == null || personFilter == myId;
-    final readOnly = ref.watch(isReadOnlyProvider).asData?.value ?? false;
+    final readOnly = ref.watch(isReadOnlyProvider).value ?? false;
     final convert = ref.watch(converterProvider);
     final txs =
-        ref.watch(allTransactionsProvider).asData?.value ??
+        ref.watch(allTransactionsProvider).value ??
         const <AppTransaction>[];
     final carryover = ref.watch(archivedCarryoverProvider);
     final memberNames =
-        ref.watch(profileNamesProvider).asData?.value ??
+        ref.watch(profileNamesProvider).value ??
         const <String, String>{};
     final l = AppLocalizations.of(context);
 
@@ -113,6 +113,7 @@ class AccountsScreen extends ConsumerWidget {
               label: Text(l.accountFab),
             ),
       body: accountsAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (allAccounts) {

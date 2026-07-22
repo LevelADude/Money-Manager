@@ -13,7 +13,7 @@ class CategoryRulesScreen extends ConsumerWidget {
   Future<void> _addRule(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
     final cats =
-        (ref.read(categoriesProvider).asData?.value ?? const <Category>[])
+        (ref.read(categoriesProvider).value ?? const <Category>[])
             .where((c) => c.active)
             .toList()
           ..sort(
@@ -100,6 +100,7 @@ class CategoryRulesScreen extends ConsumerWidget {
         label: Text(l.ruleFab),
       ),
       body: rulesAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (rules) {

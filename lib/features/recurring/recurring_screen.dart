@@ -19,7 +19,7 @@ class RecurringScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final rulesAsync = ref.watch(recurringRulesProvider);
     final accounts =
-        ref.watch(accountsProvider).asData?.value ?? const <Account>[];
+        ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final l = AppLocalizations.of(context);
@@ -33,6 +33,7 @@ class RecurringScreen extends ConsumerWidget {
         label: Text(l.recurringFab),
       ),
       body: rulesAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(l.errorWith(e))),
         data: (rules) {
