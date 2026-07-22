@@ -4,9 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/account_group.dart';
-import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
-import '../../shared/balances.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/data_refresh.dart';
 import '../../shared/hide_amounts_toggle.dart';
@@ -15,7 +13,6 @@ import '../auth/auth_providers.dart';
 import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
 import '../profile/profile_switcher.dart';
-import '../archive/archive_providers.dart';
 import '../recurring/recurring_providers.dart';
 import '../reminders/reminders_providers.dart';
 import '../sharing/account_member_providers.dart';
@@ -52,16 +49,15 @@ class AccountsScreen extends ConsumerWidget {
     final canAddAccount = personFilter == null || personFilter == myId;
     final readOnly = ref.watch(isReadOnlyProvider).value ?? false;
     final convert = ref.watch(converterProvider);
-    final txs =
-        ref.watch(allTransactionsProvider).value ??
-        const <AppTransaction>[];
-    final carryover = ref.watch(archivedCarryoverProvider);
+    // Alle Salden auf einmal (ein Durchlauf über die Buchungen, von Riverpod
+    // gecacht) statt pro Konto erneut über sämtliche Buchungen zu laufen.
+    final balances = ref.watch(accountBalancesProvider);
     final memberNames =
         ref.watch(profileNamesProvider).value ??
         const <String, String>{};
     final l = AppLocalizations.of(context);
 
-    int balanceOf(Account a) => accountBalanceCents(a, txs, carryover);
+    int balanceOf(Account a) => balances[a.id] ?? 0;
 
     return Scaffold(
       appBar: AppBar(

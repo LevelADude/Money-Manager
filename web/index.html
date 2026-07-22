@@ -18,14 +18,36 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!--
+    user-scalable=no + maximum-scale=1 sind hier KEINE Bequemlichkeit, sondern
+    ein Funktions-Fix: Flutter Web zeichnet alles in ein Canvas und rechnet
+    Touch-Koordinaten selbst um. Sobald iOS die Seite zoomt (Doppeltipp oder
+    Auto-Zoom beim Fokussieren eines Eingabefelds), passt der Treffer-Test
+    nicht mehr zur Anzeige -> Tippen landet neben dem Button (z. B. auf der
+    Menueleiste unten statt auf dem "+"-Knopf). Ohne Zoom bleibt die Zuordnung
+    korrekt.
+
+    KEIN viewport-fit=cover: die Flutter-Engine wertet env(safe-area-inset-*)
+    nicht aus (im kompilierten Build kommt "safe-area-inset" nicht vor). Mit
+    "cover" wuerde die App unter Statusleiste und Home-Indikator gezeichnet,
+    ohne das auszugleichen. Ohne "cover" begrenzt iOS den Viewport selbst auf
+    den sichtbaren Bereich - genau das, was diese App braucht.
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
   <meta name="description" content="Persönliche Finanzverwaltung – Konten, Buchungen, Budgets und Statistiken, geräteübergreifend synchronisiert.">
   <meta name="theme-color" content="#2E7D32">
 
   <!-- PWA / iOS: „Zum Home-Bildschirm" als Vollbild-App -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!--
+    "default" statt "black-translucent": bei black-translucent reicht die
+    Webansicht unter die iOS-Statusleiste. Da Flutter Web keine Safe-Area
+    kennt (s. o.), lag die AppBar dort unter Uhrzeit/Akku und der gesamte
+    Inhalt war gegenueber dem sichtbaren Bereich verschoben. Mit "default"
+    reserviert iOS die Statusleiste, die App beginnt darunter.
+  -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Money Manager">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -51,7 +73,31 @@
   </script>
 
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; background: #fafafa; }
+    /*
+      Das Dokument wird bewusst festgenagelt (position: fixed + overflow:
+      hidden). Grund: Flutter zeichnet in ein Canvas, das am Viewport-Ursprung
+      haengt, rechnet Touch-Koordinaten aber ohne Dokument-Scroll um. Laesst
+      man iOS die Seite mitscrollen oder "gummibandartig" ueberdehnen, sind
+      Anzeige und Treffer-Test um genau diesen Versatz auseinander - Knoepfe
+      reagieren dann gar nicht oder loesen den Nachbarn aus. Gescrollt wird
+      ausschliesslich INNERHALB der App (Flutter-Listen).
+
+      touch-action: manipulation schaltet zusaetzlich die 300-ms-Verzoegerung
+      und den Doppeltipp-Zoom ab -> Tippen fuehlt sich direkt an.
+    */
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      background: #fafafa;
+    }
+    /* Nur der body wird fixiert (nicht auch <html>): das genuegt gegen das
+       Mitscrollen/Ueberdehnen und vermeidet ein out-of-flow Wurzelelement. */
+    body { position: fixed; }
     @media (prefers-color-scheme: dark) { html, body { background: #121212; } }
     #boot {
       position: fixed; inset: 0; display: flex; flex-direction: column;
@@ -121,6 +167,49 @@
             '(Strg+Shift+R) oder pruefe die Internetverbindung.');
         }
       }, 20000);
+    })();
+  </script>
+  <!--
+    Service-Worker anmelden (siehe web/sw.js): haelt die grossen Dateien
+    lokal, damit die iPhone-WebApp nicht bei jedem Kaltstart ~12 MB neu
+    laedt. __BUILD_ID__ ersetzt der Deploy-Workflow durch die Commit-SHA.
+
+    Wichtig ist der Reload unten: der neue Worker uebernimmt sofort
+    (skipWaiting + claim), und die Seite laedt danach GENAU EINMAL neu. So
+    kann sich kein alter Build festsetzen — das war der Grund, warum der
+    Service-Worker frueher abgeschaltet war.
+  -->
+  <script>
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      // Auf localhost bewusst nicht registrieren: beim Entwickeln wuerde ein
+      // Cache mit unveraendertem Build-Stempel eigene Aenderungen verdecken.
+      var host = location.hostname;
+      if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+        return;
+      }
+      // Gab es beim Laden schon einen Controller, ist ein spaeterer Wechsel
+      // ein echtes Update -> neu laden. Bei der ERSTEN Installation gibt es
+      // noch keinen; dann waere der Reload ueberfluessig (und in einer
+      // Schleife sogar schaedlich).
+      var hadController = !!navigator.serviceWorker.controller;
+      var reloading = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!hadController || reloading) return;
+        reloading = true;
+        window.location.reload();
+      });
+      window.addEventListener('load', function () {
+        navigator.serviceWorker
+          .register('sw.js?v=__BUILD_ID__')
+          .then(function (reg) {
+            // Bei jedem Start nachsehen, ob es einen neueren Build gibt.
+            reg.update();
+          })
+          .catch(function (e) {
+            console.warn('Service-Worker nicht registriert:', e);
+          });
+      });
     })();
   </script>
   <script src="flutter_bootstrap.js" async></script>

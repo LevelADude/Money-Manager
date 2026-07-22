@@ -14,7 +14,11 @@ import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../profile/profile_providers.dart';
 import '../transactions/transaction_providers.dart';
-import 'pdf_export.dart';
+// Deferred: die PDF-Erzeugung (Pakete `pdf` + `printing`) macht einen
+// spürbaren Teil des Web-Bundles aus, wird aber nur beim tatsächlichen
+// PDF-Export gebraucht. So laedt der Browser sie erst beim Klick statt bei
+// jedem App-Start. Auf Windows/Android ist `loadLibrary()` ein No-Op.
+import 'pdf_export.dart' deferred as pdf_export;
 
 /// Exportiert alle Buchungen als CSV (Semikolon-getrennt, Excel-freundlich)
 /// oder als PDF-Bericht (Tabelle + Summen).
@@ -114,7 +118,8 @@ class ExportScreen extends ConsumerWidget {
     }
 
     try {
-      await shareTransactionsPdf(
+      await pdf_export.loadLibrary();
+      await pdf_export.shareTransactionsPdf(
         heading: l.pdfHeading,
         periodLabel: l.pdfStatusLabel(rows.length, df.format(DateTime.now())),
         rows: rows,

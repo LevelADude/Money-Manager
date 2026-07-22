@@ -39,25 +39,29 @@ final manageableAccountsProvider = Provider<List<Account>>((ref) {
       .toList();
 });
 
-/// Saldo (Cent) eines Kontos = Anfangssaldo + alle Buchungen (inkl. Überträge).
-final accountBalanceProvider = Provider.family<int, String>((ref, accountId) {
+/// Salden ALLER Konten (Konto-ID -> Cent), in einem einzigen Durchlauf durch
+/// die Buchungen berechnet und von Riverpod zwischengespeichert.
+///
+/// Zentrale Quelle für jede Saldo-Anzeige: vorher rechnete jede Stelle für
+/// sich, also einmal komplett über alle Buchungen **pro Konto** — auf der
+/// Konten-Übersicht mit Vermögen je Person summierte sich das zu
+/// O(Personen x Konten x Buchungen) bei **jedem** Rebuild. Das war die
+/// spürbare Ruckelquelle auf dem Handy.
+final accountBalancesProvider = Provider<Map<String, int>>((ref) {
   final accounts =
       ref.watch(accountsProvider).value ?? const <Account>[];
-  Account? account;
-  for (final a in accounts) {
-    if (a.id == accountId) {
-      account = a;
-      break;
-    }
-  }
-  if (account == null) return 0;
   final txs =
       ref.watch(allTransactionsProvider).value ??
       const <AppTransaction>[];
   // Carry-over archivierter Jahre: deren Buchungen sind aus der DB entfernt,
   // ihr Netto-Beitrag steckt im Carry-over, damit der Saldo korrekt bleibt.
   final carryover = ref.watch(archivedCarryoverProvider);
-  return accountBalanceCents(account, txs, carryover);
+  return accountBalancesCents(accounts, txs, carryover);
+});
+
+/// Saldo (Cent) eines Kontos = Anfangssaldo + alle Buchungen (inkl. Überträge).
+final accountBalanceProvider = Provider.family<int, String>((ref, accountId) {
+  return ref.watch(accountBalancesProvider)[accountId] ?? 0;
 });
 
 final accountGroupRepositoryProvider = Provider<AccountGroupRepository>((ref) {
@@ -76,11 +80,8 @@ final accountGroupTotalsProvider =
       final groups = ref.watch(accountGroupsProvider).value ?? const [];
       final accounts =
           ref.watch(accountsProvider).value ?? const <Account>[];
-      final txs =
-          ref.watch(allTransactionsProvider).value ??
-          const <AppTransaction>[];
       final convert = ref.watch(converterProvider);
-      final carryover = ref.watch(archivedCarryoverProvider);
+      final balances = ref.watch(accountBalancesProvider);
       final byId = {for (final a in accounts) a.id: a};
       return [
         for (final g in groups)
@@ -89,8 +90,7 @@ final accountGroupTotalsProvider =
             cents: g.accountIds.fold<int>(0, (s, id) {
               final a = byId[id];
               if (a == null) return s;
-              return s +
-                  convert(accountBalanceCents(a, txs, carryover), a.currency);
+              return s + convert(balances[id] ?? 0, a.currency);
             }),
           ),
       ];
@@ -101,17 +101,14 @@ final accountGroupTotalsProvider =
 final netWorthProvider = Provider.family<int, String?>((ref, ownerId) {
   final accounts =
       ref.watch(accountsProvider).value ?? const <Account>[];
-  final txs =
-      ref.watch(allTransactionsProvider).value ??
-      const <AppTransaction>[];
   final convert = ref.watch(converterProvider);
-  final carryover = ref.watch(archivedCarryoverProvider);
+  final balances = ref.watch(accountBalancesProvider);
   var total = 0;
   for (final a in accounts) {
     if (!a.includeInNetWorth || a.archived) continue;
     if (ownerId != null && a.ownerId != ownerId) continue;
     // in Hauptwährung umrechnen
-    total += convert(accountBalanceCents(a, txs, carryover), a.currency);
+    total += convert(balances[a.id] ?? 0, a.currency);
   }
   return total;
 });

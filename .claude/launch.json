@@ -13,6 +13,12 @@
         "--dart-define-from-file=env.json"
       ],
       "port": 5173
+    },
+    {
+      "name": "web-release",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-m", "http.server", "5174", "--directory", "build/web"],
+      "port": 5174
     }
   ]
 }

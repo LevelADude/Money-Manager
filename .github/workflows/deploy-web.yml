@@ -42,12 +42,10 @@ jobs:
       # --no-web-resources-cdn: CanvasKit/Schriften lokal mitliefern statt von
       # gstatic.com laden. Sonst bleibt die Seite weiss, wenn gstatic langsam
       # oder gesperrt ist (haengt beim Engine-Start). Funktioniert so auch offline.
-      # --pwa-strategy=none: kein Service-Worker. Die App ist ohnehin auf Live-
-      # Sync angewiesen (kein Offline-Feature), ein SW brachte nur das Risiko,
-      # dass iOS/Android nach "Zum Home-Bildschirm" einen alten Build ewig
-      # weiter-cached (Nutzer sieht dann z. B. Logins gegen einen veralteten
-      # Stand haengen). Ohne SW greift stattdessen der normale, kurzlebige
-      # HTTP-Cache des Browsers/CDN.
+      # --pwa-strategy=none: Flutter soll KEINEN eigenen Service-Worker
+      # beisteuern. Das ist seit Flutter 3.35 ohnehin nur noch ein Grabstein,
+      # der sich selbst abmeldet (flutter/flutter#156910) — gecacht wird davon
+      # nichts. Stattdessen bringt die App unter web/sw.js einen eigenen mit.
       - name: Build web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -57,6 +55,22 @@ jobs:
             --base-href "/${{ github.event.repository.name }}/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+
+      # Build-Stempel setzen. Der Cache-Name im Service-Worker haengt daran:
+      # neuer Commit -> neuer Cache -> alte Dateien werden verworfen. Damit
+      # kann sich kein veralteter Build festsetzen (genau das Problem, das
+      # frueher zum Abschalten des Service-Workers gefuehrt hat).
+      - name: Build-Stempel in Service-Worker setzen
+        run: |
+          set -e
+          sed -i "s/__BUILD_ID__/${{ github.sha }}/g" \
+            build/web/sw.js build/web/index.html
+          # Absichern, dass wirklich kein Platzhalter uebrig blieb.
+          if grep -rq "__BUILD_ID__" build/web/sw.js build/web/index.html; then
+            echo "FEHLER: __BUILD_ID__ wurde nicht ersetzt." >&2
+            exit 1
+          fi
+          echo "Build-Stempel: ${{ github.sha }}"
 
       - uses: actions/upload-pages-artifact@v3
         with:

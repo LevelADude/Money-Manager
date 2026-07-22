@@ -25,12 +25,14 @@ class DebtsScreen extends ConsumerWidget {
         ref.watch(allTransactionsProvider).value ??
         const <AppTransaction>[];
     final carryover = ref.watch(archivedCarryoverProvider);
+    // Salden aller Konten in einem Durchlauf (gecacht) statt pro Konto erneut.
+    final balances = ref.watch(accountBalancesProvider);
     final liabilities = accounts
         .where((a) => a.type.isLiability && !a.archived)
         .toList();
 
     final totalDebt = liabilities.fold<int>(0, (s, a) {
-      final b = accountBalanceCents(a, txs, carryover);
+      final b = balances[a.id] ?? 0;
       return s + (b < 0 ? -b : 0);
     });
 
@@ -62,7 +64,12 @@ class DebtsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 for (final a in liabilities)
-                  _DebtCard(account: a, txs: txs, carryover: carryover),
+                  _DebtCard(
+                    account: a,
+                    currentCents: balances[a.id] ?? 0,
+                    txs: txs,
+                    carryover: carryover,
+                  ),
               ],
             ),
     );
@@ -72,11 +79,15 @@ class DebtsScreen extends ConsumerWidget {
 class _DebtCard extends StatelessWidget {
   const _DebtCard({
     required this.account,
+    required this.currentCents,
     required this.txs,
     required this.carryover,
   });
 
   final Account account;
+
+  /// Aktueller Saldo, zentral vorberechnet (siehe `accountBalancesProvider`).
+  final int currentCents;
   final List<AppTransaction> txs;
   final Map<String, int> carryover;
 
@@ -84,7 +95,7 @@ class _DebtCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     // Aktueller Saldo (negativ = Schuld).
-    final current = accountBalanceCents(account, txs, carryover);
+    final current = currentCents;
     final debt = current < 0 ? -current : 0;
 
     // Restschuld-Verlauf: Saldo zum Monatsende der letzten 12 Monate.

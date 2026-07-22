@@ -13,7 +13,9 @@ import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../currency/currency_providers.dart';
-import '../export/pdf_export.dart';
+// Deferred — siehe Begruendung in export_screen.dart: haelt `pdf`/`printing`
+// aus dem Start-Bundle heraus, geladen wird erst beim PDF-Export.
+import '../export/pdf_export.dart' deferred as pdf_export;
 import '../profile/profile_providers.dart';
 import '../profile/profile_switcher.dart';
 import '../settings/settings_providers.dart';
@@ -102,7 +104,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         ],
     ];
     try {
-      await shareTransactionsPdf(
+      await pdf_export.loadLibrary();
+      await pdf_export.shareTransactionsPdf(
         heading: l.pdfHeading,
         periodLabel: '${_label()} · ${l.txCount(items.length)}',
         rows: rows,

@@ -6,12 +6,9 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/recurring_rule.dart';
 import '../../l10n/app_localizations.dart';
-import '../../shared/balances.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
-import '../archive/archive_providers.dart';
 import '../recurring/recurring_providers.dart';
-import '../transactions/transaction_providers.dart';
 
 /// Cashflow-Kalender: prognostizierter Kontostand anhand der kommenden
 /// Daueraufträge (nächste 60 Tage).
@@ -24,21 +21,20 @@ class CashflowScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts =
         ref.watch(accountsProvider).value ?? const <Account>[];
-    final txs =
-        ref.watch(allTransactionsProvider).value ??
-        const <AppTransaction>[];
     final rules =
         ref.watch(recurringRulesProvider).value ??
         const <RecurringRule>[];
     final l = AppLocalizations.of(context);
     final df = DateFormat('EEEE, dd.MM.yyyy', 'de');
 
-    // Aktueller Gesamt-Kontostand (nicht archivierte Konten).
-    final carryover = ref.watch(archivedCarryoverProvider);
+    // Aktueller Gesamt-Kontostand (nicht archivierte Konten). Salden kommen
+    // vorberechnet aus `accountBalancesProvider` (ein Durchlauf für alle
+    // Konten statt einer je Konto).
+    final balances = ref.watch(accountBalancesProvider);
     var current = 0;
     for (final a in accounts) {
       if (a.archived) continue;
-      current += accountBalanceCents(a, txs, carryover);
+      current += balances[a.id] ?? 0;
     }
 
     final now = DateTime.now();

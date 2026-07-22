@@ -77,6 +77,82 @@ void main() {
     });
   });
 
+  group('accountBalancesCents (ein Durchlauf für alle Konten)', () {
+    test('liefert je Konto exakt dasselbe wie accountBalanceCents', () {
+      final accounts = [
+        _acc('A', opening: 5000),
+        _acc('B', opening: -200),
+        _acc('C', opening: 0),
+      ];
+      final carryover = {'A': 700, 'C': -50};
+      final txs = [
+        _tx(type: TransactionType.income, accountId: 'A', amountCents: 2000),
+        _tx(type: TransactionType.expense, accountId: 'A', amountCents: 500),
+        _tx(type: TransactionType.expense, accountId: 'B', amountCents: 125),
+        _tx(
+          type: TransactionType.transfer,
+          accountId: 'A',
+          transferAccountId: 'B',
+          amountCents: 400,
+        ),
+        _tx(
+          type: TransactionType.transfer,
+          accountId: 'C',
+          transferAccountId: 'A',
+          amountCents: 90,
+        ),
+        _tx(type: TransactionType.income, accountId: 'C', amountCents: 33),
+      ];
+
+      final bulk = accountBalancesCents(accounts, txs, carryover);
+      for (final a in accounts) {
+        expect(
+          bulk[a.id],
+          accountBalanceCents(a, txs, carryover),
+          reason: 'Saldo von ${a.id} weicht ab',
+        );
+      }
+    });
+
+    test('Konten ganz ohne Buchungen sind enthalten', () {
+      final accounts = [_acc('A', opening: 1000), _acc('B', opening: 250)];
+      final bulk = accountBalancesCents(accounts, const [], {'B': 40});
+      expect(bulk['A'], 1000);
+      expect(bulk['B'], 290);
+    });
+
+    test('Buchungen auf unbekannte Konten werden ignoriert', () {
+      final accounts = [_acc('A', opening: 0)];
+      final txs = [
+        // Fremdes Quellkonto (z. B. nur-ansehbares Konto ohne Freigabe).
+        _tx(type: TransactionType.income, accountId: 'X', amountCents: 999),
+        // Übertrag von A auf ein nicht geladenes Konto: A wird belastet,
+        // für X entsteht kein Eintrag.
+        _tx(
+          type: TransactionType.transfer,
+          accountId: 'A',
+          transferAccountId: 'X',
+          amountCents: 100,
+        ),
+      ];
+      final bulk = accountBalancesCents(accounts, txs, const {});
+      expect(bulk['A'], -100);
+      expect(bulk.containsKey('X'), isFalse);
+    });
+
+    test('Übertrag ohne Zielkonto belastet nur das Quellkonto', () {
+      final accounts = [_acc('A', opening: 500)];
+      final txs = [
+        _tx(
+          type: TransactionType.transfer,
+          accountId: 'A',
+          amountCents: 200,
+        ),
+      ];
+      expect(accountBalancesCents(accounts, txs, const {})['A'], 300);
+    });
+  });
+
   group('accountBalanceAsOf', () {
     test('zählt nur Buchungen bis einschließlich asOf', () {
       final a = _acc('A', opening: 0);

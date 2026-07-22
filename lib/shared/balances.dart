@@ -8,6 +8,10 @@ import '../data/models/app_transaction.dart';
 
 /// Saldo eines Kontos in Cent: Anfangssaldo + Carry-over + alle geladenen
 /// Buchungen.
+///
+/// Achtung: laeuft einmal komplett ueber [txs]. Fuer MEHRERE Konten deshalb
+/// nicht in einer Schleife aufrufen (das waere O(Konten x Buchungen)), sondern
+/// [accountBalancesCents] nutzen — das erledigt alle Konten in einem Durchlauf.
 int accountBalanceCents(
   Account account,
   Iterable<AppTransaction> txs,
@@ -18,6 +22,46 @@ int accountBalanceCents(
     sum += t.signedCentsFor(account.id);
   }
   return sum;
+}
+
+/// Salden ALLER [accounts] in **einem** Durchlauf durch [txs] (O(Konten +
+/// Buchungen) statt O(Konten x Buchungen)).
+///
+/// Jede Buchung weiss selbst, welche Konten sie beruehrt (bei Uebertraegen
+/// zwei), deshalb genuegt ein Durchlauf, der die Betraege direkt auf die
+/// betroffenen Konten bucht. Das Ergebnis ist identisch zu
+/// [accountBalanceCents] je Konto, nur eben ohne die Schleife pro Konto.
+///
+/// Konten ohne Buchungen sind enthalten (mit Anfangssaldo + Carry-over).
+Map<String, int> accountBalancesCents(
+  Iterable<Account> accounts,
+  Iterable<AppTransaction> txs,
+  Map<String, int> carryover,
+) {
+  final sums = <String, int>{
+    for (final a in accounts)
+      a.id: a.openingBalanceCents + (carryover[a.id] ?? 0),
+  };
+  for (final t in txs) {
+    switch (t.type) {
+      case TransactionType.income:
+        final v = sums[t.accountId];
+        if (v != null) sums[t.accountId] = v + t.amountCents;
+      case TransactionType.expense:
+        final v = sums[t.accountId];
+        if (v != null) sums[t.accountId] = v - t.amountCents;
+      case TransactionType.transfer:
+        // Abgang beim Quellkonto, Zugang beim Zielkonto.
+        final from = sums[t.accountId];
+        if (from != null) sums[t.accountId] = from - t.amountCents;
+        final toId = t.transferAccountId;
+        if (toId != null) {
+          final to = sums[toId];
+          if (to != null) sums[toId] = to + t.amountCents;
+        }
+    }
+  }
+  return sums;
 }
 
 /// Wie [accountBalanceCents], aber nur Buchungen bis einschließlich [asOf]
