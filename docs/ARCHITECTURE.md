@@ -64,6 +64,8 @@ Die App findet ihre Supabase-Verbindung in dieser Reihenfolge (höchste zuerst):
    Onboarding; gespeichert in SharedPreferences.
 2. **Committete `assets/db_connection/connection.json`** – bindet eine
    Instanz/einen Fork fest an ihre DB (funktioniert auf allen Plattformen).
+   Im Upstream bewusst nur ein **Platzhalter** (`DEIN-PROJEKT…`, wird ignoriert),
+   damit ein frischer Fork leer startet statt sich an die fremde DB zu binden.
 3. **dart-define** – lokal `env.json`, im Web-Deploy GitHub-Secrets.
 4. Nichts gesetzt → **Onboarding** (neue DB anlegen oder bestehende verbinden).
 

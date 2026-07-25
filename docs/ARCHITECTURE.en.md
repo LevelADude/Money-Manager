@@ -63,7 +63,9 @@ The app finds its Supabase connection in this order (highest first):
 1. **Per-device override** – "Change database connection" (login/profile) or
    onboarding; stored in SharedPreferences.
 2. **Committed `assets/db_connection/connection.json`** – permanently binds an
-   instance/fork to its DB (works on all platforms).
+   instance/fork to its DB (works on all platforms). In the upstream this is
+   deliberately just a **placeholder** (`DEIN-PROJEKT…`, ignored) so a fresh
+   fork starts empty instead of binding to the foreign DB.
 3. **dart-define** – locally `env.json`, in the web deploy GitHub secrets.
 4. Nothing set → **onboarding** (create a new DB or connect to an existing one).
 

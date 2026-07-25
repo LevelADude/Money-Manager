@@ -56,6 +56,33 @@ jobs:
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
+      # Die im Repo committete assets/db_connection/connection.json ist nur ein
+      # Platzhalter (damit ein frischer Fork LEER startet statt sich still mit
+      # einer fremden DB zu verbinden). Fuer eine fest gebundene Instanz kommen
+      # die echten Werte per --dart-define oben in den App-Code.
+      # Zusaetzlich hier die Werte in die connection.json des Web-Builds
+      # schreiben, damit die veroeffentlichte Seite ihre Verbindung ausliefert
+      # ("Zugangsdaten von einer Web-Version uebernehmen"/easy-setup liest genau
+      # diese Datei). NUR wenn beide Secrets gesetzt sind - ein Fork ohne
+      # eigene Secrets bleibt bewusst LEER (Platzhalter -> Onboarding).
+      - name: DB-Verbindung in den Web-Build einbetten (nur mit Secrets)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -e
+          target="build/web/assets/assets/db_connection/connection.json"
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
+            mkdir -p "$(dirname "$target")"
+            jq -n --arg url "$SUPABASE_URL" --arg key "$SUPABASE_ANON_KEY" \
+              '{url: $url, anonKey: $key}' > "$target"
+            echo "connection.json in den Web-Build eingebettet."
+          else
+            echo "WARN: SUPABASE_URL/SUPABASE_ANON_KEY nicht gesetzt ->"
+            echo "      veroeffentlichte Seite startet LEER (Onboarding)."
+            echo "      Fuer Forks ohne eigene Secrets ist das normal."
+          fi
+
       # Build-Stempel setzen. Der Cache-Name im Service-Worker haengt daran:
       # neuer Commit -> neuer Cache -> alte Dateien werden verworfen. Damit
       # kann sich kein veralteter Build festsetzen (genau das Problem, das

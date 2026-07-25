@@ -38,16 +38,14 @@ desktop – without writing or building anything? Here's how, in a few minutes:
 
 1. **Fork the repo.** Click **"Fork"** at the top right → the project is now in
    your GitHub account.
-2. ⚠️ **IMMEDIATELY AFTER: delete `assets/db_connection/connection.json`.**
-   This file permanently binds the original fork to **the original project's
-   database** — if you don't delete it, **your** published site will later
-   **connect silently and automatically to the original database** (your
-   bookings mix with someone else's; RLS won't save you here, because you'd
-   just be a normal authenticated user in someone else's DB). In the GitHub
-   web UI: open the file → trash-can icon top right → **"Commit changes"**.
-   (Keep the `assets/db_connection/` folder and its `README.txt` — delete
-   only the `.json` file, otherwise the build breaks.) Do this before step 4
-   (publishing).
+2. **No "decoupling" step needed.** The bundled
+   `assets/db_connection/connection.json` is only a **placeholder** — a fresh
+   fork does **not** connect to a foreign database with it; it starts **empty**
+   in the onboarding. So you do **not** need to delete the file. You bind
+   **your own** database in step 5 (secrets, recommended) or directly in the
+   onboarding (step 6). *(Advanced: instead of secrets you can also replace the
+   placeholder values with your own project's credentials — then your site
+   binds to it permanently.)*
 3. **Create a free Supabase project.** Sign up at
    [supabase.com](https://supabase.com) → **New Project** (Europe region
    recommended) → wait a moment until it's ready.
@@ -67,8 +65,9 @@ desktop – without writing or building anything? Here's how, in a few minutes:
      (of **your own** project from step 3). Then *your* published site connects
      to your database automatically. Without the secrets the site starts empty
      and asks for the credentials in the onboarding (see step 6).
-6. **Open the app & connect.** A fresh fork **without `connection.json`**
-   (step 2!) starts **empty** and shows the onboarding with two paths:
+6. **Open the app & connect.** A fresh fork (with the placeholder
+   `connection.json`, see step 2) starts **empty** and shows the onboarding
+   with two paths:
    **"New installation"** (your own empty DB) or **"Connect to an existing
    DB"**. Enter the **Supabase URL** and **anon/publishable key** (both in
    the Supabase dashboard under *Project Settings → Data API* and *API
@@ -78,12 +77,13 @@ desktop – without writing or building anything? Here's how, in a few minutes:
    - Change/disconnect later: **More → Settings → Database connection**
      (this device only, your data is kept).
 
-> **Already forked and forgot to delete `connection.json`?** Check the
-> **original** project's Supabase dashboard (Authentication → Users) for
-> unexpected accounts (e.g. your new test email) — that's the tell. Fix:
-> delete `connection.json` in your fork now (or overwrite it with **your
-> own** project's credentials), redeploy, and remove the accidentally
-> created accounts/whitelist entries from the original database.
+> **Does your `connection.json` contain real, foreign credentials?** (Only on
+> very old forks, or if entered by hand — the bundled file is a placeholder
+> today.) Then your site connects to that foreign database. Tell-tale sign:
+> unexpected accounts show up in the affected project's Supabase dashboard
+> (Authentication → Users). Fix: reset the file to the placeholder (or
+> overwrite it with **your own** project's credentials), redeploy, and remove
+> the accidentally created accounts there.
 
 > **On iPhone:** open the site in **Safari** → **Share** → **"Add to Home
 > Screen"**. Money Manager then launches like a real app (PWA). On Android the

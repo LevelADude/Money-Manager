@@ -38,17 +38,14 @@ So geht's in wenigen Minuten:
 
 1. **Repo forken.** Oben rechts auf **„Fork"** klicken → das Projekt liegt jetzt
    in deinem GitHub-Konto.
-2. ⚠️ **SOFORT DANACH: `assets/db_connection/connection.json` löschen.**
-   Diese Datei bindet den Original-Fork fest an **die Datenbank des
-   Original-Projekts** — wird sie nicht gelöscht, verbindet sich **deine**
-   veröffentlichte Seite später **automatisch und unsichtbar mit der
-   Original-Datenbank** (fremde/eigene Buchungen vermischen sich, RLS schützt
-   dich hier nicht davor, weil du dann ganz normal als eigener Nutzer in der
-   fremden DB angemeldet bist). Im GitHub-Webinterface: Datei öffnen →
-   Papierkorb-Symbol oben rechts → **„Commit changes"**. (Den Ordner
-   `assets/db_connection/` inkl. `README.txt` dabei **behalten** — nur die
-   `.json`-Datei löschen, sonst schlägt der Build fehl.) Diesen Schritt vor
-   Schritt 4 (Veröffentlichen) erledigen.
+2. **Nichts weiter nötig zum „Abkoppeln".** Die mitgelieferte
+   `assets/db_connection/connection.json` ist nur ein **Platzhalter** — ein
+   frischer Fork verbindet sich damit **nicht** mit einer fremden Datenbank,
+   sondern startet **leer** im Onboarding. Du musst die Datei also **nicht**
+   löschen. Deine **eigene** Datenbank bindest du in Schritt 5 (Secrets,
+   empfohlen) oder direkt im Onboarding (Schritt 6). *(Fortgeschritten: Statt
+   Secrets kannst du die Platzhalter-Werte auch durch die Zugangsdaten deines
+   eigenen Projekts ersetzen — dann verbindet sich deine Seite fest damit.)*
 3. **Kostenloses Supabase-Projekt anlegen.** Auf [supabase.com](https://supabase.com)
    registrieren → **New Project** (Region Europa empfohlen) → kurz warten, bis es
    fertig ist.
@@ -69,8 +66,9 @@ So geht's in wenigen Minuten:
      verbindet sich *deine* veröffentlichte Seite automatisch mit deiner
      Datenbank. Ohne Secrets startet die Seite leer und fragt im Onboarding
      nach den Zugangsdaten (siehe Schritt 6).
-6. **App öffnen & verbinden.** Ein frischer Fork **ohne `connection.json`**
-   (Schritt 2!) startet **leer** und zeigt das Onboarding mit zwei Wegen:
+6. **App öffnen & verbinden.** Ein frischer Fork (mit Platzhalter-
+   `connection.json`, siehe Schritt 2) startet **leer** und zeigt das
+   Onboarding mit zwei Wegen:
    **„Neue Installation"** (eigene, leere DB) oder **„Mit bestehender DB
    verbinden"**. Trage **Supabase-URL** und **anon/publishable Key** ein
    (beide im Supabase-Dashboard unter *Project Settings → Data API* bzw.
@@ -80,13 +78,14 @@ So geht's in wenigen Minuten:
    - Verbindung später ändern/trennen: **Mehr → Einstellungen →
      Datenbank-Verbindung** (gilt nur für dieses Gerät, Daten bleiben erhalten).
 
-> **Schon geforkt und `connection.json` nicht gelöscht?** Prüfe im Supabase-
-> Dashboard des **Original**-Projekts (Authentication → Users), ob dort
-> unerwartete Konten (z. B. deine neue Test-E-Mail) auftauchen — das ist das
-> Anzeichen. Fix: `connection.json` im Fork jetzt löschen (oder mit den
-> Zugangsdaten deines **eigenen** Projekts überschreiben), neu deployen, und
-> die versehentlich in der Original-DB angelegten Konten/Whitelist-Einträge
-> dort wieder entfernen.
+> **Enthält deine `connection.json` echte, fremde Zugangsdaten?** (Nur bei
+> sehr alten Forks oder wenn von Hand eingetragen — die mitgelieferte Datei
+> ist heute ein Platzhalter.) Dann verbindet sich deine Seite mit dieser
+> fremden Datenbank. Anzeichen: im Supabase-Dashboard des betroffenen Projekts
+> (Authentication → Users) tauchen unerwartete Konten auf. Fix: die Datei auf
+> den Platzhalter zurücksetzen (oder mit den Zugangsdaten deines **eigenen**
+> Projekts überschreiben), neu deployen, und die versehentlich angelegten
+> Konten dort wieder entfernen.
 
 > **Auf dem iPhone:** Seite in **Safari** öffnen → **Teilen** → **„Zum
 > Home-Bildschirm"**. Dann startet Money Manager wie eine echte App (PWA).

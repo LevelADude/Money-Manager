@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../config/app_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/connection_editor.dart';
 import 'auth_providers.dart';
@@ -112,6 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final config = ref.watch(appConfigProvider);
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
@@ -192,27 +194,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: _loading ? null : _forgotPassword,
                       child: Text(l.forgotPassword),
                     ),
-                  // Immer sichtbar (auch bei fest eingebauter Standard-Instanz),
-                  // aber bewusst diskret gehalten (kleiner, unauffälliger Link),
-                  // damit normale Nutzer nicht versehentlich davon abgelenkt
-                  // werden.
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Center(
-                      child: TextButton(
-                        onPressed: _loading
-                            ? null
-                            : () => showConnectionEditor(context, ref),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.outline,
-                          textStyle: Theme.of(context).textTheme.bodySmall,
+                  // Die DB-Verbindung lässt sich vom (öffentlichen) Anmelde-
+                  // screen NUR ändern, wenn diese Instanz NICHT fest an eine
+                  // Datenbank gebunden ist (kein Standard aus
+                  // assets/db_connection/connection.json und kein per Build
+                  // eingebackenes Secret). Andernfalls könnte ein Unbefugter
+                  // die Verbindung vor dem Login auf eine fremde DB umbiegen
+                  // („trollen"). Bei fest gebundener Instanz ist die Verbindung
+                  // ausschließlich nach dem Login über die Einstellungen
+                  // (bzw. das Profil) änderbar.
+                  if (!config.hasBakedDefault)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Center(
+                        child: TextButton(
+                          onPressed: _loading
+                              ? null
+                              : () => showConnectionEditor(context, ref),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.outline,
+                            textStyle: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          child: Text(l.changeDbConnection),
                         ),
-                        child: Text(l.changeDbConnection),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
