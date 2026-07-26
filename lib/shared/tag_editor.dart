@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/app_localizations.dart';
+
 /// Eingabe für Tags (Schlagworte) als Chips. Tippen + Enter/Komma fügt einen
 /// Tag hinzu; vorhandene Tags der Gruppe werden als anklickbare Vorschläge
 /// angeboten.
@@ -47,6 +49,7 @@ class _TagEditorState extends State<TagEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final input = _controller.text.trim().toLowerCase();
     final suggestions = widget.suggestions
         .where(
@@ -72,10 +75,10 @@ class _TagEditorState extends State<TagEditor> {
         TextField(
           controller: _controller,
           textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(
-            labelText: 'Tags (z. B. Urlaub, Geschäftlich)',
-            hintText: 'Tag eingeben und Enter',
-            prefixIcon: Icon(Icons.sell_outlined),
+          decoration: InputDecoration(
+            labelText: l.tagsLabel,
+            hintText: l.tagInputHint,
+            prefixIcon: const Icon(Icons.sell_outlined),
           ),
           inputFormatters: [
             // Komma trennt sofort einen Tag ab.

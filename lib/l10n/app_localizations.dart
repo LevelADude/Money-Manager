@@ -39,6 +39,7 @@ class AppLocalizations {
   String get appTitle => 'Money Manager';
   String get save => _t('Speichern', 'Save');
   String get cancel => _t('Abbrechen', 'Cancel');
+  String get apply => _t('Übernehmen', 'Apply');
 
   // ---- Navigation ----
   String get navAccounts => _t('Konten', 'Accounts');
@@ -173,6 +174,8 @@ class AppLocalizations {
   String get edit => _t('Bearbeiten', 'Edit');
   String get delete => _t('Löschen', 'Delete');
   String errorWith(Object e) => _t('Fehler: $e', 'Error: $e');
+  String unexpectedError(Object e) =>
+      _t('Unerwarteter Fehler: $e', 'Unexpected error: $e');
 
   // ---- Konten ----
   String get accountFab => _t('Konto', 'Account');
@@ -404,6 +407,7 @@ class AppLocalizations {
     'Amount (math ok, e.g. 12.50+3)',
   );
   String get calculator => _t('Taschenrechner', 'Calculator');
+  String get calcInvalid => _t('ungültig', 'invalid');
   String get enterValidAmount =>
       _t('Gültigen Betrag eingeben', 'Enter a valid amount');
   String get targetAccount => _t('Zielkonto', 'Target account');
@@ -479,6 +483,12 @@ class AppLocalizations {
     'purge' => _t('Endgültig gelöscht', 'Purged'),
     _ => _t('Geändert', 'Edited'),
   };
+
+  // ---- Tags (Schlagworte) ----
+  String get tagsLabel =>
+      _t('Tags (z. B. Urlaub, Geschäftlich)', 'Tags (e.g. vacation, business)');
+  String get tagInputHint =>
+      _t('Tag eingeben und Enter', 'Type a tag and press Enter');
 
   // ---- Konto-Formular / -Detail ----
   String get newAccount => _t('Neues Konto', 'New account');

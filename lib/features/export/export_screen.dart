@@ -104,7 +104,7 @@ class ExportScreen extends ConsumerWidget {
       };
       rows.add([
         df.format(t.occurredOn),
-        t.type.label,
+        l.transactionType(t.type),
         accountNames[t.accountId] ?? '',
         t.categoryId == null ? '' : (catNames[t.categoryId] ?? ''),
         t.title,

@@ -88,7 +88,7 @@ class ProfileSwitcher extends ConsumerWidget {
           CheckedPopupMenuItem<String?>(
             value: o.id,
             checked: selected == o.id,
-            child: Text(o.name),
+            child: Text(nameOf(o.id)),
           ),
         const PopupMenuDivider(),
         PopupMenuItem<String?>(

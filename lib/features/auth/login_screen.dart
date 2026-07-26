@@ -33,6 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final l = AppLocalizations.of(context);
     setState(() => _loading = true);
     final auth = ref.read(authRepositoryProvider);
     try {
@@ -56,7 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError('Unerwarteter Fehler: $e');
+      _showError(l.unexpectedError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -106,7 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ).showSnackBar(SnackBar(content: Text(l.resetSent)));
       }
     } catch (e) {
-      _showError('Fehler: $e');
+      _showError(l.errorWith(e));
     }
   }
 

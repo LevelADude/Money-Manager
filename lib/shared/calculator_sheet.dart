@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import 'money.dart';
 
 /// Öffnet ein Taschenrechner-Tastenfeld als Bottom-Sheet. Gibt den berechneten
@@ -47,6 +48,7 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final res = _result;
     return Padding(
       padding: EdgeInsets.only(
@@ -77,7 +79,7 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
                 const SizedBox(height: 4),
                 Text(
                   res == null
-                      ? 'ungültig'
+                      ? l.calcInvalid
                       : '= ${formatCents((res * 100).round())}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: res == null
@@ -98,7 +100,7 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
           FilledButton.icon(
             onPressed: _apply,
             icon: const Icon(Icons.check),
-            label: const Text('Übernehmen'),
+            label: Text(l.apply),
           ),
         ],
       ),
