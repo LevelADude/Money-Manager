@@ -10,6 +10,7 @@ import '../accounts/account_providers.dart';
 import '../auth/auth_providers.dart';
 import '../profile/profile_providers.dart';
 import '../settings/settings_providers.dart';
+import 'fx_service.dart';
 
 const supportedCurrencies = <String>[
   'EUR',
@@ -100,10 +101,78 @@ final allCurrenciesProvider = Provider<List<String>>((ref) {
   return [...supportedCurrencies, ...(extras.toList()..sort())];
 });
 
-/// Wirksame Kurse für die Umrechnung in die eigene Basiswährung: meine Kurse
-/// (Vorrang) + Kurse fremder, sichtbarer Besitzer, sofern deren Basiswährung
-/// mit meiner übereinstimmt. So werden freigegebene fremde Konten mit den
-/// Kursen IHRES Besitzers angezeigt statt 1:1.
+// ----- Live-Wechselkurse (open.er-api.com) -----
+
+const _kFxCacheKey = 'fx_live_rates_v1';
+const _fxTtlMs = 6 * 60 * 60 * 1000; // 6 Stunden
+
+final fxServiceProvider = Provider<FxService>((ref) => const FxService());
+
+/// Zuletzt gespeicherte Live-Kurse (synchron aus den Prefs), damit direkt beim
+/// Start ohne Netz gerechnet werden kann.
+final cachedLiveRatesProvider = Provider<FxRates?>((ref) {
+  final raw = ref.watch(sharedPrefsProvider).getString(_kFxCacheKey);
+  if (raw == null) return null;
+  try {
+    return FxRates.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  } catch (_) {
+    return null;
+  }
+});
+
+/// Holt (bei Bedarf) frische Live-Kurse für die aktuelle Hauptwährung. Nutzt den
+/// Prefs-Cache, solange er jung genug ist; bei Fehlern bleibt der Cache gültig.
+final liveRatesProvider = FutureProvider<FxRates?>((ref) async {
+  final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
+  final prefs = ref.watch(sharedPrefsProvider);
+  final cached = ref.read(cachedLiveRatesProvider);
+  final now = DateTime.now().millisecondsSinceEpoch;
+  if (cached != null &&
+      cached.base == base &&
+      (now - cached.fetchedAtMs) < _fxTtlMs) {
+    return cached;
+  }
+  final fetched = await ref.read(fxServiceProvider).fetch(base);
+  if (fetched != null) {
+    await prefs.setString(_kFxCacheKey, jsonEncode(fetched.toJson()));
+    return fetched;
+  }
+  return (cached != null && cached.base == base) ? cached : null;
+});
+
+/// Erzwingt das Neuladen der Live-Kurse (ignoriert den TTL) und aktualisiert den
+/// Cache. Gibt `true` bei Erfolg zurück. Für den „Aktualisieren"-Knopf.
+final refreshLiveRatesProvider = Provider<Future<bool> Function()>((ref) {
+  return () async {
+    final base = ref.read(settingsProvider).baseCurrency;
+    final fetched = await ref.read(fxServiceProvider).fetch(base);
+    if (fetched == null) return false;
+    await ref
+        .read(sharedPrefsProvider)
+        .setString(_kFxCacheKey, jsonEncode(fetched.toJson()));
+    ref.invalidate(cachedLiveRatesProvider);
+    ref.invalidate(liveRatesProvider);
+    return true;
+  };
+});
+
+/// Live-Kurse als Map (Code -> rate_to_base) für die aktuelle Hauptwährung,
+/// synchron nutzbar (bevorzugt frisch geladen, sonst Cache). Leer, falls (noch)
+/// nichts für diese Basiswährung vorliegt.
+final liveRatesMapProvider = Provider<Map<String, double>>((ref) {
+  final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
+  final live =
+      ref.watch(liveRatesProvider).value ?? ref.watch(cachedLiveRatesProvider);
+  return (live != null && live.base == base)
+      ? live.ratesToBase
+      : const <String, double>{};
+});
+
+/// Wirksame Kurse für die Umrechnung in die eigene Basiswährung. Reihenfolge
+/// (spätere gewinnen): eigene manuelle Kurse → Kurse fremder sichtbarer Besitzer
+/// (gleiche Basis) → Live-Kurse aus dem Internet. So gelten für Weltwährungen
+/// automatisch die Live-Kurse, während eigene (Krypto-)Währungen ihren manuell
+/// gepflegten Kurs behalten (dort liefert die API nichts).
 final effectiveRatesProvider = Provider<Map<String, double>>((ref) {
   final me = ref.watch(currentUserIdProvider);
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
@@ -122,6 +191,8 @@ final effectiveRatesProvider = Provider<Map<String, double>>((ref) {
       result[c.code] = c.rateToBase!;
     }
   }
+  // Live-Kurse überlagern (für Weltwährungen aktueller als manuelle Kurse).
+  result.addAll(ref.watch(liveRatesMapProvider));
   return result;
 });
 

@@ -25,7 +25,8 @@ void refreshAllData(WidgetRef ref) {
   ref.invalidate(accountGroupsProvider);
   ref.invalidate(allTransactionsProvider);
   ref.invalidate(allSplitsProvider);
-  ref.invalidate(categoriesProvider);
+  ref.invalidate(categoriesRawProvider);
+  ref.invalidate(categoryPrefsProvider);
   ref.invalidate(categoryRulesProvider);
   ref.invalidate(accessGrantsProvider);
   ref.invalidate(accountMembersProvider);

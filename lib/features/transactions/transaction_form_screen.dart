@@ -749,6 +749,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     setState(() {});
   }
 
+  /// Währungssymbol des aktuell gewählten Kontos (Fallback: Hauptwährung).
+  String get _accountSymbol {
+    for (final a in _accountsCache) {
+      if (a.id == _accountId) return currencySymbol(a.currency);
+    }
+    return currencySymbol(gBaseCurrency);
+  }
+
   Widget _buildSplitEditor(BuildContext context, List<Category> categories) {
     final l = AppLocalizations.of(context);
     final total = parseToCents(_amount.text) ?? 0;
@@ -798,7 +806,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                               value: c.id,
                               child: Row(
                                 children: [
-                                  Icon(iconForToken(c.icon), size: 18),
+                                  categoryGlyph(c, size: 18),
                                   const SizedBox(width: 6),
                                   Flexible(
                                     child: Text(
@@ -826,7 +834,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         decoration: InputDecoration(
                           labelText: l.amount,
                           isDense: true,
-                          prefixText: '€ ',
+                          prefixText: '$_accountSymbol ',
                         ),
                         onChanged: (_) => setState(() {}),
                       ),
@@ -1132,7 +1140,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 value: c.id,
                                 child: Row(
                                   children: [
-                                    Icon(iconForToken(c.icon), size: 20),
+                                    categoryGlyph(c, size: 20),
                                     const SizedBox(width: 8),
                                     Flexible(
                                       child: Text(

@@ -90,7 +90,7 @@ final localInsightsProvider = Provider<List<Insight>>((ref) {
   final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
   final localeCode = ref.watch(settingsProvider.select((s) => s.localeCode));
   final l = AppLocalizations(Locale(localeCode));
-  final cats = ref.watch(categoriesProvider).value ?? const <Category>[];
+  final cats = ref.watch(categoriesRawProvider).value ?? const <Category>[];
   final catName = {for (final c in cats) c.id: c.name};
   final budgets = ref.watch(budgetsByCategoryProvider);
   final spentByCat = ref.watch(monthlySpentByCategoryProvider);

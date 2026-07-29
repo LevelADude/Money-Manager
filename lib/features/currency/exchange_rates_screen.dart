@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../settings/settings_providers.dart';
-import 'add_currency.dart';
+import 'currency_picker.dart';
 import 'currency_providers.dart';
 
 /// Wechselkurse verwalten: wie viele Einheiten der Hauptwährung 1 Einheit einer
@@ -141,20 +141,76 @@ class ExchangeRatesScreen extends ConsumerWidget {
     }
   }
 
+  /// Erzwingt frische Live-Kurse und meldet das Ergebnis.
+  Future<void> _refresh(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await ref.read(refreshLiveRatesProvider)();
+    messenger.showSnackBar(
+      SnackBar(content: Text(ok ? l.ratesUpdated : l.ratesUpdateFailed)),
+    );
+  }
+
+  /// Fügt eine Währung über die durchsuchbare Auswahl hinzu. Für Weltwährungen
+  /// genügt der Live-Kurs; bei eigenen (ohne Live) wird direkt der Kurs abgefragt.
+  Future<void> _addCurrency(
+    BuildContext context,
+    WidgetRef ref,
+    String base,
+  ) async {
+    final extras = ref.read(myCurrenciesProvider).map((c) => c.code).toList();
+    final code = await showCurrencyPicker(context, extraCodes: extras);
+    if (code == null || code == base) return;
+    await ref.read(currencyRepositoryProvider).upsert(code, null);
+    ref.invalidate(dbCurrenciesProvider);
+    final hasLive = ref.read(liveRatesMapProvider).containsKey(code);
+    if (!hasLive && context.mounted) await _editRate(context, ref, code, 0);
+  }
+
+  Widget _rateSubtitle(
+    AppLocalizations l,
+    String code,
+    String base,
+    Map<String, double> effective,
+    Map<String, double> live,
+  ) {
+    final rate = effective[code];
+    if (rate == null) return Text(l.noRateSet);
+    final source = live.containsKey(code) ? l.liveRate : l.manualRate;
+    return Text('= ${_fmtRate(rate)} $base · $source');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final base = ref.watch(settingsProvider.select((s) => s.baseCurrency));
-    final rates = ref.watch(myRatesProvider);
+    final manual = ref.watch(myRatesProvider);
+    final live = ref.watch(liveRatesMapProvider);
+    final effective = ref.watch(effectiveRatesProvider);
     final used = ref.watch(usedForeignCurrenciesProvider);
     final mine = ref.watch(myCurrenciesProvider).map((c) => c.code);
     final l = AppLocalizations.of(context);
     // Alle eigenen Fremdwährungen: benutzt in eigenen Konten oder selbst
-    // angelegt / mit Kurs versehen.
-    final codes = <String>{...used, ...mine, ...rates.keys}..remove(base);
+    // angelegt / mit Kurs versehen. Live-Währungen ohne eigenen Eintrag müssen
+    // nicht separat gepflegt werden (Umrechnung läuft automatisch).
+    final codes = <String>{...used, ...mine, ...manual.keys}..remove(base);
     final list = codes.toList()..sort();
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.exchangeRatesTitle)),
+      appBar: AppBar(
+        title: Text(l.exchangeRatesTitle),
+        actions: [
+          IconButton(
+            tooltip: l.refreshRates,
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _refresh(context, ref),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _addCurrency(context, ref, base),
+        icon: const Icon(Icons.add),
+        label: Text(l.addCurrency),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -186,11 +242,7 @@ class ExchangeRatesScreen extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.currency_exchange),
                 title: Text('1 $code (${currencySymbol(code)})'),
-                subtitle: Text(
-                  rates[code] == null
-                      ? l.noRateSet
-                      : '= ${rates[code].toString().replaceAll('.', ',')} $base',
-                ),
+                subtitle: _rateSubtitle(l, code, base, effective, live),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -202,32 +254,9 @@ class ExchangeRatesScreen extends ConsumerWidget {
                     const Icon(Icons.edit_outlined),
                   ],
                 ),
-                onTap: () => _editRate(context, ref, code, rates[code] ?? 0),
+                onTap: () => _editRate(context, ref, code, manual[code] ?? 0),
               ),
-          const Divider(height: 24),
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final c in ref.watch(allCurrenciesProvider))
-                if (c != base && !codes.contains(c))
-                  ActionChip(
-                    label: Text(c),
-                    avatar: const Icon(Icons.add, size: 16),
-                    onPressed: () => _editRate(context, ref, c, 0),
-                  ),
-              ActionChip(
-                label: Text(l.customEllipsis),
-                avatar: const Icon(Icons.add, size: 16),
-                onPressed: () async {
-                  final code = await showAddCurrencyDialog(context);
-                  if (code == null) return;
-                  await ref.read(currencyRepositoryProvider).upsert(code, null);
-                  ref.invalidate(dbCurrenciesProvider);
-                  if (context.mounted) await _editRate(context, ref, code, 0);
-                },
-              ),
-            ],
-          ),
+          const SizedBox(height: 80),
         ],
       ),
     );

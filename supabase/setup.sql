@@ -1862,3 +1862,54 @@ create unique index if not exists budgets_overall_owner_uq
   on public.budgets (created_by)
   where category_id is null and deleted_at is null;
 
+
+-- ## Migration: 0036_category_prefs.sql
+
+-- Per-Nutzer-Overlay für Kategorien (Reihenfolge / aktiv / ausgeblendet), damit
+-- jeder Presets UND eigene Kategorien individuell sortieren, aktiv/inaktiv
+-- schalten und für sich ausblenden kann, ohne andere Nutzer zu beeinflussen.
+-- Wirksamer Wert: prefs.<feld> falls gesetzt, sonst categories.<feld>.
+create table if not exists public.category_prefs (
+  owner_id    uuid not null references public.profiles(id) on delete cascade
+                default auth.uid(),
+  category_id uuid not null references public.categories(id) on delete cascade,
+  active      boolean,
+  sort_order  integer,
+  hidden      boolean not null default false,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  primary key (owner_id, category_id)
+);
+create index if not exists category_prefs_owner_idx
+  on public.category_prefs(owner_id);
+
+alter table public.category_prefs enable row level security;
+
+drop policy if exists category_prefs_select on public.category_prefs;
+drop policy if exists category_prefs_modify on public.category_prefs;
+create policy category_prefs_select on public.category_prefs for select
+  using (owner_id = auth.uid());
+create policy category_prefs_modify on public.category_prefs for all
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+
+drop trigger if exists category_prefs_set_updated_at on public.category_prefs;
+create trigger category_prefs_set_updated_at before update on public.category_prefs
+  for each row execute function public.set_updated_at();
+
+do $$
+begin
+  begin
+    alter publication supabase_realtime add table public.category_prefs;
+  exception when duplicate_object then null;
+  end;
+end $$;
+
+
+-- ## Migration: 0037_category_emoji.sql
+
+-- Emoji(s) als alternatives Kategorie-Symbol (entweder Icon-Token ODER 1–3
+-- Emojis; ist `emoji` gesetzt, ersetzt es das Icon in der Anzeige).
+alter table public.categories
+  add column if not exists emoji text;
+

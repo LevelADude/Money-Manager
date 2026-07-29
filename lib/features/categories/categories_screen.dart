@@ -34,12 +34,17 @@ class CategoriesScreen extends ConsumerWidget {
           final income = items
               .where((c) => c.kind == CategoryKind.income)
               .toList();
+          final hidden = ref.watch(hiddenCategoriesProvider);
           return ListView(
             children: [
               _SectionHeader(l.expenses),
               _ReorderableCats(items: expense),
               _SectionHeader(l.income),
               _ReorderableCats(items: income),
+              if (hidden.isNotEmpty) ...[
+                _SectionHeader('${l.hiddenCategories} (${hidden.length})'),
+                for (final c in hidden) _HiddenTile(category: c),
+              ],
               const SizedBox(height: 80),
             ],
           );
@@ -58,6 +63,7 @@ Future<void> showCategoryEditor(
 }) async {
   final l = AppLocalizations.of(context);
   final controller = TextEditingController(text: existing?.name ?? '');
+  final emojiController = TextEditingController(text: existing?.emoji ?? '');
   var kind = existing?.kind ?? CategoryKind.expense;
   var icon = existing?.icon ?? 'more';
 
@@ -94,6 +100,17 @@ Future<void> showCategoryEditor(
                   onSelectionChanged: (s) => setState(() => kind = s.first),
                 ),
                 const SizedBox(height: 16),
+                TextField(
+                  controller: emojiController,
+                  maxLength: 8,
+                  decoration: InputDecoration(
+                    labelText: l.emojiLabel,
+                    helperText: l.emojiHelp,
+                    prefixIcon: const Icon(Icons.emoji_emotions_outlined),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 8),
                 Text(l.iconLabel, style: Theme.of(ctx).textTheme.labelMedium),
                 const SizedBox(height: 8),
                 Wrap(
@@ -146,15 +163,21 @@ Future<void> showCategoryEditor(
   if (saved != true) return;
   final name = controller.text.trim();
   if (name.isEmpty) return;
+  final emojiTrim = emojiController.text.trim();
+  // Auf maximal 3 Emojis (Graphem-Cluster) begrenzen; leer = kein Emoji.
+  final emoji = emojiTrim.isEmpty
+      ? null
+      : emojiTrim.characters.take(3).toString();
   final repo = ref.read(categoryRepositoryProvider);
   if (existing == null) {
-    await repo.addCategory(name: name, kind: kind, icon: icon);
+    await repo.addCategory(name: name, kind: kind, icon: icon, emoji: emoji);
   } else {
     await repo.updateCategory(
       id: existing.id,
       name: name,
       kind: kind,
       icon: icon,
+      emoji: emoji,
     );
   }
 }
@@ -255,7 +278,7 @@ class _CategoryTile extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final editable = !category.isPreset;
     return ListTile(
-      leading: Icon(iconForToken(category.icon)),
+      leading: categoryGlyph(category),
       title: Text(l.categoryName(category)),
       subtitle: Text(category.isPreset ? l.preset : l.custom),
       onTap: editable
@@ -270,13 +293,18 @@ class _CategoryTile extends ConsumerWidget {
                 .read(categoryRepositoryProvider)
                 .setActive(id: category.id, active: v),
           ),
-          IconButton(
-            tooltip: l.delete,
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => ref
-                .read(categoryRepositoryProvider)
-                .deleteCategory(category.id),
-          ),
+          if (category.isPreset)
+            IconButton(
+              tooltip: l.hideCategory,
+              icon: const Icon(Icons.visibility_off_outlined),
+              onPressed: () => _hide(context, ref, category),
+            )
+          else
+            IconButton(
+              tooltip: l.delete,
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _confirmDelete(context, ref, category),
+            ),
           ReorderableDragStartListener(
             index: index,
             child: const Padding(
@@ -285,6 +313,81 @@ class _CategoryTile extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Blendet eine (Preset-)Kategorie nur für den aktuellen Nutzer aus und bietet
+/// „Rückgängig" per SnackBar an.
+Future<void> _hide(
+  BuildContext context,
+  WidgetRef ref,
+  Category category,
+) async {
+  final l = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  await ref
+      .read(categoryRepositoryProvider)
+      .setHidden(id: category.id, hidden: true);
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(l.categoryHidden),
+      action: SnackBarAction(
+        label: l.undo,
+        onPressed: () => ref
+            .read(categoryRepositoryProvider)
+            .setHidden(id: category.id, hidden: false),
+      ),
+    ),
+  );
+}
+
+/// Löscht eine EIGENE Kategorie (Soft-Delete) nach Rückfrage.
+Future<void> _confirmDelete(
+  BuildContext context,
+  WidgetRef ref,
+  Category category,
+) async {
+  final l = AppLocalizations.of(context);
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l.deleteCategoryTitle),
+      content: Text(l.deleteCategoryBody(l.categoryName(category))),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(l.delete),
+        ),
+      ],
+    ),
+  );
+  if (ok == true) {
+    await ref.read(categoryRepositoryProvider).deleteCategory(category.id);
+  }
+}
+
+/// Zeile einer ausgeblendeten Kategorie mit Knopf zum Wiedereinblenden.
+class _HiddenTile extends ConsumerWidget {
+  const _HiddenTile({required this.category});
+
+  final Category category;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    return ListTile(
+      leading: categoryGlyph(category, color: Theme.of(context).disabledColor),
+      title: Text(l.categoryName(category)),
+      subtitle: Text(category.isPreset ? l.preset : l.custom),
+      trailing: TextButton.icon(
+        icon: const Icon(Icons.visibility_outlined),
+        label: Text(l.restore),
+        onPressed: () => ref
+            .read(categoryRepositoryProvider)
+            .setHidden(id: category.id, hidden: false),
       ),
     );
   }

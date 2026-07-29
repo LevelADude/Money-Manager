@@ -9,6 +9,7 @@ import '../../shared/category_icons.dart';
 import '../../shared/data_refresh.dart';
 import '../../shared/hide_amounts_toggle.dart';
 import '../../shared/money_text.dart';
+import '../../shared/multi_currency_text.dart';
 import '../auth/auth_providers.dart';
 import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
@@ -253,6 +254,7 @@ class _NetWorthCard extends StatelessWidget {
                 color: positive ? Colors.green.shade700 : Colors.red.shade700,
               ),
             ),
+            MultiCurrencyText(totalCents, textAlign: TextAlign.center),
           ],
         ),
       ),

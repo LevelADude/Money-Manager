@@ -1,5 +1,21 @@
 import 'package:flutter/material.dart';
 
+import '../data/models/category.dart';
+
+/// Rendert das Symbol einer Kategorie: die gesetzten Emojis (falls vorhanden),
+/// sonst das Material-Icon des Icon-Tokens. Einheitlich überall verwenden, damit
+/// Emoji-Kategorien konsistent aussehen.
+Widget categoryGlyph(Category category, {double size = 24, Color? color}) {
+  final emoji = category.emoji;
+  if (emoji != null && emoji.trim().isNotEmpty) {
+    return Text(
+      emoji.trim(),
+      style: TextStyle(fontSize: size * 0.9, height: 1),
+    );
+  }
+  return Icon(iconForToken(category.icon), size: size, color: color);
+}
+
 /// Auswählbare Icon-Tokens für eigene Kategorien (Reihenfolge = Anzeige im
 /// Picker). Deckt die Preset-Icons ab.
 const categoryIconTokens = <String>[

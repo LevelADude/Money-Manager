@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import 'world_currencies.dart';
+
 /// Geldbeträge werden intern als **Ganzzahl in Cent** gespeichert
 /// (exakt + speichersparend). Hier Konvertierung/Formatierung + ein kleiner
 /// sicherer Rechner fürs Betragsfeld.
@@ -8,30 +10,13 @@ import 'package:intl/intl.dart';
 /// formatiert standardmäßig in dieser Währung.
 String gBaseCurrency = 'EUR';
 
-const currencySymbols = <String, String>{
-  'EUR': '€',
-  'USD': '\$',
-  'GBP': '£',
-  'CHF': 'CHF',
-  'JPY': '¥',
-  'PLN': 'zł',
-  'SEK': 'kr',
-  'NOK': 'kr',
-  'DKK': 'kr',
-  'CZK': 'Kč',
-  'TRY': '₺',
-  'CAD': 'CA\$',
-  'AUD': 'A\$',
-  'USDT': 'USDT',
-};
+/// Symbol einer Währung aus der Weltwährungsliste (Fallback: der Code selbst,
+/// z. B. für eigene/Krypto-Codes).
+String currencySymbol(String code) => worldCurrencyByCode[code]?.symbol ?? code;
 
-String currencySymbol(String code) => currencySymbols[code] ?? code;
-
-/// Währungen ohne Nachkommastellen (z. B. Yen). Standard sind 2 Stellen.
-const _currencyDecimals = <String, int>{'JPY': 0};
-
-/// Anzahl der Nachkommastellen für eine Währung (Standard 2).
-int currencyDecimals(String code) => _currencyDecimals[code] ?? 2;
+/// Anzahl der Nachkommastellen für eine Währung (Standard 2; z. B. JPY 0,
+/// KWD 3).
+int currencyDecimals(String code) => worldCurrencyByCode[code]?.decimals ?? 2;
 
 /// Formatiert Cent in der angegebenen Währung (Nachkommastellen je Währung).
 String formatMoney(int cents, String code) => NumberFormat.currency(
@@ -73,9 +58,12 @@ int? parseToCents(String input) {
 /// Wertet einen einfachen Rechenausdruck aus: + - * / und Klammern.
 /// Komma gilt als Dezimaltrenner. Gibt null bei Fehler zurück.
 double? evalExpression(String input) {
+  // Beliebiges Währungssymbol (€ $ £ ¥ ₹ …) tolerieren, egal welche
+  // Hauptwährung gerade aktiv ist. \p{Sc} = Unicode-Kategorie „Currency Symbol"
+  // – trifft nur Symbolzeichen, keine Buchstaben (so bleibt „12a" ungültig).
   final s = input
       .trim()
-      .replaceAll('€', '')
+      .replaceAll(RegExp(r'\p{Sc}', unicode: true), '')
       .replaceAll(' ', '')
       .replaceAll(',', '.');
   if (s.isEmpty) return null;
