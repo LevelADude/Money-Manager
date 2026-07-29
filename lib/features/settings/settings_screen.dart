@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
-import '../currency/add_currency.dart';
+import '../currency/currency_picker.dart';
 import '../currency/currency_providers.dart';
 import '../onboarding/connection_editor.dart';
 import 'settings_providers.dart';
@@ -97,47 +97,27 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(height: 40),
           header(l.currency),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue:
-                      ref
-                          .watch(allCurrenciesProvider)
-                          .contains(settings.baseCurrency)
-                      ? settings.baseCurrency
-                      : 'EUR',
-                  decoration: InputDecoration(
-                    labelText: l.mainCurrency,
-                    prefixIcon: const Icon(Icons.payments_outlined),
-                    helperText: l.mainCurrencyHelp,
-                  ),
-                  items: [
-                    for (final c in ref.watch(allCurrenciesProvider))
-                      DropdownMenuItem(
-                        value: c,
-                        child: Text('$c (${currencySymbol(c)})'),
-                      ),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) notifier.setBaseCurrency(v);
-                  },
-                ),
-              ),
-              IconButton(
-                tooltip: l.addCurrency,
-                icon: const Icon(Icons.add),
-                onPressed: () async {
-                  final code = await showAddCurrencyDialog(context);
-                  if (code != null) {
-                    await ref
-                        .read(currencyRepositoryProvider)
-                        .upsert(code, null);
-                    ref.invalidate(dbCurrenciesProvider);
-                  }
-                },
-              ),
-            ],
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.payments_outlined),
+            title: Text(l.mainCurrency),
+            subtitle: Text(l.mainCurrencyHelp),
+            trailing: Text(
+              '${settings.baseCurrency} (${currencySymbol(settings.baseCurrency)})',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            onTap: () async {
+              final extras = ref
+                  .read(myCurrenciesProvider)
+                  .map((c) => c.code)
+                  .toList();
+              final code = await showCurrencyPicker(
+                context,
+                selected: settings.baseCurrency,
+                extraCodes: extras,
+              );
+              if (code != null) await notifier.setBaseCurrency(code);
+            },
           ),
           const SizedBox(height: 8),
           Align(
@@ -148,6 +128,54 @@ class SettingsScreen extends ConsumerWidget {
               label: Text(l.manageRates),
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            l.displayCurrencies,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            l.displayCurrenciesHelp,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final code in settings.displayCurrencies)
+                InputChip(
+                  label: Text('$code (${currencySymbol(code)})'),
+                  onDeleted: () => notifier.setDisplayCurrencies([
+                    for (final c in settings.displayCurrencies)
+                      if (c != code) c,
+                  ]),
+                ),
+              ActionChip(
+                avatar: const Icon(Icons.add, size: 16),
+                label: Text(l.addDisplayCurrency),
+                onPressed: () async {
+                  final extras = ref
+                      .read(myCurrenciesProvider)
+                      .map((c) => c.code)
+                      .toList();
+                  final code = await showCurrencyPicker(
+                    context,
+                    extraCodes: extras,
+                  );
+                  if (code != null &&
+                      code != settings.baseCurrency &&
+                      !settings.displayCurrencies.contains(code)) {
+                    await notifier.setDisplayCurrencies([
+                      ...settings.displayCurrencies,
+                      code,
+                    ]);
+                  }
+                },
+              ),
+            ],
+          ),
+          const Divider(height: 40),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             value: settings.lockEnabled,

@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../local/app_cache.dart';
 import '../models/category.dart';
+import '../models/category_pref.dart';
 import '../models/category_rule.dart';
 
 /// Zugriff auf die Tabelle `categories` (gruppenweit) inkl. Stream + Cache.
@@ -49,45 +50,101 @@ class CategoryRepository {
     }
   }
 
-  /// Speichert eine neue Reihenfolge (id -> sort_order).
+  // ----- Persönliche Overlay-Einstellungen (category_prefs) -----
+  //
+  // Reihenfolge / aktiv / ausgeblendet werden PRO NUTZER gespeichert, damit
+  // jeder auch die (gruppenweiten) Preset-Kategorien für sich anpassen kann,
+  // ohne andere zu beeinflussen. Siehe Migration 0036.
+
+  String? get _uid => _client.auth.currentUser?.id;
+
+  /// Live-Map der eigenen Overlays (Kategorie-ID -> [CategoryPref]).
+  Stream<Map<String, CategoryPref>> watchMyPrefs() async* {
+    Map<String, CategoryPref> toMap(List<Map<String, dynamic>> rows) => {
+      for (final r in rows)
+        r['category_id'] as String: CategoryPref.fromJson(r),
+    };
+    final cached = _cache.readRows('category_prefs');
+    if (cached.isNotEmpty) yield toMap(cached);
+    try {
+      yield* _client
+          .from('category_prefs')
+          .stream(primaryKey: ['owner_id', 'category_id'])
+          .map((rows) {
+            _cache.writeRows('category_prefs', rows);
+            return toMap(rows);
+          });
+    } catch (_) {
+      // Offline: beim Cache bleiben.
+    }
+  }
+
+  /// Speichert eine neue Reihenfolge als persönliches Overlay
+  /// (Kategorie-ID -> sort_order).
   Future<void> reorder(List<({String id, int sortOrder})> orders) async {
-    await Future.wait([
+    final uid = _uid;
+    if (uid == null) return;
+    await _client.from('category_prefs').upsert([
       for (final o in orders)
-        _client
-            .from('categories')
-            .update({'sort_order': o.sortOrder})
-            .eq('id', o.id),
-    ]);
+        {'owner_id': uid, 'category_id': o.id, 'sort_order': o.sortOrder},
+    ], onConflict: 'owner_id,category_id');
+  }
+
+  /// Persönliches Aktiv/Inaktiv-Overlay.
+  Future<void> setActive({required String id, required bool active}) async {
+    final uid = _uid;
+    if (uid == null) return;
+    await _client.from('category_prefs').upsert({
+      'owner_id': uid,
+      'category_id': id,
+      'active': active,
+    }, onConflict: 'owner_id,category_id');
+  }
+
+  /// Blendet eine Kategorie für den aktuellen Nutzer aus bzw. wieder ein.
+  /// So lassen sich auch Preset-Kategorien „löschen" (nur für sich).
+  Future<void> setHidden({required String id, required bool hidden}) async {
+    final uid = _uid;
+    if (uid == null) return;
+    await _client.from('category_prefs').upsert({
+      'owner_id': uid,
+      'category_id': id,
+      'hidden': hidden,
+    }, onConflict: 'owner_id,category_id');
   }
 
   Future<void> addCategory({
     required String name,
     required CategoryKind kind,
     String? icon,
+    String? emoji,
   }) {
     return _client.from('categories').insert({
       'name': name,
       'kind': categoryKindToDb(kind),
       'icon': icon,
+      'emoji': emoji,
       'is_preset': false,
     });
   }
 
-  Future<void> setActive({required String id, required bool active}) {
-    return _client.from('categories').update({'active': active}).eq('id', id);
-  }
+  /// Sentinel: „Feld nicht ändern" (zur Unterscheidung von „auf null setzen").
+  static const _keep = Object();
 
-  /// Ändert Name, Icon und/oder Art einer (eigenen) Kategorie.
+  /// Ändert Name, Icon, Emoji und/oder Art einer (eigenen) Kategorie.
+  /// [emoji] = `_keep` lässt das Feld unverändert; explizit `null` entfernt es.
   Future<void> updateCategory({
     required String id,
     String? name,
     String? icon,
     CategoryKind? kind,
+    Object? emoji = _keep,
   }) {
     final patch = <String, dynamic>{};
     if (name != null) patch['name'] = name;
     if (icon != null) patch['icon'] = icon;
     if (kind != null) patch['kind'] = categoryKindToDb(kind);
+    if (!identical(emoji, _keep)) patch['emoji'] = emoji as String?;
     if (patch.isEmpty) return Future.value();
     return _client.from('categories').update(patch).eq('id', id);
   }

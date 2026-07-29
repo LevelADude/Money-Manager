@@ -6,7 +6,7 @@ import '../../data/models/account.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../auth/auth_providers.dart';
-import '../currency/add_currency.dart';
+import '../currency/currency_picker.dart';
 import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
 import '../sharing/account_member_providers.dart';
@@ -181,43 +181,26 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
               const SizedBox(height: 16),
               Consumer(
                 builder: (context, ref, _) {
-                  final all = ref.watch(allCurrenciesProvider);
-                  final value = all.contains(_currency) ? _currency : 'EUR';
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: value,
-                          decoration: InputDecoration(
-                            labelText: l.currency,
-                            prefixIcon: const Icon(Icons.currency_exchange),
-                          ),
-                          items: [
-                            for (final c in all)
-                              DropdownMenuItem(
-                                value: c,
-                                child: Text('$c (${currencySymbol(c)})'),
-                              ),
-                          ],
-                          onChanged: (v) =>
-                              setState(() => _currency = v ?? 'EUR'),
-                        ),
+                  return InkWell(
+                    onTap: () async {
+                      final extras = ref
+                          .read(myCurrenciesProvider)
+                          .map((c) => c.code)
+                          .toList();
+                      final code = await showCurrencyPicker(
+                        context,
+                        selected: _currency,
+                        extraCodes: extras,
+                      );
+                      if (code != null) setState(() => _currency = code);
+                    },
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: l.currency,
+                        prefixIcon: const Icon(Icons.currency_exchange),
                       ),
-                      IconButton(
-                        tooltip: l.addCurrency,
-                        icon: const Icon(Icons.add),
-                        onPressed: () async {
-                          final code = await showAddCurrencyDialog(context);
-                          if (code != null) {
-                            await ref
-                                .read(currencyRepositoryProvider)
-                                .upsert(code, null);
-                            ref.invalidate(dbCurrenciesProvider);
-                            setState(() => _currency = code);
-                          }
-                        },
-                      ),
-                    ],
+                      child: Text('$_currency (${currencySymbol(_currency)})'),
+                    ),
                   );
                 },
               ),

@@ -536,7 +536,7 @@ class _BudgetTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(iconForToken(category.icon)),
+                categoryGlyph(category),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

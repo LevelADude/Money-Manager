@@ -50,7 +50,7 @@ class CategoryRulesScreen extends ConsumerWidget {
                       value: c.id,
                       child: Row(
                         children: [
-                          Icon(iconForToken(c.icon), size: 18),
+                          categoryGlyph(c, size: 18),
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(

@@ -18,6 +18,7 @@ class AppSettings {
     this.hideAmounts = false,
     this.lockEnabled = false,
     this.baseCurrency = 'EUR',
+    this.displayCurrencies = const [],
     this.localeCode = 'de',
   });
 
@@ -33,6 +34,10 @@ class AppSettings {
   /// Hauptwährung für Summen/Umrechnung.
   final String baseCurrency;
 
+  /// Zusätzliche Anzeigewährungen: Gesamtsummen werden zusätzlich in diesen
+  /// Währungen ausgewiesen (Live-Umrechnung). Leer = nur Hauptwährung.
+  final List<String> displayCurrencies;
+
   /// Sprachcode der Oberfläche ('de' oder 'en').
   final String localeCode;
 
@@ -42,6 +47,7 @@ class AppSettings {
     bool? hideAmounts,
     bool? lockEnabled,
     String? baseCurrency,
+    List<String>? displayCurrencies,
     String? localeCode,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
@@ -49,6 +55,7 @@ class AppSettings {
     hideAmounts: hideAmounts ?? this.hideAmounts,
     lockEnabled: lockEnabled ?? this.lockEnabled,
     baseCurrency: baseCurrency ?? this.baseCurrency,
+    displayCurrencies: displayCurrencies ?? this.displayCurrencies,
     localeCode: localeCode ?? this.localeCode,
   );
 }
@@ -72,6 +79,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kPinHash = 'settings_pin_hash';
   static const _kPinSalt = 'settings_pin_salt';
   static const _kBaseCur = 'settings_base_currency';
+  static const _kDisplayCur = 'settings_display_currencies';
   static const _kLocale = 'settings_locale';
 
   @override
@@ -89,8 +97,20 @@ class SettingsNotifier extends Notifier<AppSettings> {
       hideAmounts: prefs.getBool(_kHide) ?? false,
       lockEnabled: prefs.getString(_kPinHash) != null,
       baseCurrency: base,
+      displayCurrencies: prefs.getStringList(_kDisplayCur) ?? const <String>[],
       localeCode: loc == 'en' ? 'en' : 'de',
     );
+  }
+
+  /// Setzt die zusätzlichen Anzeigewährungen (ohne die Hauptwährung selbst).
+  Future<void> setDisplayCurrencies(List<String> codes) async {
+    final base = state.baseCurrency;
+    final cleaned = <String>[
+      for (final c in codes)
+        if (c != base) c,
+    ];
+    await ref.read(sharedPrefsProvider).setStringList(_kDisplayCur, cleaned);
+    state = state.copyWith(displayCurrencies: cleaned);
   }
 
   Future<void> setLocale(String code) async {

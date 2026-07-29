@@ -97,6 +97,14 @@ class AppLocalizations {
     'Summen werden in diese Währung umgerechnet.',
     'Totals are converted to this currency.',
   );
+  String get displayCurrencies =>
+      _t('Zusätzliche Anzeigewährungen', 'Additional display currencies');
+  String get displayCurrenciesHelp => _t(
+    'Gesamtsummen werden zusätzlich in diesen Währungen angezeigt (Live-Kurs).',
+    'Totals are additionally shown in these currencies (live rate).',
+  );
+  String get addDisplayCurrency =>
+      _t('Anzeigewährung hinzufügen', 'Add display currency');
   String get addCurrency =>
       _t('Eigene Währung hinzufügen', 'Add custom currency');
   String get manageRates =>
@@ -629,6 +637,24 @@ class AppLocalizations {
     'Vorlagen-Kategorien können nicht bearbeitet werden.',
     'Preset categories cannot be edited.',
   );
+  String get hideCategory => _t('Ausblenden', 'Hide');
+  String get categoryHidden => _t('Kategorie ausgeblendet', 'Category hidden');
+  String get undo => _t('Rückgängig', 'Undo');
+  String get hiddenCategories => _t('Ausgeblendet', 'Hidden');
+  String get deleteCategoryTitle =>
+      _t('Kategorie löschen?', 'Delete category?');
+  String deleteCategoryBody(String name) => _t(
+    'Kategorie „$name" wirklich löschen? Bestehende Buchungen behalten ihren '
+        'Betrag, verlieren aber die Kategorie-Zuordnung.',
+    'Really delete category "$name"? Existing transactions keep their amount '
+        'but lose the category assignment.',
+  );
+  String get emojiOrIcon => _t('Symbol oder Emoji', 'Icon or emoji');
+  String get emojiLabel => _t('Emojis (1–3)', 'Emojis (1–3)');
+  String get emojiHelp => _t(
+    'Bis zu 3 Emojis – ersetzen das Symbol.',
+    'Up to 3 emojis – replace the icon.',
+  );
 
   // ---- Daueraufträge ----
   String get recurringFab => _t('Dauerauftrag', 'Standing order');
@@ -746,6 +772,18 @@ class AppLocalizations {
   String get noRateSet =>
       _t('Kein Kurs gesetzt (wird 1:1 gerechnet)', 'No rate set (counted 1:1)');
   String get customEllipsis => _t('Eigene…', 'Custom…');
+  String get selectCurrency => _t('Währung wählen', 'Select currency');
+  String get searchCurrency =>
+      _t('Suchen (Code oder Name)…', 'Search (code or name)…');
+  String get customCode => _t('Eigener Code…', 'Custom code…');
+  String get liveRate => _t('Live', 'Live');
+  String get manualRate => _t('manuell', 'manual');
+  String get refreshRates => _t('Kurse aktualisieren', 'Refresh rates');
+  String get ratesUpdated => _t('Kurse aktualisiert', 'Rates updated');
+  String get ratesUpdateFailed => _t(
+    'Kurse konnten nicht geladen werden (offline?)',
+    'Could not load rates (offline?)',
+  );
   String get deleteCurrency => _t('Währung löschen', 'Delete currency');
   String currencyInUse(String code) => _t(
     'Währung $code wird noch von einem Konto verwendet und kann nicht gelöscht werden.',

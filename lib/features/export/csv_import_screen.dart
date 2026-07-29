@@ -118,7 +118,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       // Import nur in verwaltbare Konten (eigene + manage-Freigaben) — Zeilen,
       // die auf ein nur-ansehbares Fremdkonto verweisen, würden an RLS scheitern.
       final accounts = ref.read(manageableAccountsProvider);
-      final cats = ref.read(categoriesProvider).value ?? const <Category>[];
+      final cats = ref.read(categoriesRawProvider).value ?? const <Category>[];
       final accByName = {for (final a in accounts) a.name.toLowerCase(): a.id};
       final catByName = {for (final c in cats) c.name.toLowerCase(): c.id};
 

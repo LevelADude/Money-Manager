@@ -20,6 +20,7 @@ class Category {
     required this.color,
     required this.isPreset,
     required this.active,
+    this.emoji,
     this.ownerId,
     this.sortOrder = 0,
   });
@@ -33,6 +34,9 @@ class Category {
   final bool isPreset;
   final bool active;
 
+  /// 1–3 Emojis als alternatives Symbol (`null`/leer = Icon-Token nutzen).
+  final String? emoji;
+
   /// Besitzer der Kategorie (`null` bei globalen Preset-Kategorien).
   final String? ownerId;
   final int sortOrder;
@@ -40,6 +44,20 @@ class Category {
   /// Passt diese Kategorie zur gegebenen Buchungsrichtung?
   bool matches(TransactionType type) =>
       (kind == CategoryKind.income) == (type == TransactionType.income);
+
+  Category copyWith({bool? active, int? sortOrder}) => Category(
+    id: id,
+    name: name,
+    kind: kind,
+    parentId: parentId,
+    icon: icon,
+    color: color,
+    isPreset: isPreset,
+    active: active ?? this.active,
+    emoji: emoji,
+    ownerId: ownerId,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
     id: json['id'] as String,
@@ -50,6 +68,7 @@ class Category {
     color: (json['color'] as num?)?.toInt(),
     isPreset: (json['is_preset'] as bool?) ?? false,
     active: (json['active'] as bool?) ?? true,
+    emoji: json['emoji'] as String?,
     ownerId: json['owner_id'] as String?,
     sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
   );
