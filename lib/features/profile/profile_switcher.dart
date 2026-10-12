@@ -16,6 +16,10 @@ class ProfileSwitcher extends ConsumerWidget {
 
   static const _signOutValue = '__sign_out__';
 
+  // Eigener Wert für „Alle Personen": null wertet PopupMenuButton als
+  // „abgebrochen" und ruft onSelected dann gar nicht auf.
+  static const _allValue = '__all__';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final myId = ref.watch(currentUserIdProvider);
@@ -67,7 +71,7 @@ class ProfileSwitcher extends ConsumerWidget {
           ref.read(authRepositoryProvider).signOut();
           return;
         }
-        ref.read(personFilterProvider.notifier).set(v);
+        ref.read(personFilterProvider.notifier).set(v == _allValue ? null : v);
       },
       itemBuilder: (ctx) => [
         if (myId != null)
@@ -80,7 +84,7 @@ class ProfileSwitcher extends ConsumerWidget {
         // wäre es identisch zur Eigenansicht (und schien „ohne Funktion").
         if (hasOthers)
           CheckedPopupMenuItem<String?>(
-            value: null,
+            value: _allValue,
             checked: selected == null,
             child: Text(l.allPersons),
           ),
