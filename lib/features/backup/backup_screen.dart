@@ -28,6 +28,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     'recurring_rules',
     'savings_goals',
     'transaction_templates',
+    'reservations',
   ];
 
   bool _busy = false;

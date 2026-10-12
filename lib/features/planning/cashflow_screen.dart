@@ -9,9 +9,10 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../recurring/recurring_providers.dart';
+import '../reservations/reservation_providers.dart';
 
 /// Cashflow-Kalender: prognostizierter Kontostand anhand der kommenden
-/// Daueraufträge (nächste 60 Tage).
+/// Daueraufträge und fälliger Reservierungen (nächste 60 Tage).
 class CashflowScreen extends ConsumerWidget {
   const CashflowScreen({super.key});
 
@@ -68,6 +69,21 @@ class CashflowScreen extends ConsumerWidget {
         d = advanceDate(d, r.intervalUnit, count, anchorDay: r.anchorDay);
         guard++;
       }
+    }
+    // Reservierungen mit Fälligkeit als geplante Abflüsse (überfällige heute).
+    final archived = {
+      for (final a in accounts)
+        if (a.archived) a.id,
+    };
+    for (final r in ref.watch(reservationsProvider)) {
+      final due = r.dueOn;
+      if (due == null || r.amountCents <= 0) continue;
+      if (archived.contains(r.accountId) || due.isAfter(horizon)) continue;
+      events.add((
+        date: due.isBefore(today) ? today : due,
+        title: l.cashflowReservation(r.name),
+        signed: -r.amountCents,
+      ));
     }
     events.sort((a, b) => a.date.compareTo(b.date));
 

@@ -1126,6 +1126,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       else
                         DropdownButtonFormField<String?>(
                           initialValue: _categoryId,
+                          // Nötig für das Flexible im Row der Einträge (sonst
+                          // unbegrenzte Breite -> Layout-Fehler, leere Maske).
+                          isExpanded: true,
                           decoration: InputDecoration(
                             labelText: l.category,
                             prefixIcon: const Icon(Icons.label_outline),

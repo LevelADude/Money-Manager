@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/recurring_rule.dart';
 import '../../data/models/savings_goal.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
+import '../accounts/account_providers.dart';
 import '../budgets/budget_providers.dart';
 import '../categories/category_providers.dart';
 import '../recurring/recurring_providers.dart';
+import '../reservations/reservation_providers.dart';
 import '../savings/savings_providers.dart';
 import '../settings/settings_providers.dart';
 import '../transactions/transaction_providers.dart';
@@ -32,7 +35,7 @@ class Reminder {
 }
 
 /// Sammelt offene Hinweise: fällige Daueraufträge, Budget-Warnungen,
-/// nahe Sparziel-Termine.
+/// nahe Sparziel-Termine, fällige Reservierungen, überreservierte Konten.
 final remindersProvider = Provider<List<Reminder>>((ref) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
@@ -116,6 +119,55 @@ final remindersProvider = Provider<List<Reminder>>((ref) {
                 ),
           level: daysLeft < 0 ? ReminderLevel.alert : ReminderLevel.warning,
           route: '/more/goals',
+        ),
+      );
+    }
+  }
+
+  // Fällige / bald fällige Reservierungen: „schon gekauft? → einlösen".
+  final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
+  final currencyOf = {for (final a in accounts) a.id: a.currency};
+  for (final r in ref.watch(reservationsProvider)) {
+    if (r.amountCents <= 0) continue;
+    final days = r.daysUntilDue(today);
+    if (days == null || days > 3) continue;
+    final amount = formatMoney(
+      r.amountCents,
+      currencyOf[r.accountId] ?? gBaseCurrency,
+    );
+    out.add(
+      Reminder(
+        icon: Icons.bookmark_outline,
+        title: l.remReservationTitle(r.name),
+        subtitle: days < 0
+            ? l.remReservationOverdue(-days, amount)
+            : days == 0
+            ? l.remReservationDue(amount)
+            : l.remReservationSoon(days, amount),
+        level: days < 0
+            ? ReminderLevel.alert
+            : days == 0
+            ? ReminderLevel.warning
+            : ReminderLevel.info,
+        route: '/account/${r.accountId}',
+      ),
+    );
+  }
+
+  // Konten, auf denen mehr reserviert ist als vorhanden.
+  final overReserved = ref.watch(overReservedAccountsProvider);
+  if (overReserved.isNotEmpty) {
+    final available = ref.watch(availableBalancesProvider);
+    for (final a in accounts.where((a) => overReserved.contains(a.id))) {
+      out.add(
+        Reminder(
+          icon: Icons.warning_amber_rounded,
+          title: l.remOverReservedTitle(a.name),
+          subtitle: l.remOverReservedDetail(
+            formatMoney(available[a.id] ?? 0, a.currency),
+          ),
+          level: ReminderLevel.warning,
+          route: '/account/${a.id}',
         ),
       );
     }

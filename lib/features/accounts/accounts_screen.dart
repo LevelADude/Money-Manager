@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/data_refresh.dart';
 import '../../shared/hide_amounts_toggle.dart';
+import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../../shared/multi_currency_text.dart';
 import '../auth/auth_providers.dart';
@@ -16,6 +17,9 @@ import '../profile/profile_providers.dart';
 import '../profile/profile_switcher.dart';
 import '../recurring/recurring_providers.dart';
 import '../reminders/reminders_providers.dart';
+import '../reservations/reservation_providers.dart';
+import '../reservations/reserved_hint.dart';
+import '../settings/settings_providers.dart';
 import '../sharing/account_member_providers.dart';
 import '../transactions/person_filter.dart';
 import '../transactions/transaction_providers.dart';
@@ -42,6 +46,8 @@ class AccountsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Fällige Daueraufträge beim App-Start einmalig erzeugen.
     ref.watch(recurringGenerationProvider);
+    // Fällige wiederkehrende Rücklagen fortschreiben.
+    ref.watch(reservationTopupProvider);
 
     final accountsAsync = ref.watch(accountsProvider);
     final personFilter = ref.watch(personFilterProvider);
@@ -53,11 +59,19 @@ class AccountsScreen extends ConsumerWidget {
     // Alle Salden auf einmal (ein Durchlauf über die Buchungen, von Riverpod
     // gecacht) statt pro Konto erneut über sämtliche Buchungen zu laufen.
     final balances = ref.watch(accountBalancesProvider);
+    // Groß angezeigter Wert je Konto (verfügbar oder gesamt, laut Einstellung).
+    final primaryBalances = ref.watch(primaryBalancesProvider);
+    final reservedMap = ref.watch(reservedByAccountProvider);
+    final overReserved = ref.watch(overReservedAccountsProvider);
+    final showAvailable = ref.watch(
+      settingsProvider.select((s) => s.showAvailable),
+    );
     final memberNames =
         ref.watch(profileNamesProvider).value ?? const <String, String>{};
     final l = AppLocalizations.of(context);
 
     int balanceOf(Account a) => balances[a.id] ?? 0;
+    int primaryOf(Account a) => primaryBalances[a.id] ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -127,6 +141,7 @@ class AccountsScreen extends ConsumerWidget {
           final children = <Widget>[
             _NetWorthCard(
               totalCents: ref.watch(netWorthProvider(personFilter)),
+              reservedCents: ref.watch(reservedNetWorthProvider(personFilter)),
             ),
           ];
 
@@ -142,7 +157,11 @@ class AccountsScreen extends ConsumerWidget {
                   name: memberNames[o]?.isNotEmpty == true
                       ? memberNames[o]!
                       : l.unknownPerson,
-                  cents: ref.watch(netWorthProvider(o)),
+                  cents: primaryAmount(
+                    ref.watch(netWorthProvider(o)),
+                    ref.watch(reservedNetWorthProvider(o)),
+                    showAvailable,
+                  ),
                 ),
             ]..sort((a, b) => b.cents.compareTo(a.cents));
             children.add(_PerPersonCard(entries: entries));
@@ -161,7 +180,7 @@ class AccountsScreen extends ConsumerWidget {
             if (group == null || group.isEmpty) continue;
             final subtotal = group.fold<int>(
               0,
-              (s, a) => s + convert(balanceOf(a), a.currency),
+              (s, a) => s + convert(primaryOf(a), a.currency),
             );
             children.add(
               _CategoryHeader(
@@ -175,6 +194,8 @@ class AccountsScreen extends ConsumerWidget {
                 _AccountTile(
                   account: a,
                   balanceCents: balanceOf(a),
+                  reservedCents: reservedMap[a.id] ?? 0,
+                  overReserved: overReserved.contains(a.id),
                   currency: a.currency,
                   ownerName: memberNames[a.ownerId] ?? '',
                   shared: membersByAccount[a.id]?.isNotEmpty ?? false,
@@ -228,14 +249,20 @@ class AccountsScreen extends ConsumerWidget {
   }
 }
 
-class _NetWorthCard extends StatelessWidget {
-  const _NetWorthCard({required this.totalCents});
+class _NetWorthCard extends ConsumerWidget {
+  const _NetWorthCard({required this.totalCents, required this.reservedCents});
 
   final int totalCents;
+  final int reservedCents;
 
   @override
-  Widget build(BuildContext context) {
-    final positive = totalCents >= 0;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final showAvailable = ref.watch(
+      settingsProvider.select((s) => s.showAvailable),
+    );
+    final primary = primaryAmount(totalCents, reservedCents, showAvailable);
+    final positive = primary >= 0;
     return Card(
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),
       child: Padding(
@@ -243,18 +270,25 @@ class _NetWorthCard extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              AppLocalizations.of(context).netWorth,
+              showAvailable && reservedCents != 0
+                  ? l.availableNetWorth
+                  : l.netWorth,
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 6),
             MoneyText(
-              totalCents,
+              primary,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: positive ? Colors.green.shade700 : Colors.red.shade700,
               ),
             ),
-            MultiCurrencyText(totalCents, textAlign: TextAlign.center),
+            ReservedHint(
+              totalCents: totalCents,
+              reservedCents: reservedCents,
+              textAlign: TextAlign.center,
+            ),
+            MultiCurrencyText(primary, textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -413,10 +447,12 @@ class _CategoryHeader extends StatelessWidget {
   }
 }
 
-class _AccountTile extends StatelessWidget {
+class _AccountTile extends ConsumerWidget {
   const _AccountTile({
     required this.account,
     required this.balanceCents,
+    required this.reservedCents,
+    required this.overReserved,
     required this.currency,
     required this.ownerName,
     required this.shared,
@@ -428,6 +464,8 @@ class _AccountTile extends StatelessWidget {
 
   final Account account;
   final int balanceCents;
+  final int reservedCents;
+  final bool overReserved;
   final String currency;
   final String ownerName;
   final bool shared;
@@ -437,9 +475,13 @@ class _AccountTile extends StatelessWidget {
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final negative = balanceCents < 0;
+    final showAvailable = ref.watch(
+      settingsProvider.select((s) => s.showAvailable),
+    );
+    final primary = primaryAmount(balanceCents, reservedCents, showAvailable);
+    final negative = primary < 0;
     final subtitle = [
       if (ownerName.isNotEmpty) ownerName,
       if (shared) l.sharedLabel,
@@ -455,13 +497,36 @@ class _AccountTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          MoneyText(
-            balanceCents,
-            currency: currency,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: negative ? Colors.red.shade700 : null,
+          if (overReserved)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Tooltip(
+                message: l.overReservedWarning,
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  size: 18,
+                  color: Colors.red.shade700,
+                ),
+              ),
             ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              MoneyText(
+                primary,
+                currency: currency,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: negative ? Colors.red.shade700 : null,
+                ),
+              ),
+              _CompactReservedHint(
+                totalCents: balanceCents,
+                reservedCents: reservedCents,
+                currency: currency,
+              ),
+            ],
           ),
           PopupMenuButton<String>(
             onSelected: (v) {
@@ -504,6 +569,38 @@ class _AccountTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Kurzform für Kontokacheln: zeigt klein den jeweils anderen Wert
+/// (Gesamt bzw. Verfügbar), damit die Zeile schmal bleibt.
+class _CompactReservedHint extends ConsumerWidget {
+  const _CompactReservedHint({
+    required this.totalCents,
+    required this.reservedCents,
+    required this.currency,
+  });
+
+  final int totalCents;
+  final int reservedCents;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hide = ref.watch(settingsProvider.select((s) => s.hideAmounts));
+    final showAvailable = ref.watch(
+      settingsProvider.select((s) => s.showAvailable),
+    );
+    if (hide || reservedCents == 0) return const SizedBox.shrink();
+    final l = AppLocalizations.of(context);
+    final other = showAvailable ? totalCents : totalCents - reservedCents;
+    final label = showAvailable ? l.totalShort : l.available;
+    return Text(
+      '$label ${formatMoney(other, currency)}',
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: Theme.of(context).hintColor),
     );
   }
 }

@@ -1557,6 +1557,138 @@ class AppLocalizations {
     'noch $days Tag(e) · $remaining fehlen',
     '$days day(s) left · $remaining missing',
   );
+
+  // ---- Reservierungen ----
+  String get reservations => _t('Reservierungen', 'Reservations');
+  String get reservation => _t('Reservierung', 'Reservation');
+  String get newReservation => _t('Neue Reservierung', 'New reservation');
+  String get editReservation =>
+      _t('Reservierung bearbeiten', 'Edit reservation');
+  String get reserveAction => _t('Reservieren', 'Reserve');
+  String get reservationName =>
+      _t('Wofür? (z. B. Laptop)', 'What for? (e.g. laptop)');
+  String get reservationNameRequired =>
+      _t('Bitte einen Namen eingeben', 'Please enter a name');
+  String get noReservations => _t('Keine Reservierungen', 'No reservations');
+  String get noReservationsHint => _t(
+    'Lege Geld für geplante Ausgaben zurück. Es zählt dann nicht mehr zum '
+        'verfügbaren Betrag.',
+    'Set money aside for planned purchases. It no longer counts towards '
+        'the available amount.',
+  );
+  String get available => _t('Verfügbar', 'Available');
+  String get totalShort => _t('Gesamt', 'Total');
+  String get availableBalance => _t('Verfügbarer Saldo', 'Available balance');
+  String get availableNetWorth =>
+      _t('Verfügbares Vermögen', 'Available net worth');
+  String get availableCredit => _t('Verfügbarer Rahmen', 'Available credit');
+  String get reservedLabel => _t('Reserviert', 'Reserved');
+  String totalWithReserved(String total, String reserved) => _t(
+    'Gesamt $total · davon $reserved reserviert',
+    'Total $total · $reserved reserved',
+  );
+  String availableWithReserved(String available, String reserved) => _t(
+    'Verfügbar $available · $reserved reserviert',
+    'Available $available · $reserved reserved',
+  );
+  String get dueOnOptional => _t('Fällig am (optional)', 'Due on (optional)');
+  String get noDueDate => _t('Kein Datum', 'No date');
+  String dueOnShort(String date) => _t('fällig $date', 'due $date');
+  String get reservationCategoryHint =>
+      _t('Wird beim Einlösen vorgeschlagen', 'Suggested when redeeming');
+  String deleteReservationTitle(String name) =>
+      _t('„$name" löschen?', 'Delete "$name"?');
+  String get deleteReservationBody => _t(
+    'Der Betrag wird wieder freigegeben. Es wird keine Buchung angelegt.',
+    'The amount is released again. No transaction is created.',
+  );
+  String get reservationDeleted =>
+      _t('Reservierung gelöscht', 'Reservation deleted');
+  String get overReservedWarning => _t(
+    'Es ist mehr reserviert, als auf dem Konto ist.',
+    'More is reserved than the account holds.',
+  );
+  String get overReservedShort => _t('Überreserviert', 'Over-reserved');
+  String get overReservedSave => _t(
+    'Damit wäre mehr reserviert, als auf dem Konto ist. Trotzdem speichern?',
+    'This reserves more than the account holds. Save anyway?',
+  );
+  String get settingShowAvailable =>
+      _t('Verfügbaren Betrag groß anzeigen', 'Show available amount large');
+  String get settingShowAvailableSub => _t(
+    'Salden abzüglich Reservierungen; der Gesamtbetrag steht klein darunter',
+    'Balances minus reservations; the total is shown small below',
+  );
+  String get allAccounts => _t('Alle Konten', 'All accounts');
+
+  // Einlösen
+  String get redeemAction => _t('Einlösen', 'Redeem');
+  String redeemTitle(String name) => _t('„$name" einlösen', 'Redeem "$name"');
+  String get redeemExplain => _t(
+    'Legt eine Ausgabe auf diesem Konto an und gibt die Reservierung frei.',
+    'Creates an expense on this account and releases the reservation.',
+  );
+  String get redeemAmountLabel => _t('Tatsächlicher Betrag', 'Actual amount');
+  String get keepRestReserved =>
+      _t('Rest weiter reservieren', 'Keep remainder reserved');
+  String restAmount(String rest) => _t('Rest: $rest', 'Remainder: $rest');
+  String get nextDueOptional =>
+      _t('Nächste Fälligkeit (optional)', 'Next due date (optional)');
+  String get redeemed =>
+      _t('Eingelöst – Ausgabe angelegt', 'Redeemed – expense created');
+
+  // Wiederkehrend
+  String get recurringReserve =>
+      _t('Regelmäßig aufstocken', 'Top up regularly');
+  String get recurringReserveSub => _t(
+    'z. B. jeden Monat 50 € für die Kfz-Versicherung',
+    'e.g. 50 € every month for car insurance',
+  );
+  String get topupAmount => _t('Betrag je Termin', 'Amount per period');
+  String get topupEvery => _t('Rhythmus', 'Frequency');
+  String get topupStart => _t('Erste Aufstockung', 'First top-up');
+  String get targetOptional =>
+      _t('Zielbetrag (optional, Deckel)', 'Target amount (optional, cap)');
+  String get startAmount => _t('Bereits zurückgelegt', 'Already set aside');
+  String topupSummary(String amount, String unit) =>
+      _t('+$amount pro $unit', '+$amount per $unit');
+  String nextTopupOn(String date) =>
+      _t('nächste Aufstockung $date', 'next top-up $date');
+  String get targetReached => _t('Ziel erreicht', 'Target reached');
+  String topupUnitSingular(IntervalUnit u) => switch (u) {
+    IntervalUnit.day => _t('Tag', 'day'),
+    IntervalUnit.week => _t('Woche', 'week'),
+    IntervalUnit.month => _t('Monat', 'month'),
+    IntervalUnit.year => _t('Jahr', 'year'),
+  };
+
+  // Erinnerungen / Cashflow
+  String remReservationTitle(String name) =>
+      _t('Reservierung: $name', 'Reservation: $name');
+  String remReservationDue(String amount) => _t(
+    'Fällig – schon gekauft? Jetzt einlösen ($amount)',
+    'Due – already bought? Redeem now ($amount)',
+  );
+  String remReservationOverdue(int days, String amount) => _t(
+    'Seit $days Tag(en) fällig – einlösen oder anpassen ($amount)',
+    'Due for $days day(s) – redeem or adjust ($amount)',
+  );
+  String remReservationSoon(int days, String amount) =>
+      _t('In $days Tag(en) fällig ($amount)', 'Due in $days day(s) ($amount)');
+  String remOverReservedTitle(String account) =>
+      _t('Überreserviert: $account', 'Over-reserved: $account');
+  String remOverReservedDetail(String amount) =>
+      _t('Verfügbar: $amount', 'Available: $amount');
+  String cashflowReservation(String name) =>
+      _t('Reservierung: $name', 'Reservation: $name');
+
+  // Export
+  String get exportReservationsCsv =>
+      _t('Reservierungen als CSV', 'Reservations as CSV');
+  String get exportReservationsCsvSub => _t(
+    'Offene Reservierungen aller Konten',
+    'Open reservations of all accounts',
+  );
 }
 
 class _AppLocalizationsDelegate

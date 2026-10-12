@@ -8,11 +8,13 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
+import '../../data/models/recurring_rule.dart' show IntervalUnitX;
 import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../profile/profile_providers.dart';
+import '../reservations/reservation_providers.dart';
 import '../transactions/transaction_providers.dart';
 // Deferred: die PDF-Erzeugung (Pakete `pdf` + `printing`) macht einen
 // spürbaren Teil des Web-Bundles aus, wird aber nur beim tatsächlichen
@@ -73,6 +75,42 @@ class ExportScreen extends ConsumerWidget {
         t.title,
         t.note,
         memberNames[t.createdBy] ?? '',
+      ].map(_field).join(';');
+      sb.writeln(row);
+    }
+    return sb.toString();
+  }
+
+  /// Offene Reservierungen als eigene CSV (gleiches Format wie die
+  /// Buchungen: Semikolon, deutsche Spaltennamen, Komma als Dezimalzeichen).
+  String _buildReservationsCsv(WidgetRef ref) {
+    final reservations = ref.read(reservationsProvider);
+    final accounts = ref.read(accountsProvider).value ?? const <Account>[];
+    final byId = {for (final a in accounts) a.id: a};
+    final catNames = ref.read(categoryRawNamesProvider);
+    final df = DateFormat('dd.MM.yyyy');
+    String money(int? cents) => cents == null
+        ? ''
+        : (cents / 100).toStringAsFixed(2).replaceAll('.', ',');
+
+    final sb = StringBuffer();
+    sb.writeln(
+      'Name;Betrag;Währung;Konto;Fällig am;Kategorie;Aufstockung;Rhythmus;'
+      'Zielbetrag;Notiz',
+    );
+    for (final r in reservations) {
+      final a = byId[r.accountId];
+      final row = [
+        r.name,
+        money(r.amountCents),
+        a?.currency ?? '',
+        a?.name ?? '',
+        r.dueOn == null ? '' : df.format(r.dueOn!),
+        r.categoryId == null ? '' : (catNames[r.categoryId] ?? ''),
+        money(r.topupCents),
+        r.topupUnit?.label ?? '',
+        money(r.targetCents),
+        r.note,
       ].map(_field).join(';');
       sb.writeln(row);
     }
@@ -148,6 +186,7 @@ class ExportScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final txCount = ref.watch(allTransactionsProvider).value?.length ?? 0;
+    final reservationCount = ref.watch(reservationsProvider).length;
     final csv = _buildCsv(ref);
     final previewLines = const LineSplitter().convert(csv).take(40).join('\n');
     final l = AppLocalizations.of(context);
@@ -198,6 +237,18 @@ class ExportScreen extends ConsumerWidget {
               icon: const Icon(Icons.picture_as_pdf_outlined),
               label: Text(l.sharePdf),
             ),
+            if (reservationCount > 0) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _share(
+                  context,
+                  _buildReservationsCsv(ref),
+                  filename: 'money-manager-reservierungen.csv',
+                ),
+                icon: const Icon(Icons.bookmarks_outlined),
+                label: Text(l.exportReservationsCsv),
+              ),
+            ],
             const SizedBox(height: 16),
             Text(
               l.previewFirstLines,
@@ -229,20 +280,18 @@ class ExportScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _share(BuildContext context, String csv) async {
+  Future<void> _share(
+    BuildContext context,
+    String csv, {
+    String filename = 'money-manager-export.csv',
+  }) async {
     final l = AppLocalizations.of(context);
     try {
       final bytes = Uint8List.fromList(utf8.encode(csv));
       await SharePlus.instance.share(
         ShareParams(
           text: l.exportShareText,
-          files: [
-            XFile.fromData(
-              bytes,
-              mimeType: 'text/csv',
-              name: 'money-manager-export.csv',
-            ),
-          ],
+          files: [XFile.fromData(bytes, mimeType: 'text/csv', name: filename)],
         ),
       );
     } catch (e) {

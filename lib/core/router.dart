@@ -24,6 +24,8 @@ import '../features/export/export_screen.dart';
 import '../features/insights/insights_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/planning/cashflow_screen.dart';
+import '../features/reservations/reservation_form_screen.dart';
+import '../features/reservations/reservations_screen.dart';
 import '../features/planning/planning_screen.dart';
 import '../features/projects/project_detail_screen.dart';
 import '../features/projects/projects_screen.dart';
@@ -110,6 +112,19 @@ final routerProvider = Provider<GoRouter>((ref) {
                         ),
                       ),
                       GoRoute(
+                        path: 'reservation/new',
+                        builder: (c, s) => ReservationFormScreen(
+                          accountId: s.pathParameters['id'],
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'reservation/:rid',
+                        builder: (c, s) => ReservationFormScreen(
+                          accountId: s.pathParameters['id'],
+                          reservationId: s.pathParameters['rid'],
+                        ),
+                      ),
+                      GoRoute(
                         path: 'tx/new',
                         builder: (c, s) => TransactionFormScreen(
                           accountId: s.pathParameters['id'],
@@ -176,6 +191,22 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'cashflow',
                     builder: (c, s) => const CashflowScreen(),
+                  ),
+                  GoRoute(
+                    path: 'reservations',
+                    builder: (c, s) => const ReservationsScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'new',
+                        builder: (c, s) => const ReservationFormScreen(),
+                      ),
+                      GoRoute(
+                        path: ':rid',
+                        builder: (c, s) => ReservationFormScreen(
+                          reservationId: s.pathParameters['rid'],
+                        ),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'goals',
