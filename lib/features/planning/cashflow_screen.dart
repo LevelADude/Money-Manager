@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
-import '../../data/models/account.dart';
-import '../../data/models/app_transaction.dart';
 import '../../data/models/recurring_rule.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
+import '../currency/currency_providers.dart';
+import '../profile/profile_switcher.dart';
 import '../recurring/recurring_providers.dart';
 import '../reservations/reservation_providers.dart';
+import '../transactions/person_filter.dart';
+import 'cashflow_projection.dart';
 
 /// Cashflow-Kalender: prognostizierter Kontostand anhand der kommenden
-/// Daueraufträge und fälliger Reservierungen (nächste 60 Tage).
+/// Daueraufträge und fälliger Reservierungen (nächste 60 Tage), für dieselbe
+/// Person/Konten-Auswahl wie der Konten-Tab und in Hauptwährung.
 class CashflowScreen extends ConsumerWidget {
   const CashflowScreen({super.key});
 
@@ -20,72 +23,29 @@ class CashflowScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
+    // Gleicher Umfang wie der Konten-Tab: gewählte Person (eigene + geteilte
+    // Konten), nur Konten im Vermögen, alles in Hauptwährung.
+    final accounts = ref.watch(personFilteredAccountsProvider);
     final rules =
         ref.watch(recurringRulesProvider).value ?? const <RecurringRule>[];
     final l = AppLocalizations.of(context);
     final df = DateFormat('EEEE, dd.MM.yyyy', 'de');
 
-    // Aktueller Gesamt-Kontostand (nicht archivierte Konten). Salden kommen
-    // vorberechnet aus `accountBalancesProvider` (ein Durchlauf für alle
-    // Konten statt einer je Konto).
-    final balances = ref.watch(accountBalancesProvider);
-    var current = 0;
-    for (final a in accounts) {
-      if (a.archived) continue;
-      current += balances[a.id] ?? 0;
-    }
-
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final horizon = today.add(const Duration(days: _horizonDays));
-
-    // Kommende Dauerauftrags-Vorkommen erzeugen.
-    final events = <({DateTime date, String title, int signed})>[];
-    for (final r in rules) {
-      if (!r.active) continue;
-      final count = r.intervalCount < 1 ? 1 : r.intervalCount;
-      var d = r.nextDue;
-      var guard = 0;
-      while (d.isBefore(today) && guard < 1000) {
-        d = advanceDate(d, r.intervalUnit, count, anchorDay: r.anchorDay);
-        guard++;
-      }
-      while (!d.isAfter(horizon) &&
-          (r.endDate == null || !d.isAfter(r.endDate!)) &&
-          guard < 1000) {
-        final signed = switch (r.type) {
-          TransactionType.income => r.amountCents,
-          TransactionType.expense => -r.amountCents,
-          TransactionType.transfer => 0,
-        };
-        if (signed != 0) {
-          events.add((
-            date: d,
-            title: r.title.isEmpty ? l.standingOrderNoun : r.title,
-            signed: signed,
-          ));
-        }
-        d = advanceDate(d, r.intervalUnit, count, anchorDay: r.anchorDay);
-        guard++;
-      }
-    }
-    // Reservierungen mit Fälligkeit als geplante Abflüsse (überfällige heute).
-    final archived = {
-      for (final a in accounts)
-        if (a.archived) a.id,
-    };
-    for (final r in ref.watch(reservationsProvider)) {
-      final due = r.dueOn;
-      if (due == null || r.amountCents <= 0) continue;
-      if (archived.contains(r.accountId) || due.isAfter(horizon)) continue;
-      events.add((
-        date: due.isBefore(today) ? today : due,
-        title: l.cashflowReservation(r.name),
-        signed: -r.amountCents,
-      ));
-    }
-    events.sort((a, b) => a.date.compareTo(b.date));
+    final projection = projectCashflow(
+      accounts: accounts,
+      balances: ref.watch(accountBalancesProvider),
+      rules: rules,
+      reservations: ref.watch(reservationsProvider),
+      convert: ref.watch(converterProvider),
+      today: today,
+      horizon: today.add(const Duration(days: _horizonDays)),
+      ruleTitle: (r) => r.title.isEmpty ? l.standingOrderNoun : r.title,
+      reservationTitle: (r) => l.cashflowReservation(r.name),
+    );
+    final current = projection.current;
+    final events = projection.events;
 
     // Laufenden Saldo berechnen.
     var running = current;
@@ -103,7 +63,10 @@ class CashflowScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.moreCashflow)),
+      appBar: AppBar(
+        title: Text(l.moreCashflow),
+        actions: const [ProfileSwitcher()],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
