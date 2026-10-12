@@ -20,6 +20,7 @@ class AppSettings {
     this.baseCurrency = 'EUR',
     this.displayCurrencies = const [],
     this.localeCode = 'de',
+    this.showAvailable = true,
   });
 
   final ThemeMode themeMode;
@@ -41,6 +42,10 @@ class AppSettings {
   /// Sprachcode der Oberfläche ('de' oder 'en').
   final String localeCode;
 
+  /// Salden als „verfügbar" (abzüglich Reservierungen) groß anzeigen und den
+  /// Gesamtbetrag klein darunter — oder umgekehrt.
+  final bool showAvailable;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     int? seedColor,
@@ -49,6 +54,7 @@ class AppSettings {
     String? baseCurrency,
     List<String>? displayCurrencies,
     String? localeCode,
+    bool? showAvailable,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
     seedColor: seedColor ?? this.seedColor,
@@ -57,6 +63,7 @@ class AppSettings {
     baseCurrency: baseCurrency ?? this.baseCurrency,
     displayCurrencies: displayCurrencies ?? this.displayCurrencies,
     localeCode: localeCode ?? this.localeCode,
+    showAvailable: showAvailable ?? this.showAvailable,
   );
 }
 
@@ -81,6 +88,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _kBaseCur = 'settings_base_currency';
   static const _kDisplayCur = 'settings_display_currencies';
   static const _kLocale = 'settings_locale';
+  static const _kShowAvailable = 'settings_show_available';
 
   @override
   AppSettings build() {
@@ -99,6 +107,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       baseCurrency: base,
       displayCurrencies: prefs.getStringList(_kDisplayCur) ?? const <String>[],
       localeCode: loc == 'en' ? 'en' : 'de',
+      showAvailable: prefs.getBool(_kShowAvailable) ?? true,
     );
   }
 
@@ -130,6 +139,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
         ref.read(supabaseClientProvider),
       ).setMyBaseCurrency(code);
     } catch (_) {}
+  }
+
+  Future<void> setShowAvailable(bool value) async {
+    await ref.read(sharedPrefsProvider).setBool(_kShowAvailable, value);
+    state = state.copyWith(showAvailable: value);
   }
 
   Future<void> setHideAmounts(bool hide) async {
