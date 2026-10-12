@@ -88,7 +88,26 @@ class AccountDetailScreen extends ConsumerWidget {
               onEdit: () =>
                   context.go('/account/$accountId/reservation/${r.id}'),
             ),
+          if (reservations.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                l.noReservations,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+            ),
           const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              l.navTransactions,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
           if (txs.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),

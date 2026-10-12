@@ -184,24 +184,25 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
 
     setState(() => _saving = true);
     try {
-      await ref
-          .read(reservationRepositoryProvider)
-          .upsert(
-            id: widget.reservationId,
-            accountId: accountId,
-            name: _name.text.trim(),
-            amountCents: cents,
-            dueOn: _dueOn,
-            categoryId: _categoryId,
-            note: _note.text.trim(),
-            targetCents: target,
-            topupCents: topup,
-            topupUnit: _recurring ? _unit : null,
-            topupStart: _recurring ? _topupStart : null,
-            resetTopupCount: resetCount,
-          );
-      // Liegt der erste Aufstockungstermin schon zurück, sofort nachziehen.
-      if (_recurring) ref.invalidate(reservationTopupProvider);
+      final repo = ref.read(reservationRepositoryProvider);
+      await repo.upsert(
+        id: widget.reservationId,
+        accountId: accountId,
+        name: _name.text.trim(),
+        amountCents: cents,
+        dueOn: _dueOn,
+        categoryId: _categoryId,
+        note: _note.text.trim(),
+        targetCents: target,
+        topupCents: topup,
+        topupUnit: _recurring ? _unit : null,
+        topupStart: _recurring ? _topupStart : null,
+        resetTopupCount: resetCount,
+      );
+      // Liegt der erste Aufstockungstermin schon zurück, sofort nachziehen
+      // (direkt, nicht per invalidate: der Konten-Tab, der den Start-Provider
+      // beobachtet, ist hier evtl. verdeckt und baut nicht neu).
+      if (_recurring) await repo.applyTopups();
       _leave();
     } catch (e) {
       if (mounted) {
