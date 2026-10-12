@@ -10,6 +10,7 @@ import '../../shared/balances.dart';
 import '../archive/archive_providers.dart';
 import '../auth/auth_providers.dart';
 import '../currency/currency_providers.dart';
+import '../reservations/reservation_providers.dart';
 import '../sharing/access_grant_providers.dart';
 import '../transactions/transaction_providers.dart';
 
@@ -70,14 +71,16 @@ final accountGroupsProvider = FutureProvider<List<AccountGroup>>((ref) {
   return ref.watch(accountGroupRepositoryProvider).fetchAll();
 });
 
-/// Summe (in Hauptwährung) je eigener Konten-Gruppe. Nicht gefundene bzw.
+/// Summe (in Hauptwährung) je eigener Konten-Gruppe (verfügbar oder gesamt,
+/// wie die Konten-Anzeige). Nicht gefundene bzw.
 /// gelöschte Konten werden übersprungen.
 final accountGroupTotalsProvider =
     Provider<List<({AccountGroup group, int cents})>>((ref) {
       final groups = ref.watch(accountGroupsProvider).value ?? const [];
       final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
       final convert = ref.watch(converterProvider);
-      final balances = ref.watch(accountBalancesProvider);
+      // Wie die Konten selbst: verfügbar oder gesamt, laut Einstellung.
+      final balances = ref.watch(primaryBalancesProvider);
       final byId = {for (final a in accounts) a.id: a};
       return [
         for (final g in groups)

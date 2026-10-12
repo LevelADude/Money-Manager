@@ -7,12 +7,18 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
+import '../../shared/money_text.dart';
 import '../categories/category_providers.dart';
 import '../profile/profile_providers.dart';
+import '../reservations/reservation_providers.dart';
+import '../reservations/reservation_tile.dart';
+import '../reservations/reserved_hint.dart';
+import '../settings/settings_providers.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
 
-/// Detailansicht eines Kontos: Saldo + Buchungen.
+/// Detailansicht eines Kontos: Saldo (verfügbar/gesamt), Reservierungen und
+/// Buchungen.
 class AccountDetailScreen extends ConsumerWidget {
   const AccountDetailScreen({super.key, required this.accountId});
 
@@ -23,14 +29,19 @@ class AccountDetailScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
-    String accountName = l.accountLabel;
-    for (final a in accounts) {
-      if (a.id == accountId) {
-        accountName = a.name;
-        break;
-      }
-    }
+    final account = accounts.where((a) => a.id == accountId).firstOrNull;
+    final accountName = account?.name ?? l.accountLabel;
+    final currency = account?.currency ?? gBaseCurrency;
     final balance = ref.watch(accountBalanceProvider(accountId));
+    final reservations = ref.watch(accountReservationsProvider(accountId));
+    final reserved = ref.watch(reservedByAccountProvider)[accountId] ?? 0;
+    final overReserved = ref
+        .watch(overReservedAccountsProvider)
+        .contains(accountId);
+    final readOnly = ref.watch(isReadOnlyProvider).value ?? false;
+    final canManage =
+        !readOnly &&
+        ref.watch(manageableAccountsProvider).any((a) => a.id == accountId);
     final txs = ref.watch(accountTransactionsProvider(accountId));
     final categoryNames = ref.watch(categoryNamesProvider);
     final memberNames =
@@ -52,62 +63,174 @@ class AccountDetailScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: Text(l.transactionFab),
       ),
-      body: Column(
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 88),
         children: [
-          _BalanceHeader(balanceCents: balance),
-          const Divider(height: 1),
-          Expanded(
-            child: txs.isEmpty
-                ? Center(child: Text(l.noTransactions))
-                : ListView.separated(
-                    itemCount: txs.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final tx = txs[i];
-                      return _TransactionTile(
-                        tx: tx,
-                        viewAccountId: accountId,
-                        accountNames: accountNames,
-                        categoryName: tx.categoryId == null
-                            ? null
-                            : categoryNames[tx.categoryId],
-                        authorName: memberNames[tx.createdBy],
-                        onTap: () =>
-                            context.go('/account/$accountId/tx/${tx.id}'),
-                      );
-                    },
-                  ),
+          _BalanceHeader(
+            balanceCents: balance,
+            reservedCents: reserved,
+            currency: currency,
+            creditLimitCents: account?.creditLimitCents,
+            overReserved: overReserved,
           ),
+          const Divider(height: 1),
+          _ReservationsHeader(
+            count: reservations.length,
+            onAdd: canManage
+                ? () => context.go('/account/$accountId/reservation/new')
+                : null,
+          ),
+          for (final r in reservations)
+            ReservationTile(
+              reservation: r,
+              currency: currency,
+              canManage: canManage,
+              onEdit: () =>
+                  context.go('/account/$accountId/reservation/${r.id}'),
+            ),
+          const Divider(height: 1),
+          if (txs.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(child: Text(l.noTransactions)),
+            )
+          else
+            for (final (i, tx) in txs.indexed) ...[
+              if (i > 0) const Divider(height: 1),
+              _TransactionTile(
+                tx: tx,
+                viewAccountId: accountId,
+                accountNames: accountNames,
+                categoryName: tx.categoryId == null
+                    ? null
+                    : categoryNames[tx.categoryId],
+                authorName: memberNames[tx.createdBy],
+                onTap: () => context.go('/account/$accountId/tx/${tx.id}'),
+              ),
+            ],
         ],
       ),
     );
   }
 }
 
-class _BalanceHeader extends StatelessWidget {
-  const _BalanceHeader({required this.balanceCents});
+class _BalanceHeader extends ConsumerWidget {
+  const _BalanceHeader({
+    required this.balanceCents,
+    required this.reservedCents,
+    required this.currency,
+    required this.creditLimitCents,
+    required this.overReserved,
+  });
 
   final int balanceCents;
+  final int reservedCents;
+  final String currency;
+  final int? creditLimitCents;
+  final bool overReserved;
 
   @override
-  Widget build(BuildContext context) {
-    final negative = balanceCents < 0;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final showAvailable = ref.watch(
+      settingsProvider.select((s) => s.showAvailable),
+    );
+    final primary = primaryAmount(balanceCents, reservedCents, showAvailable);
+    final negative = primary < 0;
+    final label = showAvailable && reservedCents != 0
+        ? l.availableBalance
+        : l.balance;
+    final limit = creditLimitCents;
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Text(
-            AppLocalizations.of(context).balance,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
+          Text(label, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 4),
-          Text(
-            formatCents(balanceCents),
+          MoneyText(
+            primary,
+            currency: currency,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: negative ? Colors.red.shade700 : Colors.green.shade700,
             ),
           ),
+          ReservedHint(
+            totalCents: balanceCents,
+            reservedCents: reservedCents,
+            currency: currency,
+            textAlign: TextAlign.center,
+          ),
+          if (limit != null && limit > 0) ...[
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${l.availableCredit}: ',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                MoneyText(
+                  limit + balanceCents - reservedCents,
+                  currency: currency,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ],
+          if (overReserved) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 18,
+                  color: Colors.red.shade700,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    l.overReservedWarning,
+                    style: TextStyle(color: Colors.red.shade700),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ReservationsHeader extends StatelessWidget {
+  const _ReservationsHeader({required this.count, required this.onAdd});
+
+  final int count;
+  final VoidCallback? onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              count == 0 ? l.reservations : '${l.reservations} ($count)',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          if (onAdd != null)
+            TextButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.bookmark_add_outlined),
+              label: Text(l.reserveAction),
+            ),
         ],
       ),
     );
