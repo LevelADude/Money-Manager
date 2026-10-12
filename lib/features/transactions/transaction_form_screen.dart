@@ -103,6 +103,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       if (t.id == widget.transactionId) {
         _amount.text = centsToInput(t.amountCents);
         _titleInitial = t.title;
+        // Beim Kaltstart (Direktaufruf) kommen die Buchungen erst nach dem
+        // ersten Aufbau; das Autocomplete hat seinen Controller dann schon mit
+        // leerem initialValue erzeugt. Ohne das hier bliebe der Titel leer und
+        // würde beim Speichern gelöscht. Nach dem Frame setzen, weil _prefill
+        // im build läuft und der Controller Listener des Autocomplete auslöst.
+        if (_titleCtrl != null) {
+          final title = t.title;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final ctrl = _titleCtrl;
+            if (mounted && ctrl != null && ctrl.text.isEmpty) ctrl.text = title;
+          });
+        }
         _note.text = t.note;
         _type = t.type;
         _date = t.occurredOn;
@@ -888,6 +900,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Beobachten, damit die Vorbelegung auch greift, wenn die Buchungen erst
+    // nach dem ersten Aufbau geladen werden (Direktaufruf/Kaltstart).
+    ref.watch(allTransactionsProvider);
     _prefill();
     // Lädt beim Bearbeiten vorhandene Aufteilungen, sobald der Stream da ist.
     ref.watch(allSplitsProvider);
