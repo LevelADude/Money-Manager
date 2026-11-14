@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../local/app_cache.dart';
 import '../models/app_transaction.dart';
 import '../models/audit_entry.dart';
+import '../paged_fetch.dart';
 
 /// Zugriff auf die Tabelle `transactions` inkl. Realtime-Stream + Offline-Cache.
 class TransactionRepository {
@@ -25,7 +26,10 @@ class TransactionRepository {
           .from('transactions')
           .stream(primaryKey: ['id'])
           .order('occurred_on')
-          .map((rows) {
+          .asyncMap((streamed) async {
+            // Schutz vor dem Zeilenlimit der API: ein abgeschnittener Stand
+            // würde die neuesten Buchungen und damit die Salden verfälschen.
+            final rows = await completeRows(streamed, _fetchPage);
             final unique = dedupRowsById(rows);
             _cache.writeRows('transactions', unique);
             return unique
@@ -36,6 +40,16 @@ class TransactionRepository {
     } catch (_) {
       // Offline: beim Cache bleiben.
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchPage(int from, int to) async {
+    final rows = await _client
+        .from('transactions')
+        .select()
+        .order('occurred_on')
+        .order('id')
+        .range(from, to);
+    return [for (final r in rows as List) Map<String, dynamic>.from(r as Map)];
   }
 
   Map<String, dynamic> _payload({

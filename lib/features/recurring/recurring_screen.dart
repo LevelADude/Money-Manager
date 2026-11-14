@@ -7,6 +7,7 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
+import '../../shared/optimistic_switch.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import 'recurring_providers.dart';
@@ -87,9 +88,10 @@ class RecurringScreen extends ConsumerWidget {
                       formatCents(r.amountCents),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Switch(
+                    OptimisticSwitch(
+                      key: ValueKey(r.id),
                       value: r.active,
-                      onChanged: (v) => ref
+                      onSave: (v) => ref
                           .read(recurringRepositoryProvider)
                           .setActive(id: r.id, active: v),
                     ),

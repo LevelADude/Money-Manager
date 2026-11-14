@@ -36,12 +36,13 @@ class AccountMemberRepository {
         for (final u in toAdd) {'account_id': accountId, 'user_id': u},
       ]);
     }
-    for (final u in toRemove) {
+    if (toRemove.isNotEmpty) {
+      // Ein Aufruf für alle statt einer Löschung pro Mitglied.
       await _client
           .from('account_members')
           .delete()
           .eq('account_id', accountId)
-          .eq('user_id', u);
+          .inFilter('user_id', toRemove.toList());
     }
   }
 }

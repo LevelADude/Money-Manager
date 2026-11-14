@@ -20,13 +20,23 @@ class _AccountsReorderScreenState extends ConsumerState<AccountsReorderScreen> {
   List<Account>? _local;
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
-    final list = [..._local!];
+    final before = _local!;
+    final list = [...before];
     final moved = list.removeAt(oldIndex);
     list.insert(newIndex, moved);
     setState(() => _local = list);
-    await ref.read(accountRepositoryProvider).reorder([
-      for (var i = 0; i < list.length; i++) (id: list[i].id, sortOrder: i),
-    ]);
+    final messenger = ScaffoldMessenger.of(context);
+    final l = AppLocalizations.of(context);
+    try {
+      await ref.read(accountRepositoryProvider).reorder([
+        for (var i = 0; i < list.length; i++) (id: list[i].id, sortOrder: i),
+      ]);
+    } catch (e) {
+      if (!mounted) return;
+      // Server hat abgelehnt -> alte Reihenfolge wiederherstellen.
+      setState(() => _local = before);
+      messenger.showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+    }
   }
 
   @override
