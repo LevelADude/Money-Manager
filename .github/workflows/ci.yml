@@ -22,5 +22,7 @@ jobs:
       - run: flutter --version
       - run: flutter pub get
       - run: dart format --output=none --set-exit-if-changed lib test
-      - run: flutter analyze
+      # Hinweise (z. B. Deprecations neuer Flutter-Versionen) brechen den Lauf
+      # nicht ab; Warnungen und Fehler weiterhin.
+      - run: flutter analyze --no-fatal-infos
       - run: flutter test
