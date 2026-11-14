@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/category.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
+import '../../shared/optimistic_switch.dart';
 import 'category_providers.dart';
 
 /// Kategorien verwalten (anlegen / bearbeiten / aktiv schalten / löschen /
@@ -240,13 +241,24 @@ class _ReorderableCatsState extends ConsumerState<_ReorderableCats> {
 
   // onReorderItem liefert newIndex bereits passend zum entfernten Element.
   Future<void> _onReorder(int oldIndex, int newIndex) async {
+    final before = [..._local];
     setState(() {
       final moved = _local.removeAt(oldIndex);
       _local.insert(newIndex, moved);
     });
-    await ref.read(categoryRepositoryProvider).reorder([
-      for (var i = 0; i < _local.length; i++) (id: _local[i].id, sortOrder: i),
-    ]);
+    final messenger = ScaffoldMessenger.of(context);
+    final l = AppLocalizations.of(context);
+    try {
+      await ref.read(categoryRepositoryProvider).reorder([
+        for (var i = 0; i < _local.length; i++)
+          (id: _local[i].id, sortOrder: i),
+      ]);
+    } catch (e) {
+      if (!mounted) return;
+      // Server hat abgelehnt -> alte Reihenfolge wiederherstellen.
+      setState(() => _local = before);
+      messenger.showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+    }
   }
 
   @override
@@ -287,9 +299,9 @@ class _CategoryTile extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Switch(
+          OptimisticSwitch(
             value: category.active,
-            onChanged: (v) => ref
+            onSave: (v) => ref
                 .read(categoryRepositoryProvider)
                 .setActive(id: category.id, active: v),
           ),

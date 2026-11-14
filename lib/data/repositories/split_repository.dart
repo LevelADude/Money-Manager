@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../local/app_cache.dart';
 import '../models/transaction_split.dart';
+import '../paged_fetch.dart';
 
 /// Zugriff auf die Tabelle `transaction_splits` (Aufteilungen einer Buchung)
 /// inkl. Realtime-Stream + Offline-Cache.
@@ -18,16 +19,28 @@ class SplitRepository {
       yield cached.map(TransactionSplit.fromJson).toList();
     }
     try {
-      yield* _client.from('transaction_splits').stream(primaryKey: ['id']).map((
-        rows,
-      ) {
-        final unique = dedupRowsById(rows);
-        _cache.writeRows('transaction_splits', unique);
-        return unique.map(TransactionSplit.fromJson).toList();
-      });
+      yield* _client
+          .from('transaction_splits')
+          .stream(primaryKey: ['id'])
+          .asyncMap((streamed) async {
+            // Schutz vor dem Zeilenlimit der API (siehe paged_fetch.dart).
+            final rows = await completeRows(streamed, _fetchPage);
+            final unique = dedupRowsById(rows);
+            _cache.writeRows('transaction_splits', unique);
+            return unique.map(TransactionSplit.fromJson).toList();
+          });
     } catch (_) {
       // Offline: beim Cache bleiben.
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchPage(int from, int to) async {
+    final rows = await _client
+        .from('transaction_splits')
+        .select()
+        .order('id')
+        .range(from, to);
+    return [for (final r in rows as List) Map<String, dynamic>.from(r as Map)];
   }
 
   /// Ersetzt alle Aufteilungen einer Buchung (löscht vorhandene, legt neue an).

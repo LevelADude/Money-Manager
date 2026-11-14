@@ -47,6 +47,57 @@ class AccountDetailScreen extends ConsumerWidget {
     final memberNames =
         ref.watch(profileNamesProvider).value ?? const <String, String>{};
 
+    // Kopfbereich (Saldo, Reservierungen); die Buchungen darunter werden
+    // zeilenweise erst beim Scrollen aufgebaut.
+    final head = <Widget>[
+      _BalanceHeader(
+        balanceCents: balance,
+        reservedCents: reserved,
+        currency: currency,
+        creditLimitCents: account?.creditLimitCents,
+        overReserved: overReserved,
+      ),
+      const Divider(height: 1),
+      _ReservationsHeader(
+        count: reservations.length,
+        onAdd: canManage
+            ? () => context.go('/account/$accountId/reservation/new')
+            : null,
+      ),
+      for (final r in reservations)
+        ReservationTile(
+          reservation: r,
+          currency: currency,
+          canManage: canManage,
+          onEdit: () => context.go('/account/$accountId/reservation/${r.id}'),
+        ),
+      if (reservations.isEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            l.noReservations,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).hintColor),
+          ),
+        ),
+      const Divider(height: 1),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Text(
+          l.navTransactions,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+        ),
+      ),
+      if (txs.isEmpty)
+        Padding(
+          padding: const EdgeInsets.all(32),
+          child: Center(child: Text(l.noTransactions)),
+        ),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(accountName),
@@ -63,71 +114,29 @@ class AccountDetailScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: Text(l.transactionFab),
       ),
-      body: ListView(
+      body: ListView.builder(
         padding: const EdgeInsets.only(bottom: 88),
-        children: [
-          _BalanceHeader(
-            balanceCents: balance,
-            reservedCents: reserved,
-            currency: currency,
-            creditLimitCents: account?.creditLimitCents,
-            overReserved: overReserved,
-          ),
-          const Divider(height: 1),
-          _ReservationsHeader(
-            count: reservations.length,
-            onAdd: canManage
-                ? () => context.go('/account/$accountId/reservation/new')
-                : null,
-          ),
-          for (final r in reservations)
-            ReservationTile(
-              reservation: r,
-              currency: currency,
-              canManage: canManage,
-              onEdit: () =>
-                  context.go('/account/$accountId/reservation/${r.id}'),
-            ),
-          if (reservations.isEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Text(
-                l.noReservations,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).hintColor,
-                ),
-              ),
-            ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              l.navTransactions,
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          if (txs.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(32),
-              child: Center(child: Text(l.noTransactions)),
-            )
-          else
-            for (final (i, tx) in txs.indexed) ...[
-              if (i > 0) const Divider(height: 1),
-              _TransactionTile(
-                tx: tx,
-                viewAccountId: accountId,
-                accountNames: accountNames,
-                categoryName: tx.categoryId == null
-                    ? null
-                    : categoryNames[tx.categoryId],
-                authorName: memberNames[tx.createdBy],
-                onTap: () => context.go('/account/$accountId/tx/${tx.id}'),
-              ),
-            ],
-        ],
+        itemCount: head.length + txs.length,
+        itemBuilder: (context, index) {
+          if (index < head.length) return head[index];
+          final i = index - head.length;
+          final tx = txs[i];
+          final tile = _TransactionTile(
+            tx: tx,
+            viewAccountId: accountId,
+            accountNames: accountNames,
+            categoryName: tx.categoryId == null
+                ? null
+                : categoryNames[tx.categoryId],
+            authorName: memberNames[tx.createdBy],
+            onTap: () => context.go('/account/$accountId/tx/${tx.id}'),
+          );
+          if (i == 0) return tile;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [const Divider(height: 1), tile],
+          );
+        },
       ),
     );
   }

@@ -120,13 +120,25 @@ class ArchiveRepository {
           r['receipt_path'] as String,
     ];
     final receipts = <String, Map<String, String>>{};
-    for (final path in receiptPaths) {
-      try {
-        final bytes = await _receipts.download(path);
-        receipts[path] = {'ext': _extOf(path), 'b64': base64Encode(bytes)};
-      } catch (_) {
-        // Beleg nicht ladbar -> überspringen (Buchungsdaten bleiben erhalten).
-      }
+    // In kleinen Gruppen parallel laden (nicht alle auf einmal: Speicher).
+    const parallel = 4;
+    for (var i = 0; i < receiptPaths.length; i += parallel) {
+      final group = receiptPaths.skip(i).take(parallel);
+      await Future.wait([
+        for (final path in group)
+          () async {
+            try {
+              final bytes = await _receipts.download(path);
+              receipts[path] = {
+                'ext': _extOf(path),
+                'b64': base64Encode(bytes),
+              };
+            } catch (_) {
+              // Beleg nicht ladbar -> überspringen (Buchungsdaten bleiben
+              // erhalten).
+            }
+          }(),
+      ]);
     }
 
     // Carry-over je Konto aus den NICHT gelöschten Buchungen (nur diese zählen
@@ -181,9 +193,13 @@ class ArchiveRepository {
     );
 
     // Lokalen Cache der (bereits aus der DB gelöschten) Buchungen bereinigen.
-    for (final id in txIds) {
-      _cache.removeFromCache('transactions', id);
-    }
+    // Ein Durchlauf: jedes einzelne Entfernen würde die ganze Liste neu
+    // schreiben.
+    final purged = txIds.toSet();
+    _cache.removeWhereFromCache(
+      'transactions',
+      (r) => purged.contains(r['id']),
+    );
 
     // Belege erst NACH dem atomaren Commit aus dem Storage entfernen. Ein Fehler
     // hier ist unkritisch (die Belege liegen verschlüsselt im GitHub-Payload) und
