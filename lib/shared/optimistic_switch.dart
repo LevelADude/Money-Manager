@@ -32,21 +32,35 @@ class _OptimisticSwitchState extends State<OptimisticSwitch> {
     if (_pending == widget.value) _pending = null;
   }
 
+  /// Während ein Speichern läuft, ist der Schalter gesperrt. So können sich
+  /// zwei Speichervorgänge nicht überholen.
+  bool _saving = false;
+
   Future<void> _toggle(bool v) async {
-    setState(() => _pending = v);
+    setState(() {
+      _pending = v;
+      _saving = true;
+    });
     final messenger = ScaffoldMessenger.of(context);
     final l = AppLocalizations.of(context);
     try {
       await widget.onSave(v);
+      if (mounted) setState(() => _saving = false);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _pending = null);
+      setState(() {
+        _pending = null;
+        _saving = false;
+      });
       messenger.showSnackBar(SnackBar(content: Text(l.errorWith(e))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Switch(value: _pending ?? widget.value, onChanged: _toggle);
+    return Switch(
+      value: _pending ?? widget.value,
+      onChanged: _saving ? null : _toggle,
+    );
   }
 }
