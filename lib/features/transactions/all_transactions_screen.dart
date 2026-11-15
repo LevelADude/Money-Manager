@@ -16,10 +16,8 @@ import '../currency/currency_providers.dart';
 // Deferred — siehe Begruendung in export_screen.dart: haelt `pdf`/`printing`
 // aus dem Start-Bundle heraus, geladen wird erst beim PDF-Export.
 import '../export/pdf_export.dart' deferred as pdf_export;
-import '../profile/profile_providers.dart';
 import '../profile/profile_switcher.dart';
 import '../settings/settings_providers.dart';
-import '../sharing/access_grant_providers.dart';
 import 'person_filter.dart';
 import 'transaction_providers.dart';
 
@@ -156,17 +154,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final txs = ref.watch(personFilteredTransactionsProvider);
-    final personFilter = ref.watch(personFilterProvider);
-    final manageableOwners = ref.watch(manageableOwnersProvider);
-    // Buchen nur in der Gesamtansicht oder bei Personen, die man verwalten darf.
-    final canAdd =
-        personFilter == null || manageableOwners.contains(personFilter);
     final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
     final allTags = ref.watch(allTagsProvider);
     final splitTxIds = ref.watch(splitsByTransactionProvider).keys.toSet();
-    final readOnly = ref.watch(isReadOnlyProvider).value ?? false;
     final convert = ref.watch(converterProvider);
     final baseCur = ref.watch(settingsProvider.select((s) => s.baseCurrency));
     final curOf = {for (final a in accounts) a.id: a.currency};
@@ -248,13 +240,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           ),
         ],
       ),
-      floatingActionButton: (readOnly || !canAdd)
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () => context.go('/transactions/new'),
-              icon: const Icon(Icons.add),
-              label: Text(l.transactionFab),
-            ),
+      // Neue Buchung: Plus-Knopf der Navigation (MainScaffold).
       body: Column(
         children: [
           Padding(

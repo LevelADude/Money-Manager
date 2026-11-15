@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light" data-v="a">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Money Manager – Buchungen, Prototyp</title>
+<style>
+:root{
+  --em:#0F6B4F; --em-deep:#0A4A37; --em-soft:#DCEFE6; --sage:#7FA08F; --brass:#C4A46A;
+  --bg:#F5F3EC; --card:#FFFFFF; --ink:#10201A; --ink2:#55655D; --line:rgba(16,32,26,.08);
+  --neg:#B8483A; --pos:#0F6B4F; --chip:#EEF1EC;
+  --glass:rgba(255,255,255,.52); --glass-strong:rgba(250,250,246,.72);
+  --glass-edge:rgba(255,255,255,.75); --glass-shadow:0 10px 36px rgba(10,74,55,.16),0 1px 2px rgba(10,74,55,.08);
+  --blob1:#9FD9BE; --blob2:#E9D6A8; --blob3:#BFE3D2; --scrim:rgba(8,24,18,.28);
+  --spring:cubic-bezier(.32,.72,0,1);
+  --stage:#E7E5DD;
+}
+/* Hell 2: kühles Weiß, kräftigerer Smaragd-Schein hinter dem Glas */
+[data-theme="mist"]{
+  --bg:#EDF2EF; --card:#FFFFFF; --ink:#0C1C16; --ink2:#4C5E56; --chip:#E6EEEA; --em-soft:#D3EBE0;
+  --glass:rgba(255,255,255,.46); --glass-strong:rgba(255,255,255,.66); --glass-edge:rgba(255,255,255,.85);
+  --glass-shadow:0 12px 36px rgba(10,74,55,.2),0 1px 2px rgba(10,74,55,.1);
+  --blob1:#5CC29B; --blob2:#A9DCC6; --blob3:#7FCDAC; --stage:#DDE3E0;
+}
+/* Hell 3: Salbei-getönt, dunkler und satter, Karten heben sich deutlich ab */
+[data-theme="sage"]{
+  --bg:#D5E2DA; --card:#F8FBF9; --ink:#0A1A14; --ink2:#42554C; --chip:#E3ECE7; --em:#0B5C43; --em-soft:#C6E2D5;
+  --line:rgba(10,26,20,.1);
+  --glass:rgba(240,248,244,.42); --glass-strong:rgba(240,248,244,.68); --glass-edge:rgba(255,255,255,.7);
+  --glass-shadow:0 14px 40px rgba(6,50,36,.26),0 1px 2px rgba(6,50,36,.12);
+  --blob1:#2F9C74; --blob2:#D9C48C; --blob3:#1F8562; --stage:#BFCDC5;
+}
+/* Smaragd: satte Edelstein-Fläche, helle Schrift, Mint als Akzent */
+[data-theme="emerald"]{
+  --em:#6FEBBD; --em-deep:#0F6B4F; --em-soft:#0A7355;
+  --bg:#06402F; --card:#0C5C45; --ink:#F2F8F4; --ink2:#B4D6C7; --line:rgba(255,255,255,.1);
+  --neg:#FFB9AB; --pos:#7EF0C4; --chip:#084C39;
+  --glass:rgba(255,255,255,.13); --glass-strong:rgba(9,84,62,.62);
+  --glass-edge:rgba(255,255,255,.26); --glass-shadow:0 14px 40px rgba(0,22,15,.5),0 1px 2px rgba(0,22,15,.35);
+  --blob1:#1FB887; --blob2:#C4A46A; --blob3:#12A077; --scrim:rgba(0,20,14,.5);
+  --stage:#03241A;
+}
+[data-theme="emerald"] .seg button.on,[data-theme="emerald"] .pill.on,[data-theme="emerald"] .cta,[data-theme="emerald"] .plus{color:#04271C}
+[data-theme="emerald"] .mark{background:var(--em)}
+[data-theme="dark"]{
+  --em:#3FBF93; --em-deep:#0F6B4F; --em-soft:#17382C; --sage:#7FA08F;
+  --bg:#0B1411; --card:#141F1B; --ink:#E9F0EC; --ink2:#9AAAA2; --line:rgba(255,255,255,.08);
+  --neg:#E38A7C; --pos:#5FD3A9; --chip:#1B2823;
+  --glass:rgba(28,44,37,.5); --glass-strong:rgba(20,32,27,.74);
+  --glass-edge:rgba(255,255,255,.14); --glass-shadow:0 12px 40px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.4);
+  --blob1:#0F6B4F; --blob2:#5C4A22; --blob3:#124D3B; --scrim:rgba(0,0,0,.5);
+  --stage:#050908;
+}
+*{box-sizing:border-box;margin:0}
+body{font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--stage);color:var(--ink);
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;padding:20px 20px 60px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+/* Steuerleiste des Prototyps */
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+.seg{display:inline-flex;background:var(--card);border-radius:999px;padding:3px;border:1px solid var(--line)}
+.seg button{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:500;color:var(--ink2)}
+.seg button.on{background:var(--em);color:#fff}
+[data-theme="dark"] .seg button.on{color:#06110D}
+.note{font-size:13px;color:var(--ink2);margin:0 0 18px;max-width:70ch}
+.stage{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap}
+.cap{font-size:12px;color:var(--ink2);margin:0 0 8px;font-weight:500}
+
+/* Glas: nur Bedienebene */
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);
+  border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-edge)}
+.glass.thick{background:var(--glass-strong);-webkit-backdrop-filter:blur(34px) saturate(190%);backdrop-filter:blur(34px) saturate(190%)}
+
+/* Geräte */
+.dev{position:relative;overflow:hidden;background:var(--bg);isolation:isolate}
+.dev::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(60% 34% at 12% 0%,var(--blob1) 0,transparent 70%),
+             radial-gradient(50% 30% at 100% 22%,var(--blob2) 0,transparent 70%),
+             radial-gradient(70% 36% at 30% 100%,var(--blob3) 0,transparent 72%);opacity:.75}
+.phone{width:390px;height:812px;border-radius:46px;box-shadow:0 0 0 9px #101614,0 30px 60px rgba(0,0,0,.25)}
+.desk{width:1200px;height:760px;border-radius:16px;box-shadow:0 0 0 1px var(--line),0 30px 60px rgba(0,0,0,.18)}
+.scroll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* Zeilen und Tagesgruppen */
+.day{margin:0 16px 18px}
+.day>header{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--ink2);padding:0 6px 8px}
+.rows{background:var(--card);border-radius:22px;border:1px solid var(--line);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;text-align:left;transition:background .1s}
+.row+.row{border-top:1px solid var(--line)}
+.row:active{background:var(--chip)}
+.emo{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:var(--chip)}
+.tt{flex:1;min-width:0}
+.tt b{display:block;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt span{font-size:13px;color:var(--ink2)}
+.col{display:none;width:150px;font-size:13px;color:var(--ink2)}
+.amt{font-weight:600;font-size:15px;white-space:nowrap}
+.amt.pos{color:var(--pos)} .amt.neg{color:var(--ink)}
+.sum{display:none;gap:12px;margin:0 16px 18px}
+.tile{flex:1;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 16px}
+.tile small{font-size:12px;color:var(--ink2);font-weight:500}
+.tile strong{display:block;font-size:20px;letter-spacing:-.02em;margin-top:2px}
+
+/* Handy: Kopf */
+.phead{position:absolute;left:0;right:0;top:0;z-index:3;padding:46px 16px 10px;border-width:0 0 1px;border-radius:0;
+  -webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent);box-shadow:none}
+.phead .top{display:flex;align-items:center;justify-content:space-between}
+.phead h1{font-size:30px;letter-spacing:-.025em;line-height:1.1}
+.ib{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;transition:transform .1s}
+.ib:active,.tab:active,.plus:active,.pill:active,.cta:active{transform:scale(.95)}
+.pills{display:flex;gap:8px;margin-top:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:12px}
+.pill{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:500;background:var(--card);border:1px solid var(--line);white-space:nowrap;transition:transform .1s}
+.pill.on{background:var(--em);color:#fff;border-color:transparent}
+[data-theme="dark"] .pill.on,[data-theme="dark"] .cta,[data-theme="dark"] .plus{color:#06110D}
+.phone .scroll{padding:168px 0 130px}
+
+/* Handy: Tableiste, drei Varianten */
+.tabbar{position:absolute;z-index:4;display:grid;align-items:center}
+.tab{display:grid;justify-items:center;gap:2px;font-size:10.5px;font-weight:500;color:var(--ink2);padding:8px 0;transition:transform .1s}
+.tab.on{color:var(--em)}
+.plus{position:absolute;z-index:5;width:56px;height:56px;border-radius:50%;background:var(--em);color:#fff;display:grid;place-items:center;
+  box-shadow:0 8px 22px rgba(15,107,79,.4),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .1s}
+.plus svg{width:26px;height:26px;stroke-width:2}
+/* A: schwebende Pille, Plus in der Mitte */
+[data-v="a"] .tabbar{left:14px;right:14px;bottom:22px;height:66px;border-radius:33px;grid-template-columns:1fr 1fr 64px 1fr 1fr}
+[data-v="a"] .plus{left:50%;margin-left:-28px;bottom:27px}
+/* B: angedockt, Plus schwebt rechts darüber */
+[data-v="b"] .tabbar{left:0;right:0;bottom:0;height:84px;padding-bottom:20px;border-width:1px 0 0;border-radius:0;grid-template-columns:repeat(4,1fr)}
+[data-v="b"] .slot{display:none}
+[data-v="b"] .plus{right:18px;bottom:102px}
+[data-v="b"] .phone .day{margin:0 0 6px}
+[data-v="b"] .phone .day>header{padding:8px 20px;position:sticky;top:158px;z-index:2;background:color-mix(in srgb,var(--bg) 80%,transparent);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+[data-v="b"] .phone .rows{background:none;border:0;border-radius:0}
+[data-v="b"] .phone .row{padding:12px 20px}
+/* C: Pille links, getrennter Plus-Knopf rechts, Bento-Summen */
+[data-v="c"] .tabbar{left:14px;right:84px;bottom:22px;height:62px;border-radius:31px;grid-template-columns:repeat(4,1fr)}
+[data-v="c"] .slot{display:none}
+[data-v="c"] .plus{right:14px;bottom:25px}
+[data-v="c"] .sum{display:flex}
+
+/* Sheet (Handy) */
+.scrim{position:absolute;inset:0;z-index:6;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .35s var(--spring)}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:7;border-radius:34px 34px 0 0;border-bottom:0;padding:10px 18px 30px;
+  transform:translateY(105%);transition:transform .5s var(--spring)}
+.open .scrim{opacity:1;pointer-events:auto}
+.open .sheet{transform:none}
+.open .phone .scroll{transform:scale(.96);border-radius:30px}
+.phone .scroll{transition:transform .5s var(--spring);transform-origin:50% 0}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--ink2);opacity:.35;margin:0 auto 12px}
+.fh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.fh h2{font-size:18px;letter-spacing:-.01em}
+.fh button{color:var(--em);font-weight:500;font-size:15px}
+.kind{display:grid;grid-template-columns:repeat(3,1fr);background:rgba(120,130,125,.16);border-radius:12px;padding:3px}
+.kind button{padding:8px 0;border-radius:9px;font-size:13px;font-weight:500;color:var(--ink2)}
+.kind button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.big{text-align:center;font-size:52px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin:22px 0 4px}
+.big i{font-style:normal;color:var(--ink2);font-weight:400;font-size:.6em;margin-left:4px}
+.hint{text-align:center;font-size:13px;color:var(--ink2);margin-bottom:18px}
+.cats{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -18px 16px;padding:0 18px}
+.cat{display:flex;align-items:center;gap:6px;padding:8px 13px 8px 9px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:500;white-space:nowrap}
+.cat.on{border-color:var(--em);box-shadow:inset 0 0 0 1px var(--em);background:var(--em-soft)}
+.grp{background:var(--card);border-radius:18px;border:1px solid var(--line);margin-bottom:16px}
+.grp div{display:flex;justify-content:space-between;padding:13px 16px;font-size:15px}
+.grp div+div{border-top:1px solid var(--line)}
+.grp span{color:var(--ink2)}
+.cta{width:100%;padding:15px;border-radius:999px;background:var(--em);color:#fff;font-weight:600;font-size:16px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3);transition:transform .1s}
+
+/* Desktop */
+.desk{display:grid;grid-template-columns:248px 1fr 356px}
+.desk .col{display:block;flex:0 1 150px;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.desk .tt{min-width:150px}
+.desk .search{flex:1 1 90px;min-width:0}
+[data-v="a"] .desk.open .dhead .cta,[data-v="c"] .desk.open .dhead .cta{display:none}
+.desk .amt{flex:none;width:120px;text-align:right}
+.desk .tt span{display:none}
+.desk .day,.desk .sum{margin-left:0;margin-right:0}
+.nav{margin:14px 0 14px 14px;border-radius:24px;padding:18px 12px;display:flex;flex-direction:column;gap:4px;z-index:2}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;padding:4px 10px 16px}
+.mark{width:30px;height:30px;border-radius:9px;background:var(--em);flex:none}
+.ni{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;font-size:14px;font-weight:500;color:var(--ink2);text-align:left}
+.ni.on{background:var(--em-soft);color:var(--em)}
+.ni:hover{background:var(--chip)}
+.nav .sp{flex:1}
+.main{position:relative;min-width:0}
+.main .scroll{padding:120px 24px 30px}
+.dhead{position:absolute;left:0;right:0;top:0;z-index:3;padding:22px 24px 26px;display:flex;align-items:center;gap:12px;border:0;box-shadow:none;border-radius:0;
+  -webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.dhead h1{font-size:28px;letter-spacing:-.025em;margin-right:8px}
+.search{flex:1;max-width:260px;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);font-size:14px}
+.search svg{width:17px;height:17px}
+.dhead .cta{width:auto;padding:9px 18px;font-size:14px;margin-left:auto}
+.insp{margin:14px 14px 14px 0;border-radius:28px;padding:20px 18px;z-index:5;overflow:hidden}
+.insp .cats{flex-wrap:wrap;overflow:visible;margin:0 0 16px;padding:0}
+.insp .grab{display:none}
+.dscrim{display:none}
+/* B Desktop: Leiste oben, Formular als Dialog */
+[data-v="b"] .desk{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+[data-v="b"] .nav{flex-direction:row;align-items:center;margin:12px 14px 0;padding:8px 12px;border-radius:999px}
+[data-v="b"] .brand{padding:0 14px 0 6px}
+[data-v="b"] .nav .ni{padding:8px 14px;border-radius:999px}
+[data-v="b"] .nav .ni svg{display:none}
+[data-v="b"] .main .scroll{padding-left:calc(50% - 430px);padding-right:calc(50% - 430px)}
+[data-v="b"] .dhead{padding-left:calc(50% - 430px);padding-right:calc(50% - 430px)}
+[data-v="b"] .insp{position:absolute;left:50%;top:50%;width:400px;margin:0;transform:translate(-50%,-46%) scale(.94);opacity:0;pointer-events:none;
+  transition:transform .45s var(--spring),opacity .25s}
+[data-v="b"] .open .insp{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+[data-v="b"] .dscrim{display:block;position:absolute;inset:0;z-index:4;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .3s}
+[data-v="b"] .open .dscrim{opacity:1;pointer-events:auto}
+/* A/C Desktop: Inspektor fährt von rechts ein, ohne Abdunkeln */
+[data-v="a"] .insp,[data-v="c"] .insp{transform:translateX(110%);transition:transform .5s var(--spring)}
+[data-v="a"] .open .insp,[data-v="c"] .open .insp{transform:none}
+[data-v="a"] .desk:not(.open),[data-v="c"] .desk:not(.open){grid-template-columns:248px 1fr 0}
+[data-v="c"] .desk{grid-template-columns:84px 1fr 356px}
+[data-v="c"] .desk:not(.open){grid-template-columns:84px 1fr 0}
+[data-v="c"] .nav .ni{justify-content:center;padding:13px 0}
+[data-v="c"] .nav .ni span,[data-v="c"] .brand span{display:none}
+[data-v="c"] .brand{justify-content:center;padding:4px 0 16px}
+
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}.open .phone .scroll{transform:none}}
+@media (prefers-reduced-transparency:reduce){.glass{background:var(--card);backdrop-filter:none;-webkit-backdrop-filter:none}}
+</style>
+</head>
+<body>
+<div class="ctl">
+  <div class="seg" id="vseg">
+    <button data-v="a" class="on">A · Schwebend</button>
+    <button data-v="b">B · Angedockt</button>
+    <button data-v="c">C · Bento + getrennt</button>
+  </div>
+  <div class="seg" id="tseg"><button data-t="light" class="on">Hell 1 · Creme</button><button data-t="mist">Hell 2 · Kühl</button><button data-t="sage">Hell 3 · Salbei</button><button data-t="emerald">Smaragd</button><button data-t="dark">Dunkel</button></div>
+  <div class="seg"><button id="tog" class="on">Neue Buchung öffnen</button></div>
+</div>
+<p class="note" id="note"></p>
+
+<div class="stage">
+  <div>
+    <p class="cap">Handy</p>
+    <div class="dev phone" id="phone">
+      <div class="scroll"><div class="sum"></div><div class="list"></div></div>
+      <header class="phead glass">
+        <div class="top"><h1>Buchungen</h1><div style="display:flex"><button class="ib" data-i="search" aria-label="Suchen"></button><button class="ib" data-i="filter" aria-label="Filtern"></button></div></div>
+        <div class="pills"><button class="pill on">Alle</button><button class="pill">Ausgaben</button><button class="pill">Einnahmen</button><button class="pill">Umbuchungen</button></div>
+      </header>
+      <nav class="tabbar glass">
+        <button class="tab"><i data-i="home"></i>Übersicht</button>
+        <button class="tab on"><i data-i="list"></i>Buchungen</button>
+        <span class="slot"></span>
+        <button class="tab"><i data-i="chart"></i>Statistik</button>
+        <button class="tab"><i data-i="more"></i>Mehr</button>
+      </nav>
+      <button class="plus" data-i="plus" data-open aria-label="Neue Buchung"></button>
+      <div class="scrim" data-close></div>
+      <div class="sheet glass thick form"></div>
+    </div>
+  </div>
+  <div>
+    <p class="cap">Desktop</p>
+    <div class="dev desk" id="desk">
+      <nav class="nav glass thick">
+        <div class="brand"><i class="mark"></i><span>Money Manager</span></div>
+        <button class="ni"><i data-i="home"></i><span>Übersicht</span></button>
+        <button class="ni on"><i data-i="list"></i><span>Buchungen</span></button>
+        <button class="ni"><i data-i="wallet"></i><span>Konten</span></button>
+        <button class="ni"><i data-i="chart"></i><span>Statistik</span></button>
+        <button class="ni"><i data-i="target"></i><span>Budgets</span></button>
+        <i class="sp"></i>
+        <button class="ni"><i data-i="more"></i><span>Mehr</span></button>
+      </nav>
+      <div class="main">
+        <div class="scroll"><div class="sum"></div><div class="list"></div></div>
+        <header class="dhead glass">
+          <h1>Buchungen</h1>
+          <div class="search"><i data-i="search"></i>Suchen</div>
+          <button class="pill on">Alle</button><button class="pill">Ausgaben</button><button class="pill">Einnahmen</button>
+          <button class="cta" data-open>+ Neue Buchung</button>
+        </header>
+      </div>
+      <div class="dscrim" data-close></div>
+      <aside class="insp glass thick form"></aside>
+    </div>
+  </div>
+</div>
+
+<script>
+const I={
+ home:'<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>',
+ list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+ chart:'<path d="M5 20V10M12 20V4M19 20v-7"/>',
+ more:'<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="2.6"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+ filter:'<path d="M4 7h16M7 12h10M10 17h4"/>',
+ wallet:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M16 12.5h2"/>',
+ target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/>'
+};
+document.querySelectorAll('[data-i]').forEach(e=>e.innerHTML='<svg viewBox="0 0 24 24">'+I[e.dataset.i]+'</svg>');
+
+const days=[
+ ['Heute','−50,08 €',[['🛒','REWE City','Lebensmittel','Girokonto','−42,18 €'],['☕','Café Extrablatt','Essen gehen','Bargeld','−7,90 €']]],
+ ['Gestern','−58,00 €',[['🚆','Deutschlandticket','Mobilität','Girokonto','−58,00 €']]],
+ ['Fr., 13. Nov.','+2.861,02 €',[['💼','Gehalt November','Einkommen','Girokonto','+2.950,00 €'],['🎬','Kino Cinestar','Freizeit','Girokonto','−24,00 €'],['🛒','dm Drogerie','Haushalt','Girokonto','−18,49 €'],['🔁','Auf Sparkonto','Umbuchung','Girokonto → Sparkonto','−46,49 €']]],
+ ['Do., 12. Nov.','−735,99 €',[['🏠','Miete','Wohnen','Girokonto','−725,00 €'],['🎵','Spotify','Abos','Girokonto','−10,99 €']]]
+];
+const list=days.map(([d,t,r])=>`<section class="day"><header><span>${d}</span><span>${t}</span></header><div class="rows">${
+  r.map(([e,n,c,a,m])=>`<button class="row"><span class="emo">${e}</span><span class="tt"><b>${n}</b><span>${c} · ${a}</span></span><span class="col">${c}</span><span class="col">${a}</span><span class="amt ${m[0]=='+'?'pos':'neg'}">${m}</span></button>`).join('')
+}</div></section>`).join('');
+const sum=`<div class="tile"><small>Einnahmen</small><strong style="color:var(--pos)">2.950,00 €</strong></div><div class="tile"><small>Ausgaben</small><strong>1.840,65 €</strong></div>`;
+const form=`<div class="grab"></div><div class="fh"><h2>Neue Buchung</h2><button data-close>Abbrechen</button></div>
+<div class="kind"><button class="on">Ausgabe</button><button>Einnahme</button><button>Umbuchung</button></div>
+<div class="big">24,90<i>€</i></div><p class="hint">Girokonto · 2.310,20 € verfügbar</p>
+<div class="cats">${[['🛒','Lebensmittel'],['☕','Essen gehen'],['🚆','Mobilität'],['🏠','Wohnen'],['🎬','Freizeit']].map(([e,n],i)=>`<button class="cat${i?'':' on'}">${e} ${n}</button>`).join('')}</div>
+<div class="grp"><div>Konto<span>Girokonto ›</span></div><div>Datum<span>Heute</span></div><div>Notiz<span>Optional</span></div></div>
+<button class="cta" data-close>Speichern</button>`;
+document.querySelectorAll('.list').forEach(e=>e.innerHTML=list);
+document.querySelectorAll('.sum').forEach(e=>e.innerHTML=sum+(e.closest('.desk')?'<div class="tile"><small>Saldo November</small><strong>+1.109,35 €</strong></div>':''));
+document.querySelectorAll('.form').forEach(e=>e.innerHTML=form);
+
+const root=document.documentElement, devs=[phone,desk], notes={
+ a:'A: schwebende Glas-Pille mit Plus in der Mitte, Tagesgruppen als Karten. Desktop: Glas-Seitenleiste, Formular fährt als Glas-Inspektor von rechts ein, ohne die Liste abzudunkeln.',
+ b:'B: angedockte Glas-Leiste, Plus schwebt rechts darüber, Liste ohne Karten mit haftenden Tageszeilen. Desktop: Glas-Leiste oben, Formular als zentrierter Glas-Dialog mit Abdunkeln.',
+ c:'C: Glas-Pille links und getrennter runder Plus-Knopf rechts (wie iOS 26), Summen-Kacheln über der Liste. Desktop: schmale Symbol-Leiste, Summen-Kacheln, Inspektor rechts.'
+};
+function setOpen(o){devs.forEach(d=>d.classList.toggle('open',o));tog.textContent=o?'Neue Buchung schließen':'Neue Buchung öffnen'}
+function pick(seg,attr,fn){seg.onclick=e=>{const b=e.target.closest('button');if(!b)return;seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x==b));fn(b.dataset[attr])}}
+pick(vseg,'v',v=>{root.dataset.v=v;note.textContent=notes[v]});
+pick(tseg,'t',t=>root.dataset.theme=t);
+note.textContent=notes.a;
+tog.onclick=()=>setOpen(!phone.classList.contains('open'));
+document.addEventListener('click',e=>{if(e.target.closest('[data-open]'))setOpen(true);else if(e.target.closest('[data-close]'))setOpen(false)});
+document.querySelectorAll('.pills,.kind,.cats,.dhead').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('.pill,.kind button,.cat');if(!b)return;
+  b.parentNode.querySelectorAll('.'+(b.className.split(' ')[0]||'x')+',button').forEach(x=>{if(x.className.split(' ')[0]==b.className.split(' ')[0])x.classList.remove('on')});b.classList.add('on')}));
+const p=new URLSearchParams(location.search);
+if(p.get('v'))vseg.querySelector(`[data-v="${p.get('v')}"]`).click();
+if(p.get('t'))tseg.querySelector(`[data-t="${p.get('t')}"]`).click();
+if(p.get('open'))setOpen(true);
+function fit(){desk.style.zoom=Math.min(1,(innerWidth-40)/1200)}
+fit();addEventListener('resize',fit);
+</script>
+</body>
+</html>

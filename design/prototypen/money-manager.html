@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="sage" data-s="home">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Money Manager – Prototyp (Version C)</title>
+<style>
+/* Salbei (Hell) */
+:root{
+  --em:#0B5C43; --on-em:#fff; --em-soft:#C6E2D5; --brass:#B8935A; --sage:#7FA08F;
+  --bg:#D5E2DA; --card:#F8FBF9; --ink:#0A1A14; --ink2:#42554C; --line:rgba(10,26,20,.1);
+  --neg:#B8483A; --pos:#0B5C43; --chip:#E3ECE7;
+  --glass:rgba(240,248,244,.42); --glass-strong:rgba(240,248,244,.7); --glass-edge:rgba(255,255,255,.7);
+  --glass-shadow:0 14px 40px rgba(6,50,36,.26),0 1px 2px rgba(6,50,36,.12);
+  --blob1:#2F9C74; --blob2:#D9C48C; --blob3:#1F8562; --scrim:rgba(8,24,18,.3); --stage:#BFCDC5;
+  --c1:#0B5C43; --c2:#5FA88A; --c3:#B8935A; --c4:#A9C4B7;
+  --spring:cubic-bezier(.32,.72,0,1);
+}
+/* Smaragd */
+[data-theme="emerald"]{
+  --em:#6FEBBD; --on-em:#04271C; --em-soft:#0A7355; --brass:#E0C48A;
+  --bg:#06402F; --card:#0C5C45; --ink:#F2F8F4; --ink2:#BEDDCF; --line:rgba(255,255,255,.1);
+  --neg:#FFB9AB; --pos:#7EF0C4; --chip:#084C39;
+  --glass:rgba(255,255,255,.13); --glass-strong:rgba(9,84,62,.64); --glass-edge:rgba(255,255,255,.26);
+  --glass-shadow:0 14px 40px rgba(0,22,15,.5),0 1px 2px rgba(0,22,15,.35);
+  --blob1:#1FB887; --blob2:#C4A46A; --blob3:#12A077; --scrim:rgba(0,20,14,.5); --stage:#03241A;
+  --c1:#6FEBBD; --c2:#2FAE84; --c3:#E0C48A; --c4:#1B7E60;
+}
+/* Dunkel */
+[data-theme="dark"]{
+  --em:#3FBF93; --on-em:#06110D; --em-soft:#17382C; --brass:#C4A46A;
+  --bg:#0B1411; --card:#141F1B; --ink:#E9F0EC; --ink2:#9AAAA2; --line:rgba(255,255,255,.08);
+  --neg:#E38A7C; --pos:#5FD3A9; --chip:#1B2823;
+  --glass:rgba(28,44,37,.5); --glass-strong:rgba(20,32,27,.76); --glass-edge:rgba(255,255,255,.14);
+  --glass-shadow:0 12px 40px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.4);
+  --blob1:#0F6B4F; --blob2:#5C4A22; --blob3:#124D3B; --scrim:rgba(0,0,0,.5); --stage:#050908;
+  --c1:#3FBF93; --c2:#1F7D5E; --c3:#C4A46A; --c4:#2B4A3F;
+}
+*{box-sizing:border-box;margin:0}
+body{font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--stage);color:var(--ink);
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;padding:20px 20px 60px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+svg.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px}
+.seg{display:inline-flex;background:var(--card);border-radius:999px;padding:3px;border:1px solid var(--line)}
+.seg button{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:500;color:var(--ink2)}
+.seg button.on{background:var(--em);color:var(--on-em)}
+.stage{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap}
+.cap{font-size:12px;color:var(--ink2);margin:0 0 8px;font-weight:500}
+
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);
+  border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-edge)}
+.glass.thick{background:var(--glass-strong);-webkit-backdrop-filter:blur(34px) saturate(190%);backdrop-filter:blur(34px) saturate(190%)}
+
+.dev{position:relative;overflow:hidden;background:var(--bg);isolation:isolate}
+.dev::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.75;
+  background:radial-gradient(60% 34% at 12% 0%,var(--blob1) 0,transparent 70%),
+             radial-gradient(50% 30% at 100% 22%,var(--blob2) 0,transparent 70%),
+             radial-gradient(70% 36% at 30% 100%,var(--blob3) 0,transparent 72%)}
+.phone{width:390px;height:812px;border-radius:46px;box-shadow:0 0 0 9px #101614,0 30px 60px rgba(0,0,0,.25)}
+.desk{width:1200px;height:780px;border-radius:16px;box-shadow:0 0 0 1px var(--line),0 30px 60px rgba(0,0,0,.18);
+  display:grid;grid-template-columns:84px 1fr 0;transition:grid-template-columns .5s var(--spring)}
+.desk.open{grid-template-columns:84px 1fr 356px}
+.scroll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* Ansichten */
+[data-s="home"] .view:not(.home),[data-s="tx"] .view:not(.tx),[data-s="stats"] .view:not(.stats){display:none}
+
+/* Kacheln */
+.bento{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 16px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:14px 16px;min-width:0}
+.w2,.full,.hero{grid-column:1/-1}
+.lbl{font-size:12.5px;color:var(--ink2);font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lbl a{color:var(--em);font-weight:500}
+.num{display:block;font-size:20px;font-weight:600;letter-spacing:-.02em;margin-top:2px}
+.sub{font-size:12.5px;color:var(--ink2)}
+.hero{padding:18px 18px 0;overflow:hidden}
+.hero .num{font-size:40px;letter-spacing:-.03em;line-height:1.1;margin-top:4px}
+.hero .num i,.big i{font-style:normal;color:var(--ink2);font-weight:400;font-size:.6em;margin-left:4px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:var(--em-soft);color:var(--em);font-size:12px;font-weight:600}
+.spark{display:block;width:calc(100% + 36px);margin:10px -18px 0;height:84px}
+.ringrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ring{width:64px;height:64px;flex:none}
+.ring text{font:600 13px system-ui;fill:var(--ink)}
+.bar{height:6px;border-radius:3px;background:var(--chip);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--em)}
+.bar.over i{background:var(--neg)}
+.bars{display:flex;align-items:flex-end;gap:3px;height:96px;margin:14px 0 14px}
+.bars i{flex:1;border-radius:3px 3px 1px 1px;background:var(--c4);min-width:0}
+.bars i.now{background:var(--em)}
+.donut{width:104px;height:104px;border-radius:50%;margin:10px auto 6px;display:grid;place-items:center;
+  background:conic-gradient(var(--c1) 0 38%,var(--c2) 38% 60%,var(--c3) 60% 77%,var(--c4) 77%)}
+.donut b{width:70px;height:70px;border-radius:50%;background:var(--card);display:grid;place-items:center;text-align:center;font-size:12px;line-height:1.2;font-weight:600}
+.leg{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:12px;color:var(--ink2)}
+.leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.hb{display:grid;grid-template-columns:86px 1fr auto;align-items:center;gap:10px;font-size:13px;margin-top:10px}
+.hb .bar{margin:0;height:10px;border-radius:5px}.hb .bar i{border-radius:5px}
+.sec{font-size:17px;font-weight:600;letter-spacing:-.01em;margin:22px 22px 10px;display:flex;justify-content:space-between;align-items:baseline}
+.sec a{font-size:13px;font-weight:500;color:var(--em)}
+
+/* Zeilen */
+.day{margin:0 16px 18px}
+.day>header{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--ink2);padding:0 6px 8px}
+.rows{background:var(--card);border-radius:22px;border:1px solid var(--line);overflow:hidden}
+.tile.list{padding:0;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;transition:background .1s}
+.row+.row{border-top:1px solid var(--line)}
+.row:active{background:var(--chip)}
+.emo{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:var(--chip)}
+.tt{flex:1;min-width:0}
+.tt b{display:block;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt span{font-size:13px;color:var(--ink2);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col{display:none}
+.amt{font-weight:600;font-size:15px;white-space:nowrap;text-align:right}
+.amt.pos{color:var(--pos)}
+.amt small{display:block;font-weight:400;font-size:12px;color:var(--ink2)}
+
+/* Handy: Kopf und Navigation */
+.phead{position:absolute;left:0;right:0;top:0;z-index:3;padding:46px 16px 10px;border-width:0;border-radius:0;border-bottom:1px solid var(--line);box-shadow:0 8px 24px -12px rgba(0,0,0,.25)}
+.phead .top{display:flex;align-items:center;justify-content:space-between}
+h1{font-size:30px;letter-spacing:-.025em;line-height:1.1}
+.ib{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;transition:transform .1s}
+.ib:active,.tab:active,.plus:active,.pill:active,.cta:active,.ni:active{transform:scale(.95)}
+.pills{display:flex;gap:8px;margin-top:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.pill{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:500;background:var(--card);border:1px solid var(--line);white-space:nowrap;transition:transform .1s}
+.pill.on{background:var(--em);color:var(--on-em);border-color:transparent}
+.phone .scroll{padding:162px 0 120px;transition:transform .5s var(--spring);transform-origin:50% 0}
+.tabbar{position:absolute;z-index:4;left:14px;right:84px;bottom:22px;height:62px;border-radius:31px;display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:0 6px}
+.tab{display:grid;justify-items:center;gap:2px;font-size:10.5px;font-weight:500;color:var(--ink2);padding:7px 0;border-radius:24px;transition:transform .1s}
+.tab.on{color:var(--em);background:var(--em-soft)}
+.plus{position:absolute;z-index:5;right:14px;bottom:25px;width:56px;height:56px;border-radius:50%;background:var(--em);color:var(--on-em);display:grid;place-items:center;
+  box-shadow:0 8px 22px rgba(6,50,36,.4),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .1s}
+.plus svg{width:26px;height:26px;stroke-width:2}
+
+/* Formular */
+.scrim{position:absolute;inset:0;z-index:6;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .35s var(--spring)}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:7;border-radius:34px 34px 0 0;border-bottom:0;padding:10px 18px 30px;
+  transform:translateY(105%);transition:transform .5s var(--spring)}
+.phone.open .scrim{opacity:1;pointer-events:auto}
+.phone.open .sheet{transform:none}
+.phone.open .scroll{transform:scale(.96)}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--ink2);opacity:.35;margin:0 auto 12px}
+.fh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.fh h2{font-size:18px;letter-spacing:-.01em}
+.fh button{color:var(--em);font-weight:500}
+.kind{display:grid;grid-template-columns:repeat(3,1fr);background:rgba(120,130,125,.18);border-radius:12px;padding:3px}
+.kind button{padding:8px 0;border-radius:9px;font-size:13px;font-weight:500;color:var(--ink2);text-align:center}
+.kind button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.big{text-align:center;font-size:52px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin:22px 0 4px}
+.hint{text-align:center;font-size:13px;color:var(--ink2);margin-bottom:18px}
+.cats{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -18px 16px;padding:0 18px}
+.cat{display:flex;align-items:center;gap:6px;padding:8px 13px 8px 9px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:500;white-space:nowrap}
+.cat.on{border-color:var(--em);box-shadow:inset 0 0 0 1px var(--em);background:var(--em-soft)}
+.grp{background:var(--card);border-radius:18px;border:1px solid var(--line);margin-bottom:16px}
+.grp div{display:flex;justify-content:space-between;padding:13px 16px}
+.grp div+div{border-top:1px solid var(--line)}
+.grp span{color:var(--ink2)}
+.cta{width:100%;padding:15px;border-radius:999px;background:var(--em);color:var(--on-em);font-weight:600;font-size:16px;text-align:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3);transition:transform .1s}
+
+/* Desktop */
+.nav{margin:14px 0 14px 14px;border-radius:24px;padding:16px 10px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.mark{width:34px;height:34px;border-radius:10px;background:var(--em);margin:2px auto 14px}
+.ni{display:grid;place-items:center;height:46px;border-radius:14px;color:var(--ink2);transition:transform .1s}
+.ni.on{background:var(--em-soft);color:var(--em)}
+.ni:hover{background:var(--chip)}
+.nav .sp{flex:1}
+.main{position:relative;min-width:0}
+.main .scroll{padding:104px 24px 30px}
+.dhead{position:absolute;left:0;right:0;top:0;z-index:3;padding:20px 24px 18px;display:flex;align-items:center;gap:10px;border:0;border-bottom:1px solid var(--line);box-shadow:0 8px 24px -12px rgba(0,0,0,.25);border-radius:0}
+.dhead h1{font-size:28px;margin-right:8px;white-space:nowrap}
+.dhead .pills{margin:0;padding:0;overflow:visible}
+.search{flex:0 1 240px;min-width:0;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink2);font-size:14px}
+.search svg{width:17px;height:17px}
+.dhead .cta{width:auto;padding:9px 18px;font-size:14px;margin-left:auto;white-space:nowrap}
+.desk.open .dhead .cta{visibility:hidden}
+.insp{margin:14px 14px 14px 0;border-radius:28px;padding:20px 18px;z-index:5;width:342px;transform:translateX(110%);transition:transform .5s var(--spring)}
+.desk.open .insp{transform:none}
+.insp .cats{flex-wrap:wrap;overflow:visible;margin:0 0 16px;padding:0}
+.insp .grab{display:none}
+.desk .bento{grid-template-columns:repeat(4,minmax(0,1fr));margin:0;gap:14px}
+.desk .hero{grid-column:span 2;grid-row:span 2}
+.desk .hero .num{font-size:48px}
+.desk .hero .spark{height:150px}
+.desk .w2{grid-column:span 2}
+.donly{display:none}.desk .donly{display:block}
+.desk .sm{order:2}
+.desk .day{margin:0 0 18px}
+.desk .sec{margin:22px 6px 10px}
+.desk .col{display:block;flex:0 1 150px;min-width:0;font-size:13px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.desk .tt{min-width:150px}.desk .tt span{display:none}
+.desk .amt{flex:none;width:120px}
+
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}.phone.open .scroll{transform:none}}
+@media (prefers-reduced-transparency:reduce){.glass{background:var(--card);backdrop-filter:none;-webkit-backdrop-filter:none}}
+</style>
+</head>
+<body>
+<div class="ctl">
+  <div class="seg" id="tseg"><button data-t="sage" class="on">Hell · Salbei</button><button data-t="emerald">Smaragd</button><button data-t="dark">Dunkel</button></div>
+  <div class="seg" id="sseg"><button data-go="home" class="on">Übersicht</button><button data-go="tx">Buchungen</button><button data-go="stats">Statistik</button></div>
+  <div class="seg"><button id="tog" class="on">Neue Buchung öffnen</button></div>
+</div>
+
+<div class="stage">
+  <div>
+    <p class="cap">Handy</p>
+    <div class="dev phone" id="phone">
+      <div class="scroll content"></div>
+      <header class="phead glass">
+        <div class="top"><h1 class="title"></h1><div style="display:flex"><button class="ib" data-i="search" aria-label="Suchen"></button><button class="ib" data-i="filter" aria-label="Filtern"></button></div></div>
+        <div class="pills"></div>
+      </header>
+      <nav class="tabbar glass">
+        <button class="tab" data-go="home"><i data-i="home"></i>Übersicht</button>
+        <button class="tab" data-go="tx"><i data-i="list"></i>Buchungen</button>
+        <button class="tab" data-go="stats"><i data-i="chart"></i>Statistik</button>
+        <button class="tab"><i data-i="more"></i>Mehr</button>
+      </nav>
+      <button class="plus" data-i="plus" data-open aria-label="Neue Buchung"></button>
+      <div class="scrim" data-close></div>
+      <div class="sheet glass thick form"></div>
+    </div>
+  </div>
+  <div>
+    <p class="cap">Desktop</p>
+    <div class="dev desk" id="desk">
+      <nav class="nav glass thick">
+        <i class="mark"></i>
+        <button class="ni" data-go="home" data-i="home" aria-label="Übersicht"></button>
+        <button class="ni" data-go="tx" data-i="list" aria-label="Buchungen"></button>
+        <button class="ni" data-i="wallet" aria-label="Konten"></button>
+        <button class="ni" data-go="stats" data-i="chart" aria-label="Statistik"></button>
+        <button class="ni" data-i="target" aria-label="Budgets"></button>
+        <i class="sp"></i>
+        <button class="ni" data-i="more" aria-label="Mehr"></button>
+      </nav>
+      <div class="main">
+        <div class="scroll content"></div>
+        <header class="dhead glass">
+          <h1 class="title"></h1>
+          <div class="search"><i data-i="search"></i>Suchen</div>
+          <div class="pills"></div>
+          <button class="cta" data-open>+ Neue Buchung</button>
+        </header>
+      </div>
+      <aside class="insp glass thick form"></aside>
+    </div>
+  </div>
+</div>
+
+<script>
+const I={
+ home:'<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>',
+ list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+ chart:'<path d="M5 20V10M12 20V4M19 20v-7"/>',
+ more:'<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="2.6"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+ filter:'<path d="M4 7h16M7 12h10M10 17h4"/>',
+ wallet:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M16 12.5h2"/>',
+ target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/>'
+};
+document.querySelectorAll('[data-i]').forEach(e=>e.innerHTML='<svg class="ic" viewBox="0 0 24 24">'+I[e.dataset.i]+'</svg>');
+
+const row=([e,n,c,a,m])=>`<button class="row"><span class="emo">${e}</span><span class="tt"><b>${n}</b><span>${c} · ${a}</span></span><span class="col">${c}</span><span class="col">${a}</span><span class="amt ${m[0]=='+'?'pos':''}">${m}</span></button>`;
+const days=[
+ ['Heute','−50,08 €',[['🛒','REWE City','Lebensmittel','Girokonto','−42,18 €'],['☕','Café Extrablatt','Essen gehen','Bargeld','−7,90 €']]],
+ ['Gestern','−58,00 €',[['🚆','Deutschlandticket','Mobilität','Girokonto','−58,00 €']]],
+ ['Fr., 13. Nov.','+2.861,02 €',[['💼','Gehalt November','Einkommen','Girokonto','+2.950,00 €'],['🎬','Kino Cinestar','Freizeit','Girokonto','−24,00 €'],['🛒','dm Drogerie','Haushalt','Girokonto','−18,49 €'],['🔁','Auf Sparkonto','Umbuchung','Girokonto → Sparkonto','−46,49 €']]],
+ ['Do., 12. Nov.','−735,99 €',[['🏠','Miete','Wohnen','Girokonto','−725,00 €'],['🎵','Spotify','Abos','Girokonto','−10,99 €']]]
+];
+const inout=`<div class="tile"><span class="lbl">Einnahmen</span><b class="num" style="color:var(--pos)">2.950,00 €</b></div><div class="tile"><span class="lbl">Ausgaben</span><b class="num">1.840,65 €</b></div>`;
+const ring=p=>`<svg class="ring" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="var(--chip)" stroke-width="7"/><circle cx="32" cy="32" r="26" fill="none" stroke="var(--em)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${p*1.634} 164" transform="rotate(-90 32 32)"/><text x="32" y="36.5" text-anchor="middle">${p} %</text></svg>`;
+const spark=`<svg class="spark" viewBox="0 0 300 80" preserveAspectRatio="none"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--em)" stop-opacity=".32"/><stop offset="1" stop-color="var(--em)" stop-opacity="0"/></linearGradient></defs><path d="M0 62C30 60 45 50 70 52S110 40 135 44s40-14 65-12 40-16 60-18 30-4 40-6V80H0z" fill="url(#g)"/><path d="M0 62C30 60 45 50 70 52S110 40 135 44s40-14 65-12 40-16 60-18 30-4 40-6" fill="none" stroke="var(--em)" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg>`;
+const acct=(e,n,s,m)=>`<button class="row"><span class="emo">${e}</span><span class="tt"><b>${n}</b><span>${s}</span></span><span class="amt">${m}</span></button>`;
+const bud=(e,n,a,b)=>`<div class="row"><span class="emo">${e}</span><span class="tt"><b>${n}</b><div class="bar${a>b?' over':''}"><i style="width:${Math.min(100,a/b*100)}%"></i></div></span><span class="amt"${a>b?' style="color:var(--neg)"':''}>${a} €<small>von ${b} €</small></span></div>`;
+const dayBars=[30,12,48,20,8,64,26,18,40,10,22,90,35,14,52,28].map((h,i,a)=>`<i style="height:${h}%"${i==a.length-1?' class="now"':''}></i>`).join('');
+
+const V={
+ home:{title:'Übersicht',pills:['‹  November 2026  ›'],html:`
+  <div class="bento">
+   <div class="tile hero"><span class="lbl">Gesamtvermögen <span class="chip">↗ +320,10 €</span></span><b class="num">12.480,35<i>€</i></b><span class="sub">Verlauf der letzten 30 Tage</span>${spark}</div>
+   ${inout}
+   <div class="tile w2"><div class="ringrow"><div><span class="lbl">Budget November</span><b class="num">580,00 € übrig</b><span class="sub">von 1.800 € · noch 15 Tage</span></div>${ring(68)}</div></div>
+   <div class="tile sm"><span class="lbl">🌴 Urlaub 2027 <span>45 %</span></span><b class="num">900 €</b><span class="sub">von 2.000 €</span><div class="bar"><i style="width:45%"></i></div></div>
+   <div class="tile sm"><span class="lbl">Nächstes Abo</span><b class="num">10,99 €</b><span class="sub">🎵 Spotify · 17. Nov.</span></div>
+   <div class="tile sm donly"><span class="lbl">Sparquote <span>37 %</span></span><b class="num">1.109 €</b><span class="sub">diesen Monat gespart</span><div class="bar"><i style="width:37%"></i></div></div>
+   <div class="tile sm donly"><span class="lbl">Reserviert</span><b class="num">240,00 €</b><span class="sub">2 Reservierungen offen</span></div>
+   <div class="tile list w2">${acct('🏦','Girokonto','Hauptkonto','2.310,20 €')+acct('💰','Sparkonto','Tagesgeld','9.400,00 €')+acct('💵','Bargeld','Geldbörse','770,15 €')}</div>
+   <div class="tile list w2 last">${days[0][2].concat(days[1][2]).map(row).join('')}</div>
+  </div>`},
+ tx:{title:'Buchungen',pills:['Alle','Ausgaben','Einnahmen','Umbuchungen'],html:`
+  <div class="bento" style="margin-bottom:18px">${inout}<div class="tile w2 saldo"><span class="lbl">Saldo November</span><b class="num">+1.109,35 €</b></div></div>
+  ${days.map(([d,t,r])=>`<section class="day"><header><span>${d}</span><span>${t}</span></header><div class="rows">${r.map(row).join('')}</div></section>`).join('')}`},
+ stats:{title:'Statistik',pills:['Monat','Jahr','Gesamt'],html:`
+  <div class="bento">
+   <div class="tile hero" style="padding-bottom:4px"><span class="lbl">Ausgaben im November <span class="chip">↘ 12 % zum Oktober</span></span><b class="num">1.840,65<i>€</i></b><div class="bars">${dayBars}</div></div>
+   <div class="tile"><span class="lbl">Nach Kategorie</span><div class="donut"><b>Wohnen<br>38 %</b></div><div class="leg"><span><i style="background:var(--c1)"></i>Wohnen</span><span><i style="background:var(--c2)"></i>Essen</span><span><i style="background:var(--c3)"></i>Mobilität</span><span><i style="background:var(--c4)"></i>Rest</span></div></div>
+   <div class="tile"><span class="lbl">Sparquote</span><b class="num" style="font-size:38px;margin-top:14px">37 %</b><span class="sub">1.109 € gespart</span><div class="bar"><i style="width:37%"></i></div></div>
+   <div class="tile w2"><span class="lbl">Einnahmen und Ausgaben</span><div class="hb"><span>Einnahmen</span><div class="bar"><i style="width:100%"></i></div><b>2.950 €</b></div><div class="hb"><span>Ausgaben</span><div class="bar"><i style="width:62%;background:var(--c3)"></i></div><b>1.841 €</b></div></div>
+   <div class="tile list full">${bud('🛒','Lebensmittel',310,400)+bud('🚆','Mobilität',58,100)+bud('🎬','Freizeit',145,120)+bud('☕','Essen gehen',62,150)}</div>
+  </div>`}
+};
+document.querySelectorAll('.content').forEach(c=>c.innerHTML=Object.entries(V).map(([k,v])=>`<div class="view ${k}">${v.html}</div>`).join(''));
+document.querySelectorAll('.form').forEach(e=>e.innerHTML=`<div class="grab"></div><div class="fh"><h2>Neue Buchung</h2><button data-close>Abbrechen</button></div>
+<div class="kind"><button class="on">Ausgabe</button><button>Einnahme</button><button>Umbuchung</button></div>
+<div class="big">24,90<i>€</i></div><p class="hint">Girokonto · 2.310,20 € verfügbar</p>
+<div class="cats">${[['🛒','Lebensmittel'],['☕','Essen gehen'],['🚆','Mobilität'],['🏠','Wohnen'],['🎬','Freizeit']].map(([e,n],i)=>`<button class="cat${i?'':' on'}">${e} ${n}</button>`).join('')}</div>
+<div class="grp"><div>Konto<span>Girokonto ›</span></div><div>Datum<span>Heute</span></div><div>Notiz<span>Optional</span></div></div>
+<button class="cta" data-close>Speichern</button>`);
+
+const root=document.documentElement;
+function go(s){root.dataset.s=s;
+  document.querySelectorAll('.title').forEach(t=>t.textContent=V[s].title);
+  document.querySelectorAll('.pills').forEach(p=>p.innerHTML=V[s].pills.map((x,i)=>`<button class="pill${i||s=='home'?'':' on'}">${x}</button>`).join(''));
+  document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go==s));
+  document.querySelectorAll('.content').forEach(c=>c.scrollTop=0)}
+function setOpen(o){phone.classList.toggle('open',o);desk.classList.toggle('open',o);tog.textContent=o?'Neue Buchung schließen':'Neue Buchung öffnen'}
+function theme(t){root.dataset.theme=t;tseg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.t==t))}
+document.addEventListener('click',e=>{const t=e.target,b=t.closest('[data-go]');
+  if(b)return go(b.dataset.go);
+  if(t.closest('[data-t]'))return theme(t.closest('[data-t]').dataset.t);
+  if(t.closest('#tog'))return setOpen(!phone.classList.contains('open'));
+  if(t.closest('[data-open]'))return setOpen(true);
+  if(t.closest('[data-close]'))return setOpen(false);
+  const o=t.closest('.pill,.kind button,.cat');
+  if(o&&root.dataset.s!='home'||o&&!o.classList.contains('pill')){[...o.parentNode.children].forEach(x=>x.classList.remove('on'));o.classList.add('on')}});
+go('home');
+function fit(){desk.style.zoom=Math.min(1,(innerWidth-40)/1200)}
+fit();addEventListener('resize',fit);
+</script>
+</body>
+</html>

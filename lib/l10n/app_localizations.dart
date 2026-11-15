@@ -85,7 +85,9 @@ class AppLocalizations {
   String get themeSystem => _t('System', 'System');
   String get themeLight => _t('Hell', 'Light');
   String get themeDark => _t('Dunkel', 'Dark');
-  String get accentColor => _t('Akzentfarbe', 'Accent color');
+  String get palette => _t('Farbpalette', 'Color palette');
+  String get paletteSage => _t('Salbei', 'Sage');
+  String get paletteEmerald => _t('Smaragd', 'Emerald');
   String get privacy => _t('Privatsphäre', 'Privacy');
   String get hideAmounts => _t('Beträge verbergen', 'Hide amounts');
   String get showAmounts => _t('Beträge einblenden', 'Show amounts');

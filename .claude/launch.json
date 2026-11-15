@@ -17,8 +17,28 @@
     {
       "name": "web-release",
       "runtimeExecutable": "py",
-      "runtimeArgs": ["-m", "http.server", "5174", "--directory", "build/web"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5174",
+        "--directory",
+        "build/web"
+      ],
       "port": 5174
+    },
+    {
+      "name": "design-preview",
+      "runtimeExecutable": "C:/dev/flutter/bin/flutter.bat",
+      "runtimeArgs": [
+        "run",
+        "-d",
+        "web-server",
+        "--web-port",
+        "5175",
+        "-t",
+        "lib/dev_preview.dart"
+      ],
+      "port": 5175
     }
   ]
 }

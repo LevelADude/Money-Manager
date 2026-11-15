@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'config/app_config.dart';
 import 'config/db_connection_file.dart';
+import 'core/theme.dart';
 import 'data/local/app_cache.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -156,10 +157,7 @@ class _BootstrapState extends State<_Bootstrap> {
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF2E7D32),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.fallback,
       home: OnboardingScreen(
         config: _config,
         initialError: _error,

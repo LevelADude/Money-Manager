@@ -2,19 +2,18 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/theme.dart';
 import '../../data/local/app_cache.dart';
 import '../../data/repositories/currency_repository.dart';
 import '../../shared/money.dart' show gBaseCurrency;
 import '../auth/auth_providers.dart';
 
-/// App-Einstellungen (Theme-Modus + Akzentfarbe), lokal gespeichert.
+/// App-Einstellungen (Palette, Privatsphäre, Währung, Sprache), lokal gespeichert.
 class AppSettings {
   const AppSettings({
-    this.themeMode = ThemeMode.system,
-    this.seedColor = 0xFF2E7D32,
+    this.palette = AppPalette.system,
     this.hideAmounts = false,
     this.lockEnabled = false,
     this.baseCurrency = 'EUR',
@@ -23,8 +22,8 @@ class AppSettings {
     this.showAvailable = true,
   });
 
-  final ThemeMode themeMode;
-  final int seedColor;
+  /// Farbpalette der Oberfläche; `system` folgt Hell/Dunkel des Geräts.
+  final AppPalette palette;
 
   /// Beträge in der Oberfläche verbergen (Privatsphäre).
   final bool hideAmounts;
@@ -47,8 +46,7 @@ class AppSettings {
   final bool showAvailable;
 
   AppSettings copyWith({
-    ThemeMode? themeMode,
-    int? seedColor,
+    AppPalette? palette,
     bool? hideAmounts,
     bool? lockEnabled,
     String? baseCurrency,
@@ -56,8 +54,7 @@ class AppSettings {
     String? localeCode,
     bool? showAvailable,
   }) => AppSettings(
-    themeMode: themeMode ?? this.themeMode,
-    seedColor: seedColor ?? this.seedColor,
+    palette: palette ?? this.palette,
     hideAmounts: hideAmounts ?? this.hideAmounts,
     lockEnabled: lockEnabled ?? this.lockEnabled,
     baseCurrency: baseCurrency ?? this.baseCurrency,
@@ -67,21 +64,9 @@ class AppSettings {
   );
 }
 
-/// Auswählbare Akzentfarben.
-const accentColors = <int>[
-  0xFF2E7D32, // Grün (Standard)
-  0xFF1565C0, // Blau
-  0xFF6A1B9A, // Violett
-  0xFFC62828, // Rot
-  0xFFEF6C00, // Orange
-  0xFF00838F, // Petrol
-  0xFF4E342E, // Braun
-  0xFF37474F, // Blaugrau
-];
-
 class SettingsNotifier extends Notifier<AppSettings> {
   static const _kMode = 'settings_theme_mode';
-  static const _kSeed = 'settings_seed_color';
+  static const _kPalette = 'settings_palette';
   static const _kHide = 'settings_hide_amounts';
   static const _kPinHash = 'settings_pin_hash';
   static const _kPinSalt = 'settings_pin_salt';
@@ -93,15 +78,15 @@ class SettingsNotifier extends Notifier<AppSettings> {
   @override
   AppSettings build() {
     final prefs = ref.watch(sharedPrefsProvider);
-    final modeIdx = prefs.getInt(_kMode) ?? ThemeMode.system.index;
-    final seed = prefs.getInt(_kSeed) ?? 0xFF2E7D32;
+    final palette = _readPalette(
+      prefs.getString(_kPalette),
+      prefs.getInt(_kMode),
+    );
     final base = prefs.getString(_kBaseCur) ?? 'EUR';
     gBaseCurrency = base; // globalen Formatter aktualisieren
     final loc = prefs.getString(_kLocale) ?? 'de';
     return AppSettings(
-      themeMode:
-          ThemeMode.values[modeIdx.clamp(0, ThemeMode.values.length - 1)],
-      seedColor: seed,
+      palette: palette,
       hideAmounts: prefs.getBool(_kHide) ?? false,
       lockEnabled: prefs.getString(_kPinHash) != null,
       baseCurrency: base,
@@ -109,6 +94,19 @@ class SettingsNotifier extends Notifier<AppSettings> {
       localeCode: loc == 'en' ? 'en' : 'de',
       showAvailable: prefs.getBool(_kShowAvailable) ?? true,
     );
+  }
+
+  /// Gespeicherte Palette lesen. Fehlt sie (Stand vor dem Redesign), wird der
+  /// alte Hell/Dunkel-Schalter übernommen: 1 = hell → Salbei, 2 = dunkel.
+  static AppPalette _readPalette(String? name, int? legacyMode) {
+    for (final p in AppPalette.values) {
+      if (p.name == name) return p;
+    }
+    return switch (legacyMode) {
+      1 => AppPalette.sage,
+      2 => AppPalette.dark,
+      _ => AppPalette.system,
+    };
   }
 
   /// Setzt die zusätzlichen Anzeigewährungen (ohne die Hauptwährung selbst).
@@ -180,14 +178,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
     return _hash(pin, salt) == hash;
   }
 
-  Future<void> setThemeMode(ThemeMode mode) async {
-    await ref.read(sharedPrefsProvider).setInt(_kMode, mode.index);
-    state = state.copyWith(themeMode: mode);
-  }
-
-  Future<void> setSeedColor(int color) async {
-    await ref.read(sharedPrefsProvider).setInt(_kSeed, color);
-    state = state.copyWith(seedColor: color);
+  Future<void> setPalette(AppPalette palette) async {
+    await ref.read(sharedPrefsProvider).setString(_kPalette, palette.name);
+    state = state.copyWith(palette: palette);
   }
 }
 
