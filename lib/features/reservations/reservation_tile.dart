@@ -8,6 +8,7 @@ import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import 'redeem_reservation_sheet.dart';
 import 'reservation_providers.dart';
+import '../../core/theme.dart';
 
 /// Eine Reservierung in einer Liste: Name, Betrag, Fälligkeit/Rhythmus und
 /// Aktionen (Einlösen, Bearbeiten, Löschen).
@@ -39,7 +40,7 @@ class ReservationTile extends ConsumerWidget {
     final dueColor = days == null
         ? null
         : days < 0
-        ? Colors.red.shade700
+        ? AppColors.of(context).expense
         : days <= 3
         ? Colors.orange.shade800
         : null;

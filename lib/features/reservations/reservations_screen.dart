@@ -10,6 +10,8 @@ import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
 import 'reservation_providers.dart';
 import 'reservation_tile.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Übersicht aller Reservierungen, nach Konto gruppiert.
 class ReservationsScreen extends ConsumerWidget {
@@ -70,7 +72,7 @@ class ReservationsScreen extends ConsumerWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.only(bottom: 88),
+              padding: EdgeInsets.only(bottom: 88).withBarInset(context),
               children: [
                 Card(
                   margin: const EdgeInsets.all(12),
@@ -98,7 +100,9 @@ class ReservationsScreen extends ConsumerWidget {
                     subtitle: overReserved.contains(g.account.id)
                         ? Text(
                             l.overReservedWarning,
-                            style: TextStyle(color: Colors.red.shade700),
+                            style: TextStyle(
+                              color: AppColors.of(context).expense,
+                            ),
                           )
                         : null,
                     trailing: const Icon(Icons.chevron_right),

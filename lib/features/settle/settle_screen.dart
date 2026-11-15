@@ -10,6 +10,8 @@ import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../profile/profile_providers.dart';
 import '../transactions/transaction_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// „Wer schuldet wem": teilt die Ausgaben des laufenden Monats gleichmäßig auf
 /// alle Personen auf und schlägt einen minimalen Ausgleich vor.
@@ -89,7 +91,7 @@ class SettleScreen extends ConsumerWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12).withBarInset(context),
               children: [
                 Card(
                   child: Padding(
@@ -141,8 +143,8 @@ class SettleScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: balance[m]! >= 0
-                            ? Colors.green.shade700
-                            : Colors.red.shade700,
+                            ? AppColors.of(context).income
+                            : AppColors.of(context).expense,
                       ),
                     ),
                   ),

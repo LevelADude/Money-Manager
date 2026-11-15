@@ -16,6 +16,8 @@ import '../reservations/reserved_hint.dart';
 import '../settings/settings_providers.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Detailansicht eines Kontos: Saldo (verfügbar/gesamt), Reservierungen und
 /// Buchungen.
@@ -115,7 +117,7 @@ class AccountDetailScreen extends ConsumerWidget {
         label: Text(l.transactionFab),
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.only(bottom: 88),
+        padding: EdgeInsets.only(bottom: 88).withBarInset(context),
         itemCount: head.length + txs.length,
         itemBuilder: (context, index) {
           if (index < head.length) return head[index];
@@ -180,7 +182,9 @@ class _BalanceHeader extends ConsumerWidget {
             currency: currency,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: negative ? Colors.red.shade700 : Colors.green.shade700,
+              color: negative
+                  ? AppColors.of(context).expense
+                  : AppColors.of(context).income,
             ),
           ),
           ReservedHint(
@@ -214,13 +218,13 @@ class _BalanceHeader extends ConsumerWidget {
                 Icon(
                   Icons.warning_amber_rounded,
                   size: 18,
-                  color: Colors.red.shade700,
+                  color: AppColors.of(context).expense,
                 ),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     l.overReservedWarning,
-                    style: TextStyle(color: Colors.red.shade700),
+                    style: TextStyle(color: AppColors.of(context).expense),
                   ),
                 ),
               ],
@@ -294,13 +298,15 @@ class _TransactionTile extends StatelessWidget {
     switch (tx.type) {
       case TransactionType.income:
         icon = Icons.south_west;
-        color = Colors.green.shade700;
+        color = AppColors.of(context).income;
       case TransactionType.expense:
         icon = Icons.north_east;
-        color = Colors.red.shade700;
+        color = AppColors.of(context).expense;
       case TransactionType.transfer:
         icon = Icons.swap_horiz;
-        color = positive ? Colors.green.shade700 : Colors.red.shade700;
+        color = positive
+            ? AppColors.of(context).income
+            : AppColors.of(context).expense;
     }
 
     String titleText;

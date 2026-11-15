@@ -33,4 +33,15 @@ extension ResponsiveContext on BuildContext {
 
   /// Sehr breit (Monitor): NavigationRail mit Beschriftung neben den Icons.
   bool get isExtraWide => screenWidth >= 1200;
+
+  /// Platz, den die schwebende Glas-Leiste unten überdeckt (0 auf Desktop).
+  /// Scrollbare Inhalte hängen ihn an, damit sie unter der Leiste
+  /// durchlaufen und das Ende trotzdem erreichbar bleibt.
+  double get barInset => MediaQuery.paddingOf(this).bottom;
+}
+
+extension BarInsetPadding on EdgeInsets {
+  /// Dieses Padding plus der Platz unter der Glas-Leiste.
+  EdgeInsets withBarInset(BuildContext context) =>
+      copyWith(bottom: bottom + context.barInset);
 }

@@ -17,6 +17,8 @@ import '../profile/profile_switcher.dart';
 import '../transactions/person_filter.dart';
 import 'period_filter.dart';
 import 'statistics_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Farbpalette für die Kategorie-Diagramme.
 const _palette = <Color>[
@@ -98,6 +100,7 @@ class StatisticsScreen extends ConsumerWidget {
 
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       isScrollControlled: true,
       constraints: const BoxConstraints(maxWidth: 640),
@@ -183,7 +186,7 @@ class StatisticsScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12).withBarInset(context),
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -206,7 +209,7 @@ class StatisticsScreen extends ConsumerWidget {
                 child: _SummaryCard(
                   label: l.income,
                   cents: stats.incomeCents,
-                  color: Colors.green.shade700,
+                  color: AppColors.of(context).income,
                 ),
               ),
               const SizedBox(width: 8),
@@ -214,7 +217,7 @@ class StatisticsScreen extends ConsumerWidget {
                 child: _SummaryCard(
                   label: l.expenses,
                   cents: stats.expenseCents,
-                  color: Colors.red.shade700,
+                  color: AppColors.of(context).expense,
                 ),
               ),
             ],
@@ -224,8 +227,8 @@ class StatisticsScreen extends ConsumerWidget {
             label: l.balanceInPeriod,
             cents: stats.balanceCents,
             color: stats.balanceCents >= 0
-                ? Colors.green.shade700
-                : Colors.red.shade700,
+                ? AppColors.of(context).income
+                : AppColors.of(context).expense,
           ),
           if (comparison.hasPrevious) ...[
             const SizedBox(height: 8),
@@ -280,8 +283,8 @@ class StatisticsScreen extends ConsumerWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: stats.netWorthCents >= 0
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
+                          ? AppColors.of(context).income
+                          : AppColors.of(context).expense,
                     ),
                   ),
                 ),
@@ -293,7 +296,9 @@ class StatisticsScreen extends ConsumerWidget {
                     stats.debtCents,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: stats.debtCents > 0 ? Colors.red.shade700 : null,
+                      color: stats.debtCents > 0
+                          ? AppColors.of(context).expense
+                          : null,
                     ),
                   ),
                 ),
@@ -454,8 +459,8 @@ class _NetWorthTrendCard extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: current >= 0
-                        ? Colors.green.shade700
-                        : Colors.red.shade700,
+                        ? AppColors.of(context).income
+                        : AppColors.of(context).expense,
                   ),
                 ),
               ],
@@ -470,8 +475,8 @@ class _NetWorthTrendCard extends StatelessWidget {
                     delta >= 0 ? Icons.trending_up : Icons.trending_down,
                     size: 16,
                     color: delta >= 0
-                        ? Colors.green.shade700
-                        : Colors.red.shade700,
+                        ? AppColors.of(context).income
+                        : AppColors.of(context).expense,
                   ),
                   const SizedBox(width: 4),
                   MoneyText(
@@ -1019,8 +1024,8 @@ class _MonthlyTrendCard extends StatelessWidget {
                   painter: _TrendPainter(
                     months: months,
                     monthAbbr: l.monthAbbr,
-                    incomeColor: Colors.green.shade600,
-                    expenseColor: Colors.red.shade600,
+                    incomeColor: AppColors.of(context).income,
+                    expenseColor: AppColors.of(context).expense,
                     axisColor: Theme.of(context).dividerColor,
                     labelColor: Theme.of(context).hintColor,
                   ),
@@ -1030,9 +1035,15 @@ class _MonthlyTrendCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _LegendDot(color: Colors.green.shade600, label: l.income),
+                  _LegendDot(
+                    color: AppColors.of(context).income,
+                    label: l.income,
+                  ),
                   const SizedBox(width: 16),
-                  _LegendDot(color: Colors.red.shade600, label: l.expenses),
+                  _LegendDot(
+                    color: AppColors.of(context).expense,
+                    label: l.expenses,
+                  ),
                 ],
               ),
             ],
@@ -1364,7 +1375,9 @@ class _ComparisonCard extends StatelessWidget {
       final good = expense ? !up : up;
       final color = pct == null || pct == 0
           ? null
-          : (good ? Colors.green.shade700 : Colors.red.shade700);
+          : (good
+                ? AppColors.of(context).income
+                : AppColors.of(context).expense);
       final txt = pct == null
           ? l.noPrevValue
           : '${up ? '+' : ''}${pct.round()} %';
@@ -1451,7 +1464,7 @@ class _TopExpensesCard extends ConsumerWidget {
                 prefix: '-',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.red.shade700,
+                  color: AppColors.of(context).expense,
                 ),
               ),
               onTap: () => context.go('/transactions/${t.id}'),

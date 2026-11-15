@@ -6,6 +6,7 @@ import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import 'archive_providers.dart';
+import '../../core/theme.dart';
 
 /// Schreibgeschützte Ansicht eines archivierten Jahres. Lädt die Buchungen
 /// (entschlüsselt) von GitHub über den Proxy – strikt getrennt vom
@@ -70,7 +71,7 @@ class ArchivedYearScreen extends ConsumerWidget {
   Widget _tile(BuildContext context, AppTransaction t, DateFormat df) {
     final theme = Theme.of(context);
     final (sign, color) = switch (t.type) {
-      TransactionType.income => ('+', Colors.green),
+      TransactionType.income => ('+', AppColors.of(context).income),
       TransactionType.expense => ('-', theme.colorScheme.error),
       TransactionType.transfer => ('', theme.colorScheme.onSurfaceVariant),
     };

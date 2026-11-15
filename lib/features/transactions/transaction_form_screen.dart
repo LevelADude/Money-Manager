@@ -26,6 +26,8 @@ import '../../shared/tag_editor.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import 'transaction_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Buchung erfassen ODER bearbeiten. Das Konto wird hier gewählt; kommt man von
 /// einem Konto, ist es vorausgewählt.
@@ -359,6 +361,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final df = DateFormat('dd.MM.yyyy HH:mm');
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       builder: (ctx) => FutureBuilder<List<AuditEntry>>(
         future: repo.historyFor(widget.transactionId!),
@@ -456,6 +459,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final l = AppLocalizations.of(context);
     final chosen = await showModalBottomSheet<TransactionTemplate>(
       context: context,
+      useRootNavigator: true,
       builder: (ctx) => Consumer(
         builder: (ctx, ref2, _) {
           final templates = ref2.watch(templatesProvider).value ?? const [];
@@ -575,6 +579,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         defaultTargetPlatform == TargetPlatform.iOS;
     return showModalBottomSheet<ImageSource>(
       context: context,
+      useRootNavigator: true,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -889,7 +894,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 ),
           style: TextStyle(
             color: balanced
-                ? Colors.green.shade700
+                ? AppColors.of(context).income
                 : Theme.of(context).colorScheme.error,
             fontWeight: FontWeight.bold,
           ),
@@ -985,7 +990,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16).withBarInset(context),
               child: Form(
                 key: _formKey,
                 child: Column(

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import 'reminders_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Erinnerungen: offene Hinweise (fällige Daueraufträge, Budget-Warnungen,
 /// Sparziel-Termine) + Erfassungs-Streak.
@@ -11,7 +13,7 @@ class RemindersScreen extends ConsumerWidget {
   const RemindersScreen({super.key});
 
   Color _color(BuildContext context, ReminderLevel level) => switch (level) {
-    ReminderLevel.alert => Colors.red.shade700,
+    ReminderLevel.alert => AppColors.of(context).expense,
     ReminderLevel.warning => Colors.orange.shade800,
     ReminderLevel.info => Theme.of(context).colorScheme.primary,
   };
@@ -25,13 +27,13 @@ class RemindersScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.moreReminders)),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12).withBarInset(context),
         children: [
           Card(
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: streak.bookedToday
-                    ? Colors.green.shade600
+                    ? AppColors.of(context).income
                     : Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Text('🔥', style: const TextStyle(fontSize: 18)),
               ),

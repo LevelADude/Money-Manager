@@ -11,6 +11,7 @@ import '../../shared/optimistic_switch.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import 'recurring_providers.dart';
+import '../../core/theme.dart';
 
 /// Liste der Daueraufträge (wiederkehrende Buchungen).
 class RecurringScreen extends ConsumerWidget {
@@ -67,7 +68,13 @@ class RecurringScreen extends ConsumerWidget {
                 leading: CircleAvatar(
                   backgroundColor: transfer
                       ? null
-                      : (income ? Colors.green.shade100 : Colors.red.shade100),
+                      : (income
+                            ? AppColors.of(
+                                context,
+                              ).income.withValues(alpha: .16)
+                            : AppColors.of(
+                                context,
+                              ).expense.withValues(alpha: .16)),
                   child: Icon(
                     transfer
                         ? Icons.swap_horiz
@@ -75,8 +82,8 @@ class RecurringScreen extends ConsumerWidget {
                     color: transfer
                         ? null
                         : (income
-                              ? Colors.green.shade700
-                              : Colors.red.shade700),
+                              ? AppColors.of(context).income
+                              : AppColors.of(context).expense),
                   ),
                 ),
                 title: Text(title),

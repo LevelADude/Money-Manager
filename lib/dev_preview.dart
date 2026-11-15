@@ -144,6 +144,7 @@ class _SamplePage extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showModalBottomSheet<void>(
           context: context,
+          useRootNavigator: true,
           builder: (_) => const SizedBox(
             height: 220,
             child: Center(child: Text('Beispiel-Sheet')),

@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../transactions/transaction_providers.dart';
+import '../../shared/responsive.dart';
 
 /// CSV-Import: liest Buchungen aus eingefügtem CSV (Format wie der Export:
 /// Datum;Typ;Betrag;Konto;Zielkonto;Kategorie;Titel;Notiz). Konten/Kategorien
@@ -203,7 +204,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.moreImport)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16).withBarInset(context),
         children: [
           Text(l.csvImportIntro),
           const SizedBox(height: 12),

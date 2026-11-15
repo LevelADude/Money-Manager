@@ -20,6 +20,7 @@ import '../profile/profile_switcher.dart';
 import '../settings/settings_providers.dart';
 import 'person_filter.dart';
 import 'transaction_providers.dart';
+import '../../core/theme.dart';
 
 enum _PeriodView { day, week, month, year }
 
@@ -292,21 +293,21 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                 _SumBox(
                   label: l.income,
                   cents: income,
-                  color: Colors.green.shade700,
+                  color: AppColors.of(context).income,
                 ),
                 const SizedBox(width: 8),
                 _SumBox(
                   label: l.expenses,
                   cents: expense,
-                  color: Colors.red.shade700,
+                  color: AppColors.of(context).expense,
                 ),
                 const SizedBox(width: 8),
                 _SumBox(
                   label: l.balance,
                   cents: income - expense,
                   color: (income - expense) >= 0
-                      ? Colors.green.shade700
-                      : Colors.red.shade700,
+                      ? AppColors.of(context).income
+                      : AppColors.of(context).expense,
                 ),
               ],
             ),
@@ -465,7 +466,9 @@ class _TxTile extends StatelessWidget {
     final transfer = tx.type == TransactionType.transfer;
     final color = transfer
         ? null
-        : (income ? Colors.green.shade700 : Colors.red.shade700);
+        : (income
+              ? AppColors.of(context).income
+              : AppColors.of(context).expense);
     final sub = [
       if (accountName.isNotEmpty) accountName,
       ?categoryName,

@@ -129,6 +129,9 @@ class _MainScaffoldState extends ConsumerState<MainScaffold>
     }
 
     return Scaffold(
+      // Inhalt läuft unter der Glas-Leiste durch; Listen hängen den Platz über
+      // `withBarInset` / MediaQuery-Padding unten an.
+      extendBody: true,
       body: content,
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(14, 8, 14, 14),

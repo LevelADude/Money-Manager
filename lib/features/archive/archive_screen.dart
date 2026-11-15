@@ -13,6 +13,7 @@ import '../transactions/transaction_providers.dart';
 import 'archive_providers.dart';
 import 'archive_setup_screen.dart';
 import 'archived_year_screen.dart';
+import '../../shared/responsive.dart';
 
 /// Archivierung alter Jahre nach GitHub: Jahres-Auswahl + Warnung + Fortschritt
 /// (nur Admins) sowie die Liste bereits archivierter Jahre mit read-only-Ansicht
@@ -56,7 +57,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
       return Scaffold(
         appBar: AppBar(title: Text(l.archiveTitle)),
         body: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16).withBarInset(context),
           children: [
             Text(l.archiveIntro, style: theme.textTheme.bodyMedium),
             const SizedBox(height: 16),

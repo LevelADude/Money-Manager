@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Komplettes Backup aller Daten als JSON (Export) sowie Wiederherstellung
 /// (Import) – z. B. zur Sicherung oder zum Umzug in ein frisches Projekt.
@@ -163,7 +164,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.moreBackup)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16).withBarInset(context),
         children: [
           Text(l.backupSection, style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 4),

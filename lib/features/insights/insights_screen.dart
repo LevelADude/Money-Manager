@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/mini_line_chart.dart';
 import 'insights_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// „Insights" – lokal berechnete Auswertungen, gruppiert in Achtung / Überblick
 /// / Hinweise. Komplett offline, ohne LLM.
@@ -56,7 +58,12 @@ class InsightsScreen extends ConsumerWidget {
                     ),
                   )
                 : ListView(
-                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                    padding: EdgeInsets.fromLTRB(
+                      12,
+                      4,
+                      12,
+                      12,
+                    ).withBarInset(context),
                     children: [
                       for (final (section, label) in sections)
                         ...() {
@@ -133,7 +140,7 @@ class _InsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final color = switch (insight.severity) {
-      InsightSeverity.positive => Colors.green.shade600,
+      InsightSeverity.positive => AppColors.of(context).income,
       InsightSeverity.warning => scheme.error,
       InsightSeverity.info => scheme.primary,
     };

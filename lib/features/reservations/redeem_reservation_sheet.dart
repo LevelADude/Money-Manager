@@ -23,6 +23,7 @@ Future<bool> showRedeemReservationSheet(
 ) async {
   final result = await showModalBottomSheet<bool>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (_) => _RedeemSheet(reservation: reservation),

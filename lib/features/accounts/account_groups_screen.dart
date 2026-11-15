@@ -8,6 +8,8 @@ import '../../shared/category_icons.dart';
 import '../../shared/money_text.dart';
 import '../auth/auth_providers.dart';
 import 'account_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Eigene Konten-Gruppen für Custom-Summen verwalten (anlegen / bearbeiten /
 /// löschen). Die Summen selbst erscheinen auf dem Konten-Tab unter dem
@@ -33,7 +35,7 @@ class AccountGroupsScreen extends ConsumerWidget {
               child: Center(child: Text(l.noGroupsYet)),
             )
           : ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.symmetric(vertical: 8).withBarInset(context),
               children: [
                 for (final t in totals)
                   ListTile(
@@ -49,7 +51,9 @@ class AccountGroupsScreen extends ConsumerWidget {
                           t.cents,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: t.cents < 0 ? Colors.red.shade700 : null,
+                            color: t.cents < 0
+                                ? AppColors.of(context).expense
+                                : null,
                           ),
                         ),
                         PopupMenuButton<String>(

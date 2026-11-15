@@ -9,6 +9,8 @@ import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../transactions/transaction_providers.dart';
 import 'savings_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Sparziele: Zielbetrag, Fortschritt, Beiträge ein-/auszahlen.
 class SavingsScreen extends ConsumerWidget {
@@ -260,7 +262,7 @@ class SavingsScreen extends ConsumerWidget {
             );
           }
           return ListView(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12).withBarInset(context),
             children: [
               for (final g in goals)
                 _GoalCard(
@@ -301,7 +303,7 @@ class _GoalCard extends StatelessWidget {
     final isPot = goal.targetCents <= 0;
     final pct = (goal.fraction * 100).round();
     final color = goal.reached
-        ? Colors.green.shade700
+        ? AppColors.of(context).income
         : Theme.of(context).colorScheme.primary;
 
     String? hint;
@@ -414,7 +416,7 @@ class _GoalCard extends StatelessWidget {
                   child: Text(
                     l.goalReached,
                     style: TextStyle(
-                      color: Colors.green.shade700,
+                      color: AppColors.of(context).income,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

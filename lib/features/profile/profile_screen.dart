@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../onboarding/connection_editor.dart';
 import 'profile_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Eigenes Profil ansehen/bearbeiten (Anzeigename) + Abmelden.
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -133,7 +134,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.moreProfile)),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16).withBarInset(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

@@ -66,17 +66,15 @@ flutter_launcher_icons:
   image_path: "assets/icon/app_icon.png"
   android: true
   min_sdk_android: 21
-  adaptive_icon_background: "#2E7D32"
+  adaptive_icon_background: "#E7EFEA"
   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
   windows:
     generate: true
-    image_path: "assets/icon/app_icon.png"
+    image_path: "assets/icon/app_icon_transparent.png"
     icon_size: 256
+  # Web-Symbole erzeugt tool/make_icons.py (eigene Maskable-/Transparent-Varianten).
   web:
-    generate: true
-    image_path: "assets/icon/app_icon.png"
-    background_color: "#2E7D32"
-    theme_color: "#2E7D32"
+    generate: false
 
 msix_config:
   display_name: Money Manager
@@ -105,6 +103,14 @@ flutter:
     # eingebunden, damit das Loeschen von connection.json den Build NICHT bricht
     # (README.txt haelt den Ordner am Leben). Fehlt connection.json -> Onboarding.
     - assets/db_connection/
+    - assets/icon/logo.png
+
+  # Inter (OFL, variable Datei mit allen Stärken): ersetzt Roboto, weil die
+  # Systemschrift in Flutter Web (CanvasKit) nicht direkt nutzbar ist.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -8,6 +8,8 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../recurring/recurring_providers.dart';
 import '../transactions/transaction_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Planungs-Übersicht: „Verfügbar bis Monatsende" + Fixkosten (aus Daueraufträgen).
 class PlanningScreen extends ConsumerWidget {
@@ -89,7 +91,7 @@ class PlanningScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.morePlanning)),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12).withBarInset(context),
         children: [
           Card(
             child: Padding(
@@ -107,8 +109,8 @@ class PlanningScreen extends ConsumerWidget {
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: available >= 0
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
+                          ? AppColors.of(context).income
+                          : AppColors.of(context).expense,
                     ),
                   ),
                   const Divider(height: 24),
@@ -164,8 +166,8 @@ class PlanningScreen extends ConsumerWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: projectedNet >= 0
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
+                              ? AppColors.of(context).income
+                              : AppColors.of(context).expense,
                         ),
                       ),
                     ],

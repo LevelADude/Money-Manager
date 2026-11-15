@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import 'recurring_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Erkannte Abos/wiederkehrende Buchungen mit Vorschlag, sie als Dauerauftrag
 /// anzulegen.
@@ -27,7 +28,7 @@ class SubscriptionsScreen extends ConsumerWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8).withBarInset(context),
               children: [
                 for (final c in candidates)
                   Card(

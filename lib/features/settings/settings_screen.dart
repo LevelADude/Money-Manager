@@ -9,6 +9,7 @@ import '../currency/currency_picker.dart';
 import '../currency/currency_providers.dart';
 import '../onboarding/connection_editor.dart';
 import 'settings_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Einstellungen: Sprache, Erscheinungsbild (Farbpalette), Privatsphäre, Währung.
 class SettingsScreen extends ConsumerWidget {
@@ -30,7 +31,7 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.settingsTitle)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16).withBarInset(context),
         children: [
           header(l.language),
           const SizedBox(height: 8),

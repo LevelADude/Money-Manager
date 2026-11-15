@@ -14,6 +14,7 @@ import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import 'reservation_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Reservierung anlegen oder bearbeiten.
 class ReservationFormScreen extends ConsumerStatefulWidget {
@@ -297,7 +298,7 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16).withBarInset(context),
               child: Form(
                 key: _formKey,
                 child: Column(

@@ -11,6 +11,7 @@ Future<String?> showCalculatorSheet(
 }) {
   return showModalBottomSheet<String>(
     context: context,
+    useRootNavigator: true,
     showDragHandle: true,
     isScrollControlled: true,
     // Auf breiten Screens zentriert + begrenzt statt über die ganze Breite.

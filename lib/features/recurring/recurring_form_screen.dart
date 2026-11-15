@@ -13,6 +13,7 @@ import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import 'recurring_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Dauerauftrag anlegen oder bearbeiten.
 class RecurringFormScreen extends ConsumerStatefulWidget {
@@ -232,7 +233,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16).withBarInset(context),
               child: Form(
                 key: _formKey,
                 child: Column(

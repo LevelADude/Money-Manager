@@ -11,6 +11,8 @@ import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../archive/archive_providers.dart';
 import '../transactions/transaction_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Schulden-/Kredit-Tracker: Restschuld + Verlauf je Verbindlichkeits-Konto
 /// (Kreditkarte / Kredit), inkl. Kreditrahmen-Auslastung.
@@ -45,7 +47,7 @@ class DebtsScreen extends ConsumerWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12).withBarInset(context),
               children: [
                 Card(
                   child: ListTile(
@@ -55,7 +57,9 @@ class DebtsScreen extends ConsumerWidget {
                       totalDebt,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: totalDebt > 0 ? Colors.red.shade700 : null,
+                        color: totalDebt > 0
+                            ? AppColors.of(context).expense
+                            : null,
                       ),
                     ),
                   ),
@@ -131,8 +135,8 @@ class _DebtCard extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: current < 0
-                        ? Colors.red.shade700
-                        : Colors.green.shade700,
+                        ? AppColors.of(context).expense
+                        : AppColors.of(context).income,
                   ),
                 ),
               ],
@@ -145,7 +149,7 @@ class _DebtCard extends StatelessWidget {
                   value: utilization,
                   minHeight: 8,
                   color: utilization >= 0.9
-                      ? Colors.red.shade600
+                      ? AppColors.of(context).expense
                       : Colors.orange.shade700,
                   backgroundColor: Colors.orange.withValues(alpha: 0.15),
                 ),

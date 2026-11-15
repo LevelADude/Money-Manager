@@ -8,6 +8,8 @@ import '../../shared/category_icons.dart';
 import '../../shared/money.dart';
 import '../categories/category_providers.dart';
 import 'budget_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Monatsbudgets je Ausgabe-Kategorie verwalten + Fortschritt anzeigen.
 class BudgetsScreen extends ConsumerWidget {
@@ -262,7 +264,7 @@ class BudgetsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context).moreBudgets)),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12).withBarInset(context),
         children: [
           _OverallBudgetCard(
             budget: overall,
@@ -331,8 +333,8 @@ class _OverallBudgetCard extends StatelessWidget {
     final remaining = amount - spent;
     final over = hasBudget && remaining < 0;
     final color = over
-        ? Colors.red.shade600
-        : (pct >= 90 ? Colors.orange.shade700 : Colors.green.shade600);
+        ? AppColors.of(context).expense
+        : (pct >= 90 ? Colors.orange.shade700 : AppColors.of(context).income);
     final perDay = (!over && daysLeft > 0) ? remaining ~/ daysLeft : 0;
     final periodLabel = period == BudgetPeriod.week ? l.thisWeek : l.thisMonth;
 
@@ -394,7 +396,7 @@ class _OverallBudgetCard extends StatelessWidget {
                           formatCents(perDay),
                         ),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: over ? Colors.red.shade700 : null,
+                    color: over ? AppColors.of(context).expense : null,
                   ),
                 ),
               ),
@@ -447,7 +449,7 @@ class _AllocationBlock extends StatelessWidget {
         ? (allocatedCents / overallCents).clamp(0.0, 1.0)
         : 0.0;
     final color = overAllocated
-        ? Colors.red.shade600
+        ? AppColors.of(context).expense
         : theme.colorScheme.primary;
 
     return Column(
@@ -486,7 +488,7 @@ class _AllocationBlock extends StatelessWidget {
               ? l.budgetOverAllocatedBy(formatCents(-free))
               : l.budgetFreeToAllocate(formatCents(free)),
           style: theme.textTheme.bodySmall?.copyWith(
-            color: overAllocated ? Colors.red.shade700 : null,
+            color: overAllocated ? AppColors.of(context).expense : null,
             fontWeight: overAllocated ? FontWeight.bold : null,
           ),
         ),
@@ -525,8 +527,8 @@ class _BudgetTile extends StatelessWidget {
         ? (spentCents / amount * 100).round()
         : 0;
     final color = over
-        ? Colors.red.shade600
-        : (pct >= 90 ? Colors.orange.shade700 : Colors.green.shade600);
+        ? AppColors.of(context).expense
+        : (pct >= 90 ? Colors.orange.shade700 : AppColors.of(context).income);
 
     return Card(
       child: Padding(
@@ -583,7 +585,7 @@ class _BudgetTile extends StatelessWidget {
                         : l.amountLeft(formatCents(amount - spentCents)),
                     style: TextStyle(
                       color: over
-                          ? Colors.red.shade700
+                          ? AppColors.of(context).expense
                           : (pct >= 90 ? Colors.orange.shade800 : null),
                       fontWeight: FontWeight.bold,
                     ),

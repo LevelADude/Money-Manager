@@ -12,6 +12,8 @@ import '../recurring/recurring_providers.dart';
 import '../reservations/reservation_providers.dart';
 import '../transactions/person_filter.dart';
 import 'cashflow_projection.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Cashflow-Kalender: prognostizierter Kontostand anhand der kommenden
 /// Daueraufträge und fälliger Reservierungen (nächste 60 Tage), für dieselbe
@@ -68,7 +70,7 @@ class CashflowScreen extends ConsumerWidget {
         actions: const [ProfileSwitcher()],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12).withBarInset(context),
         children: [
           Card(
             child: Padding(
@@ -99,7 +101,9 @@ class CashflowScreen extends ConsumerWidget {
                         lowest,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: lowest < 0 ? Colors.red.shade700 : null,
+                          color: lowest < 0
+                              ? AppColors.of(context).expense
+                              : null,
                         ),
                       ),
                     ],
@@ -109,7 +113,7 @@ class CashflowScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         l.balanceGoesNegative,
-                        style: TextStyle(color: Colors.red.shade700),
+                        style: TextStyle(color: AppColors.of(context).expense),
                       ),
                     ),
                 ],
@@ -131,8 +135,8 @@ class CashflowScreen extends ConsumerWidget {
                 leading: Icon(
                   r.signed >= 0 ? Icons.south_west : Icons.north_east,
                   color: r.signed >= 0
-                      ? Colors.green.shade700
-                      : Colors.red.shade700,
+                      ? AppColors.of(context).income
+                      : AppColors.of(context).expense,
                 ),
                 title: Text(r.title),
                 subtitle: Text(df.format(r.date)),
@@ -146,8 +150,8 @@ class CashflowScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: r.signed >= 0
-                            ? Colors.green.shade700
-                            : Colors.red.shade700,
+                            ? AppColors.of(context).income
+                            : AppColors.of(context).expense,
                       ),
                     ),
                     MoneyText(
@@ -155,7 +159,7 @@ class CashflowScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 12,
                         color: r.balance < 0
-                            ? Colors.red.shade700
+                            ? AppColors.of(context).expense
                             : Theme.of(context).hintColor,
                       ),
                     ),

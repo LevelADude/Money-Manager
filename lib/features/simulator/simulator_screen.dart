@@ -7,6 +7,8 @@ import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../statistics/statistics_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/responsive.dart';
 
 /// Was-wäre-wenn: spielt verschiedene Einnahmen/Ausgaben-Szenarien durch und
 /// zeigt die Vermögensentwicklung über 12 Monate.
@@ -59,7 +61,7 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.moreSimulator)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16).withBarInset(context),
         children: [
           Text(l.simulatorIntro),
           const SizedBox(height: 16),
@@ -114,8 +116,8 @@ class _SimulatorScreenState extends ConsumerState<SimulatorScreen> {
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                           color: inOneYear >= current
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
+                              ? AppColors.of(context).income
+                              : AppColors.of(context).expense,
                         ),
                       ),
                     ],

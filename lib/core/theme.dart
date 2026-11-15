@@ -267,6 +267,7 @@ class AppTheme {
 
     final base = ThemeData(
       useMaterial3: true,
+      fontFamily: 'Inter',
       brightness: t.brightness,
       colorScheme: scheme,
     );

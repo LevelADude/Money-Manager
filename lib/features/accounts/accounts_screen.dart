@@ -24,6 +24,7 @@ import '../sharing/account_member_providers.dart';
 import '../transactions/person_filter.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
+import '../../core/theme.dart';
 
 /// "Konten"-Tab: Gesamtvermögen + Konten, nach Kontokategorie gruppiert
 /// (mit Summe je Kategorie).
@@ -280,7 +281,9 @@ class _NetWorthCard extends ConsumerWidget {
               primary,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: positive ? Colors.green.shade700 : Colors.red.shade700,
+                color: positive
+                    ? AppColors.of(context).income
+                    : AppColors.of(context).expense,
               ),
             ),
             ReservedHint(
@@ -330,7 +333,9 @@ class _PerPersonCard extends StatelessWidget {
                       e.cents,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: e.cents < 0 ? Colors.red.shade700 : null,
+                        color: e.cents < 0
+                            ? AppColors.of(context).expense
+                            : null,
                       ),
                     ),
                   ],
@@ -395,7 +400,9 @@ class _CustomSumsCard extends StatelessWidget {
                         e.cents,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: e.cents < 0 ? Colors.red.shade700 : null,
+                          color: e.cents < 0
+                              ? AppColors.of(context).expense
+                              : null,
                         ),
                       ),
                     ],
@@ -438,7 +445,7 @@ class _CategoryHeader extends StatelessWidget {
             cents,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: negative ? Colors.red.shade700 : null,
+              color: negative ? AppColors.of(context).expense : null,
             ),
           ),
         ],
@@ -505,7 +512,7 @@ class _AccountTile extends ConsumerWidget {
                 child: Icon(
                   Icons.warning_amber_rounded,
                   size: 18,
-                  color: Colors.red.shade700,
+                  color: AppColors.of(context).expense,
                 ),
               ),
             ),
@@ -518,7 +525,7 @@ class _AccountTile extends ConsumerWidget {
                 currency: currency,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: negative ? Colors.red.shade700 : null,
+                  color: negative ? AppColors.of(context).expense : null,
                 ),
               ),
               _CompactReservedHint(

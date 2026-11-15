@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/archive_repository.dart';
 import '../../l10n/app_localizations.dart';
 import 'archive_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Richtet das private GitHub-Archiv-Repo ein: Repo-URL + Token eingeben,
 /// Schlüssel wird erzeugt und (einmalig) zum Sichern angezeigt. Token & Schlüssel
@@ -45,7 +46,7 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.archiveSetupTitle)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16).withBarInset(context),
         children: [
           if (status != null && status.configured)
             Card(

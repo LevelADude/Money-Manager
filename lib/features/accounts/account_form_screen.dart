@@ -11,6 +11,7 @@ import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
 import '../sharing/account_member_providers.dart';
 import 'account_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Konto anlegen oder bearbeiten.
 class AccountFormScreen extends ConsumerStatefulWidget {
@@ -149,7 +150,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         title: Text(widget.isEditing ? l.editAccount : l.newAccount),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16).withBarInset(context),
         child: Form(
           key: _formKey,
           child: Column(
