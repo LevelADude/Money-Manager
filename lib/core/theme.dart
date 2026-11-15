@@ -56,6 +56,25 @@ class AppColors extends ThemeExtension<AppColors> {
   static AppColors of(BuildContext context) =>
       Theme.of(context).extension<AppColors>()!;
 
+  /// Farbreihe für Diagramme mit mehreren Kategorien, aus der Palette
+  /// abgeleitet (Akzent, Messing, Ausgaben und deren gedämpfte Stufen). Bei
+  /// mehr Einträgen als Farben wird von vorn begonnen.
+  static List<Color> chartSeries(BuildContext context) {
+    final c = of(context);
+    final s = Theme.of(context).colorScheme;
+    Color mix(Color a, Color b, double t) => Color.lerp(a, b, t)!;
+    return [
+      s.primary,
+      c.brass,
+      mix(s.primary, c.card, .5),
+      c.expense,
+      s.outline,
+      mix(c.brass, c.card, .5),
+      mix(c.expense, c.card, .5),
+      mix(s.primary, s.onSurface, .5),
+    ];
+  }
+
   @override
   AppColors copyWith() => this;
 

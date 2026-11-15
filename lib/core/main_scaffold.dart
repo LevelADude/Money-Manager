@@ -104,7 +104,23 @@ class _MainScaffoldState extends ConsumerState<MainScaffold>
     final onAdd = canAdd ? () => context.go('/transactions/new') : null;
 
     // Auf breiten Screens den Inhalt zentriert + begrenzt darstellen.
-    final content = MaxWidthBox(child: shell);
+    // Die Glas-Leiste auch als `viewPadding` melden: verschachtelte Scaffolds
+    // richten schwebende Knöpfe und Snackbars daran aus (nicht an `padding`)
+    // und lägen sonst hinter der Leiste.
+    final content = MaxWidthBox(
+      child: Builder(
+        builder: (context) {
+          final mq = MediaQuery.of(context);
+          if (mq.viewPadding.bottom >= mq.padding.bottom) return shell;
+          return MediaQuery(
+            data: mq.copyWith(
+              viewPadding: mq.viewPadding.copyWith(bottom: mq.padding.bottom),
+            ),
+            child: shell,
+          );
+        },
+      ),
+    );
 
     if (context.isWide) {
       return Scaffold(
