@@ -1,260 +1,150 @@
 // Design-Vorschau ohne Login und ohne Supabase.
 //
-// Zeigt das echte Theme und die echte Glas-Navigation mit Beispielinhalt, um
-// Paletten und Bausteine im Browser zu prüfen:
+// Zeigt die echte Navigation und die vier echten Hauptscreens (Konten,
+// Buchungen, Statistik, Mehr) mit Beispieldaten, um Paletten und Layout im
+// Browser zu prüfen:
 //   flutter run -d web-server --web-port 5175 -t lib/dev_preview.dart
+// Palette über den Knopf am linken Rand oder per URL: `?p=sage|emerald|dark`.
 // Wird von der App nicht importiert und landet daher nicht im Release-Build.
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/main_scaffold.dart';
 import 'core/theme.dart';
-import 'shared/responsive.dart';
+import 'dev_preview_data.dart';
+import 'features/accounts/accounts_screen.dart';
+import 'features/more/more_screen.dart';
+import 'features/settings/settings_providers.dart';
+import 'features/statistics/statistics_screen.dart';
+import 'features/transactions/all_transactions_screen.dart';
+import 'features/transactions/person_filter.dart';
+import 'l10n/app_localizations.dart';
+import 'shared/glass.dart';
 
-void main() => runApp(const _PreviewApp());
-
-class _PreviewApp extends StatefulWidget {
-  const _PreviewApp();
-
-  @override
-  State<_PreviewApp> createState() => _PreviewAppState();
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('de', null);
+  final prefs = await SharedPreferences.getInstance();
+  runApp(
+    ProviderScope(
+      overrides: previewOverrides(prefs),
+      child: const PreviewApp(),
+    ),
+  );
 }
 
-class _PreviewAppState extends State<_PreviewApp> {
-  AppPalette _palette = AppPalette.sage;
-  int _tab = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.themeFor(_palette),
-      home: Builder(
-        builder: (context) {
-          const items = [
-            (
-              icon: Icons.account_balance_wallet_outlined,
-              active: Icons.account_balance_wallet,
-              label: 'Konten',
-            ),
-            (
-              icon: Icons.receipt_long_outlined,
-              active: Icons.receipt_long,
-              label: 'Buchungen',
-            ),
-            (
-              icon: Icons.bar_chart_outlined,
-              active: Icons.bar_chart,
-              label: 'Statistik',
-            ),
-            (icon: Icons.menu, active: Icons.menu, label: 'Mehr'),
-          ];
-          final page = _SamplePage(
-            title: items[_tab].label,
-            palette: _palette,
-            onPalette: (p) => setState(() => _palette = p),
-          );
-          if (context.isWide) {
-            return Scaffold(
-              body: SafeArea(
-                child: Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 14, 4, 14),
-                      child: GlassRail(
-                        items: items,
-                        current: _tab,
-                        onSelect: (i) => setState(() => _tab = i),
-                        onAdd: () {},
-                        addLabel: 'Buchung',
-                      ),
-                    ),
-                    Expanded(child: MaxWidthBox(child: page)),
-                  ],
-                ),
-              ),
-            );
-          }
-          return Scaffold(
-            body: page,
-            bottomNavigationBar: SafeArea(
-              minimum: const EdgeInsets.fromLTRB(14, 8, 14, 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GlassTabBar(
-                      items: items,
-                      current: _tab,
-                      onSelect: (i) => setState(() => _tab = i),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  GlassAddButton(onTap: () {}, label: 'Buchung'),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _SamplePage extends StatelessWidget {
-  const _SamplePage({
-    required this.title,
-    required this.palette,
-    required this.onPalette,
-  });
-
-  final String title;
-  final AppPalette palette;
-  final ValueChanged<AppPalette> onPalette;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context);
-    final c = AppColors.of(context);
-    Widget row(
-      String emoji,
-      String name,
-      String sub,
-      String amount,
-      bool pos,
-    ) => ListTile(
-      leading: CircleAvatar(
-        backgroundColor: c.chip,
-        child: Text(emoji, style: const TextStyle(fontSize: 20)),
-      ),
-      title: Text(name),
-      subtitle: Text(sub),
-      trailing: Text(
-        amount,
-        style: t.textTheme.titleMedium?.copyWith(color: pos ? c.income : null),
-      ),
-      onTap: () {},
-    );
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.swap_vert)),
+/// Router der Vorschau: die echte Shell mit den vier Hauptscreens. Alle
+/// anderen Ziele zeigen nur ihren Pfad, damit Antippen nichts kaputt macht.
+GoRouter buildPreviewRouter({String initialLocation = '/'}) {
+  StatefulShellBranch branch(String path, Widget screen) => StatefulShellBranch(
+    routes: [GoRoute(path: path, builder: (_, _) => screen)],
+  );
+  return GoRouter(
+    initialLocation: initialLocation,
+    routes: [
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) => MainScaffold(shell: shell),
+        branches: [
+          branch('/', const AccountsScreen()),
+          branch('/transactions', const AllTransactionsScreen()),
+          branch('/statistics', const StatisticsScreen()),
+          branch('/more', const MoreScreen()),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showModalBottomSheet<void>(
-          context: context,
-          useRootNavigator: true,
-          builder: (_) => const SizedBox(
-            height: 220,
-            child: Center(child: Text('Beispiel-Sheet')),
-          ),
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('Konto'),
+    ],
+    errorBuilder: (context, state) => Scaffold(
+      appBar: AppBar(
+        leading: BackButton(onPressed: () => context.go('/')),
+        title: const Text('Vorschau'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 96),
+      body: Center(child: Text('Nicht Teil der Vorschau: ${state.uri}')),
+    ),
+  );
+}
+
+class PreviewApp extends ConsumerStatefulWidget {
+  const PreviewApp({super.key, this.initialLocation = '/', this.palette});
+
+  final String initialLocation;
+
+  /// Feste Palette (Tests); sonst aus `?p=` bzw. per Knopf umschaltbar.
+  final AppPalette? palette;
+
+  @override
+  ConsumerState<PreviewApp> createState() => _PreviewAppState();
+}
+
+class _PreviewAppState extends ConsumerState<PreviewApp> {
+  late final GoRouter _router = buildPreviewRouter(
+    initialLocation: widget.initialLocation,
+  );
+  static const _palettes = [
+    AppPalette.sage,
+    AppPalette.emerald,
+    AppPalette.dark,
+  ];
+  late AppPalette _palette =
+      widget.palette ??
+      _palettes.firstWhere(
+        (p) => p.name == Uri.base.queryParameters['p'],
+        orElse: () => AppPalette.sage,
+      );
+
+  @override
+  void initState() {
+    super.initState();
+    // Gesamtansicht („Alle Personen"), damit auch „Vermögen je Person" und
+    // fremde Konten zu sehen sind; `?person=me` zeigt nur die eigenen.
+    if (Uri.base.queryParameters['person'] != 'me') {
+      Future.microtask(() => ref.read(personFilterProvider.notifier).set(null));
+    }
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = ref.watch(settingsProvider.select((s) => s.localeCode));
+    return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.themeFor(_palette),
+      locale: Locale(locale),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      routerConfig: _router,
+      builder: (context, child) => Stack(
         children: [
-          SegmentedButton<AppPalette>(
-            segments: const [
-              ButtonSegment(value: AppPalette.sage, label: Text('Salbei')),
-              ButtonSegment(value: AppPalette.emerald, label: Text('Smaragd')),
-              ButtonSegment(value: AppPalette.dark, label: Text('Dunkel')),
-            ],
-            selected: {palette},
-            onSelectionChanged: (s) => onPalette(s.first),
-          ),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Gesamtvermögen',
-                    style: t.textTheme.bodySmall?.copyWith(
-                      color: t.colorScheme.onSurfaceVariant,
+          ?child,
+          if (widget.palette == null)
+            Align(
+              alignment: const Alignment(-1, .5),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Glass(
+                  borderRadius: BorderRadius.circular(20),
+                  child: PressScale(
+                    shape: const CircleBorder(),
+                    onTap: () => setState(
+                      () => _palette =
+                          _palettes[(_palettes.indexOf(_palette) + 1) %
+                              _palettes.length],
                     ),
-                  ),
-                  Text('12.480,35 €', style: t.textTheme.displaySmall),
-                  const SizedBox(height: 10),
-                  const LinearProgressIndicator(value: .68),
-                ],
-              ),
-            ),
-          ),
-          Card(
-            child: Column(
-              children: [
-                row('🏦', 'Girokonto', 'Hauptkonto', '2.310,20 €', false),
-                const Divider(),
-                row('💰', 'Sparkonto', 'Tagesgeld', '9.400,00 €', false),
-                const Divider(),
-                row('💼', 'Gehalt November', 'Einkommen', '+2.950,00 €', true),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilledButton(onPressed: () {}, child: const Text('Speichern')),
-              OutlinedButton(onPressed: () {}, child: const Text('Abbrechen')),
-              TextButton(onPressed: () {}, child: const Text('Mehr')),
-              FilterChip(
-                label: const Text('Ausgaben'),
-                selected: true,
-                onSelected: (_) {},
-              ),
-              FilterChip(label: const Text('Einnahmen'), onSelected: (_) {}),
-              ElevatedButton(
-                onPressed: () => showDialog<void>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Buchung löschen?'),
-                    content: const Text(
-                      'Das lässt sich nicht rückgängig machen.',
+                    child: const Tooltip(
+                      message: 'Palette wechseln',
+                      child: SizedBox.square(
+                        dimension: 40,
+                        child: Icon(Icons.palette_outlined, size: 20),
+                      ),
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Abbrechen'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Löschen'),
-                      ),
-                    ],
                   ),
                 ),
-                child: const Text('Dialog'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const TextField(
-            decoration: InputDecoration(
-              labelText: 'Notiz',
-              hintText: 'Optional',
-            ),
-          ),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            value: true,
-            onChanged: (_) {},
-            title: const Text('Beträge verbergen'),
-          ),
-          for (var i = 0; i < 6; i++)
-            Card(
-              child: row(
-                '🛒',
-                'REWE City',
-                'Lebensmittel · Girokonto',
-                '−42,18 €',
-                false,
               ),
             ),
         ],
