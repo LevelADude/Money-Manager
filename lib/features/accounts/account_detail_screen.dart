@@ -17,7 +17,7 @@ import '../settings/settings_providers.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Detailansicht eines Kontos: Saldo (verfügbar/gesamt), Reservierungen und
 /// Buchungen.
@@ -59,39 +59,38 @@ class AccountDetailScreen extends ConsumerWidget {
         creditLimitCents: account?.creditLimitCents,
         overReserved: overReserved,
       ),
-      const Divider(height: 1),
-      _ReservationsHeader(
-        count: reservations.length,
-        onAdd: canManage
-            ? () => context.go('/account/$accountId/reservation/new')
-            : null,
+      const SizedBox(height: Bento.gap),
+      BentoList(
+        header: _ReservationsHeader(
+          count: reservations.length,
+          onAdd: canManage
+              ? () => context.go('/account/$accountId/reservation/new')
+              : null,
+        ),
+        children: [
+          for (final r in reservations)
+            ReservationTile(
+              reservation: r,
+              currency: currency,
+              canManage: canManage,
+              onEdit: () =>
+                  context.go('/account/$accountId/reservation/${r.id}'),
+            ),
+          if (reservations.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                l.noReservations,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+            ),
+        ],
       ),
-      for (final r in reservations)
-        ReservationTile(
-          reservation: r,
-          currency: currency,
-          canManage: canManage,
-          onEdit: () => context.go('/account/$accountId/reservation/${r.id}'),
-        ),
-      if (reservations.isEmpty)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Text(
-            l.noReservations,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).hintColor),
-          ),
-        ),
-      const Divider(height: 1),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: Text(
-          l.navTransactions,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
+        padding: const EdgeInsets.only(top: 20),
+        child: BentoSectionHeader(label: l.navTransactions),
       ),
       if (txs.isEmpty)
         Padding(
@@ -117,7 +116,7 @@ class AccountDetailScreen extends ConsumerWidget {
         label: Text(l.transactionFab),
       ),
       body: ListView.builder(
-        padding: EdgeInsets.only(bottom: 88).withBarInset(context),
+        padding: BentoListView.paddingOf(context, fabSpace: true),
         itemCount: head.length + txs.length,
         itemBuilder: (context, index) {
           if (index < head.length) return head[index];
@@ -133,11 +132,7 @@ class AccountDetailScreen extends ConsumerWidget {
             authorName: memberNames[tx.createdBy],
             onTap: () => context.go('/account/$accountId/tx/${tx.id}'),
           );
-          if (i == 0) return tile;
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [const Divider(height: 1), tile],
-          );
+          return BentoSegment(index: i, count: txs.length, child: tile);
         },
       ),
     );
@@ -171,11 +166,11 @@ class _BalanceHeader extends ConsumerWidget {
         ? l.availableBalance
         : l.balance;
     final limit = creditLimitCents;
-    return Padding(
+    return BentoTile(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelLarge),
+          Text(label, style: Bento.label(context)),
           const SizedBox(height: 4),
           MoneyText(
             primary,

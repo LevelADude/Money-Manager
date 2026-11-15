@@ -42,7 +42,7 @@ class ReservationTile extends ConsumerWidget {
         : days < 0
         ? AppColors.of(context).expense
         : days <= 3
-        ? Colors.orange.shade800
+        ? AppColors.of(context).warning
         : null;
 
     final parts = <String>[

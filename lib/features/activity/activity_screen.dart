@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../profile/profile_providers.dart';
 import '../transactions/transaction_providers.dart';
+import '../../shared/bento.dart';
 
 /// Aktivitäts-Feed: wer hat welche Buchung wann angelegt/geändert/gelöscht.
 class ActivityScreen extends ConsumerWidget {
@@ -50,9 +51,8 @@ class ActivityScreen extends ConsumerWidget {
                 ],
               );
             }
-            return ListView.separated(
+            return BentoListView(
               itemCount: items.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (ctx, i) {
                 final e = items[i];
                 final title = (e.data?['title'] as String?)?.trim();

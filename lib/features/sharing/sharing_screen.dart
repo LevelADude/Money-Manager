@@ -6,7 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../profile/profile_providers.dart';
 import 'access_grant_providers.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// „Freigaben": legt fest, wer die eigenen Finanzen ansehen/verwalten darf,
 /// und zeigt, wer dem aktuellen Nutzer Zugriff gegeben hat.
@@ -46,7 +46,7 @@ class SharingScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.sharingTitle)),
       body: ListView(
-        padding: EdgeInsets.all(12).withBarInset(context),
+        padding: BentoListView.paddingOf(context),
         children: [
           Card(
             child: Padding(

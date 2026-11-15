@@ -13,7 +13,7 @@ import '../reservations/reservation_providers.dart';
 import '../transactions/person_filter.dart';
 import 'cashflow_projection.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Cashflow-Kalender: prognostizierter Kontostand anhand der kommenden
 /// Daueraufträge und fälliger Reservierungen (nächste 60 Tage), für dieselbe
@@ -70,7 +70,7 @@ class CashflowScreen extends ConsumerWidget {
         actions: const [ProfileSwitcher()],
       ),
       body: ListView(
-        padding: EdgeInsets.all(12).withBarInset(context),
+        padding: BentoListView.paddingOf(context),
         children: [
           Card(
             child: Padding(

@@ -11,7 +11,7 @@ import '../accounts/account_providers.dart';
 import '../profile/profile_providers.dart';
 import '../transactions/transaction_providers.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// „Wer schuldet wem": teilt die Ausgaben des laufenden Monats gleichmäßig auf
 /// alle Personen auf und schlägt einen minimalen Ausgleich vor.
@@ -91,7 +91,7 @@ class SettleScreen extends ConsumerWidget {
               ),
             )
           : ListView(
-              padding: EdgeInsets.all(12).withBarInset(context),
+              padding: BentoListView.paddingOf(context),
               children: [
                 Card(
                   child: Padding(

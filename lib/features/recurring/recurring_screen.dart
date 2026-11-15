@@ -12,6 +12,7 @@ import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import 'recurring_providers.dart';
 import '../../core/theme.dart';
+import '../../shared/bento.dart';
 
 /// Liste der Daueraufträge (wiederkehrende Buchungen).
 class RecurringScreen extends ConsumerWidget {
@@ -46,9 +47,9 @@ class RecurringScreen extends ConsumerWidget {
               ),
             );
           }
-          return ListView.separated(
+          return BentoListView(
             itemCount: rules.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            fabSpace: true,
             itemBuilder: (_, i) {
               final r = rules[i];
               final income = r.type == TransactionType.income;

@@ -9,7 +9,7 @@ import '../../shared/money.dart';
 import '../categories/category_providers.dart';
 import 'budget_providers.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Monatsbudgets je Ausgabe-Kategorie verwalten + Fortschritt anzeigen.
 class BudgetsScreen extends ConsumerWidget {
@@ -264,7 +264,7 @@ class BudgetsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context).moreBudgets)),
       body: ListView(
-        padding: EdgeInsets.all(12).withBarInset(context),
+        padding: BentoListView.paddingOf(context),
         children: [
           _OverallBudgetCard(
             budget: overall,
@@ -334,7 +334,9 @@ class _OverallBudgetCard extends StatelessWidget {
     final over = hasBudget && remaining < 0;
     final color = over
         ? AppColors.of(context).expense
-        : (pct >= 90 ? Colors.orange.shade700 : AppColors.of(context).income);
+        : (pct >= 90
+              ? AppColors.of(context).warning
+              : AppColors.of(context).income);
     final perDay = (!over && daysLeft > 0) ? remaining ~/ daysLeft : 0;
     final periodLabel = period == BudgetPeriod.week ? l.thisWeek : l.thisMonth;
 
@@ -528,7 +530,9 @@ class _BudgetTile extends StatelessWidget {
         : 0;
     final color = over
         ? AppColors.of(context).expense
-        : (pct >= 90 ? Colors.orange.shade700 : AppColors.of(context).income);
+        : (pct >= 90
+              ? AppColors.of(context).warning
+              : AppColors.of(context).income);
 
     return Card(
       child: Padding(
@@ -586,7 +590,7 @@ class _BudgetTile extends StatelessWidget {
                     style: TextStyle(
                       color: over
                           ? AppColors.of(context).expense
-                          : (pct >= 90 ? Colors.orange.shade800 : null),
+                          : (pct >= 90 ? AppColors.of(context).warning : null),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

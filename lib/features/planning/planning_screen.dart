@@ -9,7 +9,7 @@ import '../../shared/money_text.dart';
 import '../recurring/recurring_providers.dart';
 import '../transactions/transaction_providers.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Planungs-Übersicht: „Verfügbar bis Monatsende" + Fixkosten (aus Daueraufträgen).
 class PlanningScreen extends ConsumerWidget {
@@ -91,7 +91,7 @@ class PlanningScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.morePlanning)),
       body: ListView(
-        padding: EdgeInsets.all(12).withBarInset(context),
+        padding: BentoListView.paddingOf(context),
         children: [
           Card(
             child: Padding(

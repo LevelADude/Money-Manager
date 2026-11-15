@@ -15,8 +15,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/main_scaffold.dart';
 import 'core/theme.dart';
 import 'dev_preview_data.dart';
+import 'features/accounts/account_detail_screen.dart';
+import 'features/accounts/account_groups_screen.dart';
 import 'features/accounts/accounts_screen.dart';
 import 'features/more/more_screen.dart';
+import 'features/projects/projects_screen.dart';
+import 'features/reservations/reservations_screen.dart';
+import 'features/search/search_screen.dart';
+import 'features/settings/settings_screen.dart';
 import 'features/settings/settings_providers.dart';
 import 'features/statistics/statistics_screen.dart';
 import 'features/transactions/all_transactions_screen.dart';
@@ -39,19 +45,38 @@ Future<void> main() async {
 /// Router der Vorschau: die echte Shell mit den vier Hauptscreens. Alle
 /// anderen Ziele zeigen nur ihren Pfad, damit Antippen nichts kaputt macht.
 GoRouter buildPreviewRouter({String initialLocation = '/'}) {
-  StatefulShellBranch branch(String path, Widget screen) => StatefulShellBranch(
-    routes: [GoRoute(path: path, builder: (_, _) => screen)],
+  StatefulShellBranch branch(
+    String path,
+    Widget screen, [
+    List<RouteBase> sub = const [],
+  ]) => StatefulShellBranch(
+    routes: [GoRoute(path: path, builder: (_, _) => screen, routes: sub)],
   );
+  GoRoute page(String path, Widget screen) =>
+      GoRoute(path: path, builder: (_, _) => screen);
   return GoRouter(
     initialLocation: initialLocation,
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => MainScaffold(shell: shell),
         branches: [
-          branch('/', const AccountsScreen()),
+          branch('/', const AccountsScreen(), [
+            page('account/groups', const AccountGroupsScreen()),
+            GoRoute(
+              path: 'account/:id',
+              builder: (_, state) =>
+                  AccountDetailScreen(accountId: state.pathParameters['id']!),
+            ),
+          ]),
           branch('/transactions', const AllTransactionsScreen()),
           branch('/statistics', const StatisticsScreen()),
-          branch('/more', const MoreScreen()),
+          // Unterseiten, die mit den Beispieldaten auskommen.
+          branch('/more', const MoreScreen(), [
+            page('search', const SearchScreen()),
+            page('projects', const ProjectsScreen()),
+            page('reservations', const ReservationsScreen()),
+            page('settings', const SettingsScreen()),
+          ]),
         ],
       ),
     ],

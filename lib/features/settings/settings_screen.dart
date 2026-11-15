@@ -10,6 +10,7 @@ import '../currency/currency_providers.dart';
 import '../onboarding/connection_editor.dart';
 import 'settings_providers.dart';
 import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Einstellungen: Sprache, Erscheinungsbild (Farbpalette), Privatsphäre, Währung.
 class SettingsScreen extends ConsumerWidget {
@@ -32,7 +33,7 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(l.settingsTitle)),
       body: ListView(
         padding: EdgeInsets.all(16).withBarInset(context),
-        children: [
+        children: bentoSections([
           header(l.language),
           const SizedBox(height: 8),
           SegmentedButton<String>(
@@ -208,7 +209,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => showConnectionEditor(context, ref),
           ),
-        ],
+        ]),
       ),
     );
   }

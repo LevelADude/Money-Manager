@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Komplettes Backup aller Daten als JSON (Export) sowie Wiederherstellung
 /// (Import) – z. B. zur Sicherung oder zum Umzug in ein frisches Projekt.
@@ -165,7 +166,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       appBar: AppBar(title: Text(l.moreBackup)),
       body: ListView(
         padding: EdgeInsets.all(16).withBarInset(context),
-        children: [
+        children: bentoSections([
           Text(l.backupSection, style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 4),
           Text(l.backupDesc),
@@ -209,7 +210,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
-        ],
+        ]),
       ),
     );
   }

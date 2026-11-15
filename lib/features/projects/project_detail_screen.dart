@@ -11,7 +11,7 @@ import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../transactions/transaction_providers.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Detailauswertung eines Projekts/einer Reise (alle Buchungen mit dem Tag).
 class ProjectDetailScreen extends ConsumerWidget {
@@ -42,7 +42,7 @@ class ProjectDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(tag)),
       body: ListView(
-        padding: EdgeInsets.all(12).withBarInset(context),
+        padding: BentoListView.paddingOf(context),
         children: [
           Card(
             child: Padding(

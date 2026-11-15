@@ -504,3 +504,169 @@ class BentoColumns extends StatelessWidget {
     );
   }
 }
+
+/// Ein Abschnitt einer durchgehenden Listen-Kachel: die erste Zeile rundet
+/// oben ab, die letzte unten, dazwischen trennen Haarlinien. So sieht eine
+/// lange, träge gebaute Liste aus wie eine einzige Kachel, ohne dass alle
+/// Zeilen auf einmal gebaut werden müssen.
+class BentoSegment extends StatelessWidget {
+  const BentoSegment({
+    super.key,
+    required this.index,
+    required this.count,
+    required this.child,
+  });
+
+  final int index;
+  final int count;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    const r = Radius.circular(Bento.radius);
+    final first = index == 0;
+    final last = index == count - 1;
+    final radius = BorderRadius.vertical(
+      top: first ? r : Radius.zero,
+      bottom: last ? r : Radius.zero,
+    );
+    return CustomPaint(
+      foregroundPainter: _SegmentEdgePainter(
+        color: c.hairline,
+        first: first,
+        last: last,
+      ),
+      child: Material(
+        color: c.card,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: radius),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Zeichnet den Haarlinien-Rand eines Abschnitts: außen den Kachelrand, oben
+/// (außer bei der ersten Zeile) die Trennlinie.
+class _SegmentEdgePainter extends CustomPainter {
+  const _SegmentEdgePainter({
+    required this.color,
+    required this.first,
+    required this.last,
+  });
+
+  final Color color;
+  final bool first;
+  final bool last;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    const r = Radius.circular(Bento.radius);
+    // Der Kachelrand als Ganzes, über die offenen Seiten hinaus verlängert
+    // und auf den Abschnitt beschnitten: so bleiben nur die Außenkanten.
+    final outline = RRect.fromRectAndCorners(
+      Rect.fromLTRB(
+        .5,
+        first ? .5 : -Bento.radius,
+        size.width - .5,
+        last ? size.height - .5 : size.height + Bento.radius,
+      ),
+      topLeft: r,
+      topRight: r,
+      bottomLeft: r,
+      bottomRight: r,
+    );
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
+    canvas.drawRRect(outline, paint);
+    if (!first) {
+      canvas.drawLine(const Offset(0, .5), Offset(size.width, .5), paint);
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_SegmentEdgePainter old) =>
+      old.color != color || old.first != first || old.last != last;
+}
+
+/// Träge gebaute Liste, die als eine durchgehende Kachel erscheint. Ersatz für
+/// `ListView.separated` mit Trennlinien direkt auf dem Hintergrund.
+class BentoListView extends StatelessWidget {
+  const BentoListView({
+    super.key,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.fabSpace = false,
+    this.controller,
+  });
+
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+
+  /// Unten Platz für einen schwebenden Knopf lassen.
+  final bool fabSpace;
+  final ScrollController? controller;
+
+  /// Rand einer Kachel-Liste zum Bildschirm, inklusive Platz unter der
+  /// Glas-Leiste.
+  static EdgeInsets paddingOf(BuildContext context, {bool fabSpace = false}) =>
+      EdgeInsets.fromLTRB(
+        Bento.margin,
+        4,
+        Bento.margin,
+        (fabSpace ? 88 : 16) + MediaQuery.paddingOf(context).bottom,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      controller: controller,
+      padding: paddingOf(context, fabSpace: fabSpace),
+      itemCount: itemCount,
+      itemBuilder: (context, i) => BentoSegment(
+        index: i,
+        count: itemCount,
+        child: itemBuilder(context, i),
+      ),
+    );
+  }
+}
+
+/// Macht aus einer flachen Liste mit [Divider]n als Abschnittstrennern eine
+/// Folge von Kacheln: jeder Abschnitt wird eine Kachel, die Trenner entfallen.
+/// Für Einstellungs-artige Seiten, deren Inhalt bisher direkt auf dem
+/// Hintergrund lag. Listenzeilen darin sitzen bündig am Kachelrand.
+List<Widget> bentoSections(List<Widget> children, {double gap = Bento.gap}) {
+  final sections = <List<Widget>>[[]];
+  for (final child in children) {
+    if (child is Divider) {
+      if (sections.last.isNotEmpty) sections.add([]);
+    } else {
+      sections.last.add(child);
+    }
+  }
+  return [
+    for (final (i, section) in sections.indexed)
+      if (section.isNotEmpty)
+        Padding(
+          padding: EdgeInsets.only(top: i == 0 ? 0 : gap),
+          child: BentoTile(
+            padding: const EdgeInsets.all(16),
+            child: ListTileTheme.merge(
+              contentPadding: EdgeInsets.zero,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: section,
+              ),
+            ),
+          ),
+        ),
+  ];
+}

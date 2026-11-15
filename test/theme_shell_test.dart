@@ -41,6 +41,7 @@ void main() {
       expect(contrast(s.onPrimary, s.primary), greaterThan(4.5));
       expect(contrast(c.income, c.card), greaterThan(4.5));
       expect(contrast(c.expense, c.card), greaterThan(4.5));
+      expect(contrast(c.warning, c.card), greaterThan(4.5));
       expect(contrast(s.primary, s.primaryContainer), greaterThan(4.5));
     });
   }

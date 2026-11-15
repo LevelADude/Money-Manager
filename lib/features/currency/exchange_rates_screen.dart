@@ -6,7 +6,7 @@ import '../../shared/money.dart';
 import '../settings/settings_providers.dart';
 import 'currency_picker.dart';
 import 'currency_providers.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Wechselkurse verwalten: wie viele Einheiten der Hauptwährung 1 Einheit einer
 /// Fremdwährung wert ist (z. B. 1 USD = 0,92 EUR). Nur eigene Währungen/Kurse;
@@ -213,7 +213,7 @@ class ExchangeRatesScreen extends ConsumerWidget {
         label: Text(l.addCurrency),
       ),
       body: ListView(
-        padding: EdgeInsets.all(12).withBarInset(context),
+        padding: BentoListView.paddingOf(context, fabSpace: true),
         children: [
           Card(
             child: ListTile(

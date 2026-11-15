@@ -12,7 +12,7 @@ import '../accounts/account_providers.dart';
 import '../archive/archive_providers.dart';
 import '../transactions/transaction_providers.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Schulden-/Kredit-Tracker: Restschuld + Verlauf je Verbindlichkeits-Konto
 /// (Kreditkarte / Kredit), inkl. Kreditrahmen-Auslastung.
@@ -47,7 +47,7 @@ class DebtsScreen extends ConsumerWidget {
               ),
             )
           : ListView(
-              padding: EdgeInsets.all(12).withBarInset(context),
+              padding: BentoListView.paddingOf(context),
               children: [
                 Card(
                   child: ListTile(
@@ -150,8 +150,8 @@ class _DebtCard extends StatelessWidget {
                   minHeight: 8,
                   color: utilization >= 0.9
                       ? AppColors.of(context).expense
-                      : Colors.orange.shade700,
-                  backgroundColor: Colors.orange.withValues(alpha: 0.15),
+                      : AppColors.of(context).warning,
+                  backgroundColor: AppColors.of(context).chip,
                 ),
               ),
               const SizedBox(height: 4),

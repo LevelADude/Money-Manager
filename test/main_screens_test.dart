@@ -175,4 +175,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('/more/budgets'), findsOneWidget);
   });
+
+  // Unterseiten aus Phase 3, die mit den Beispieldaten auskommen.
+  for (final route in [
+    '/account/giro',
+    '/account/groups',
+    '/more/search',
+    '/more/projects',
+    '/more/reservations',
+    '/more/settings',
+  ]) {
+    for (final size in _sizes.entries) {
+      testWidgets('Unterseite $route (${size.key}) baut ohne Fehler', (
+        tester,
+      ) async {
+        await _pump(tester, route, AppPalette.emerald, size.value);
+        expect(tester.takeException(), isNull);
+        _expectGlassOnlyInNavigation();
+      });
+    }
+  }
 }

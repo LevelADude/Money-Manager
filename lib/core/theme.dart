@@ -17,6 +17,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.income,
     required this.expense,
     required this.brass,
+    required this.warning,
     required this.glass,
     required this.glassThick,
     required this.glassEdge,
@@ -39,6 +40,10 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color income;
   final Color expense;
   final Color brass;
+
+  /// Warnstufe zwischen Einnahmen- und Ausgabenfarbe (Budget fast
+  /// ausgeschöpft, Fälligkeit naht); als Text auf Kacheln lesbar.
+  final Color warning;
 
   /// Glas der Bedienebene (Tableiste, Knöpfe) und die dickere Fassung für
   /// große Flächen (Seitenleiste, Sheets).
@@ -90,6 +95,7 @@ class AppColors extends ThemeExtension<AppColors> {
       income: c(income, other.income),
       expense: c(expense, other.expense),
       brass: c(brass, other.brass),
+      warning: c(warning, other.warning),
       glass: c(glass, other.glass),
       glassThick: c(glassThick, other.glassThick),
       glassEdge: c(glassEdge, other.glassEdge),
@@ -147,6 +153,7 @@ const _sage = _Tokens(
     income: Color(0xFF0B5C43),
     expense: Color(0xFFB8483A),
     brass: Color(0xFFB8935A),
+    warning: Color(0xFF7E5A12),
     glass: Color(0x6BF0F8F4),
     glassThick: Color(0xB3F0F8F4),
     glassEdge: Color(0xB3FFFFFF),
@@ -176,6 +183,7 @@ const _emerald = _Tokens(
     income: Color(0xFF7EF0C4),
     expense: Color(0xFFFFB9AB),
     brass: Color(0xFFE0C48A),
+    warning: Color(0xFFF0D59A),
     glass: Color(0x21FFFFFF),
     glassThick: Color(0xA309543E),
     glassEdge: Color(0x42FFFFFF),
@@ -205,6 +213,7 @@ const _dark = _Tokens(
     income: Color(0xFF5FD3A9),
     expense: Color(0xFFE38A7C),
     brass: Color(0xFFC4A46A),
+    warning: Color(0xFFD9B878),
     glass: Color(0x801C2C25),
     glassThick: Color(0xC214201B),
     glassEdge: Color(0x24FFFFFF),
@@ -376,7 +385,8 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: c.card,
         elevation: 0,
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        // Wie eine Bento-Kachel: bündig mit dem Seitenrand, 12 Abstand.
+        margin: const EdgeInsets.symmetric(vertical: 6),
         clipBehavior: Clip.antiAlias,
         shape: rounded(22, hair),
       ),
@@ -385,6 +395,11 @@ class AppTheme {
         iconColor: t.ink2,
         shape: rounded(16),
         subtitleTextStyle: textTheme.bodySmall?.copyWith(color: t.ink2),
+        // Beträge rechts so kräftig wie in den Bento-Zeilen.
+        leadingAndTrailingTextStyle: textTheme.bodyLarge?.copyWith(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(

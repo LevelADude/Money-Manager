@@ -9,7 +9,7 @@ import '../../shared/money_text.dart';
 import '../auth/auth_providers.dart';
 import 'account_providers.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Eigene Konten-Gruppen für Custom-Summen verwalten (anlegen / bearbeiten /
 /// löschen). Die Summen selbst erscheinen auf dem Konten-Tab unter dem
@@ -35,57 +35,65 @@ class AccountGroupsScreen extends ConsumerWidget {
               child: Center(child: Text(l.noGroupsYet)),
             )
           : ListView(
-              padding: EdgeInsets.symmetric(vertical: 8).withBarInset(context),
+              padding: BentoListView.paddingOf(context, fabSpace: true),
               children: [
-                for (final t in totals)
-                  ListTile(
-                    leading: const CircleAvatar(child: Icon(Icons.functions)),
-                    title: Text(t.group.name),
-                    subtitle: Text(
-                      l.groupAccountCount(t.group.accountIds.length),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        MoneyText(
-                          t.cents,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: t.cents < 0
-                                ? AppColors.of(context).expense
-                                : null,
-                          ),
+                BentoList(
+                  children: [
+                    for (final t in totals)
+                      ListTile(
+                        leading: const BentoGlyph(child: Icon(Icons.functions)),
+                        title: Text(t.group.name),
+                        subtitle: Text(
+                          l.groupAccountCount(t.group.accountIds.length),
                         ),
-                        PopupMenuButton<String>(
-                          onSelected: (v) {
-                            if (v == 'edit') {
-                              _showGroupEditor(context, ref, existing: t.group);
-                            } else if (v == 'delete') {
-                              _confirmDelete(context, ref, t.group);
-                            }
-                          },
-                          itemBuilder: (ctx) => [
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: ListTile(
-                                leading: const Icon(Icons.edit_outlined),
-                                title: Text(l.edit),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            MoneyText(
+                              t.cents,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: t.cents < 0
+                                    ? AppColors.of(context).expense
+                                    : null,
                               ),
                             ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: ListTile(
-                                leading: const Icon(Icons.delete_outline),
-                                title: Text(l.delete),
-                              ),
+                            PopupMenuButton<String>(
+                              onSelected: (v) {
+                                if (v == 'edit') {
+                                  _showGroupEditor(
+                                    context,
+                                    ref,
+                                    existing: t.group,
+                                  );
+                                } else if (v == 'delete') {
+                                  _confirmDelete(context, ref, t.group);
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: ListTile(
+                                    leading: const Icon(Icons.edit_outlined),
+                                    title: Text(l.edit),
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: ListTile(
+                                    leading: const Icon(Icons.delete_outline),
+                                    title: Text(l.delete),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                    onTap: () =>
-                        _showGroupEditor(context, ref, existing: t.group),
-                  ),
+                        onTap: () =>
+                            _showGroupEditor(context, ref, existing: t.group),
+                      ),
+                  ],
+                ),
               ],
             ),
     );

@@ -10,7 +10,7 @@ import '../../shared/money_text.dart';
 import '../transactions/transaction_providers.dart';
 import 'savings_providers.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Sparziele: Zielbetrag, Fortschritt, Beiträge ein-/auszahlen.
 class SavingsScreen extends ConsumerWidget {
@@ -262,7 +262,7 @@ class SavingsScreen extends ConsumerWidget {
             );
           }
           return ListView(
-            padding: EdgeInsets.all(12).withBarInset(context),
+            padding: BentoListView.paddingOf(context, fabSpace: true),
             children: [
               for (final g in goals)
                 _GoalCard(

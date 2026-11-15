@@ -11,6 +11,7 @@ import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../transactions/transaction_providers.dart';
+import '../../shared/bento.dart';
 
 /// Globale Suche über alle Buchungen (zeitraumübergreifend) und Konten.
 class SearchScreen extends ConsumerStatefulWidget {
@@ -83,52 +84,60 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           : (matchedAccounts.isEmpty && limitedTx.isEmpty)
           ? Center(child: Text(l.noResults))
           : ListView(
+              padding: BentoListView.paddingOf(context),
               children: [
                 if (matchedAccounts.isNotEmpty) ...[
                   _Header(l.navAccounts),
-                  for (final a in matchedAccounts)
-                    ListTile(
-                      leading: const Icon(
-                        Icons.account_balance_wallet_outlined,
-                      ),
-                      title: Text(a.name),
-                      onTap: () => context.go('/account/${a.id}'),
-                    ),
+                  BentoList(
+                    children: [
+                      for (final a in matchedAccounts)
+                        ListTile(
+                          leading: const Icon(
+                            Icons.account_balance_wallet_outlined,
+                          ),
+                          title: Text(a.name),
+                          onTap: () => context.go('/account/${a.id}'),
+                        ),
+                    ],
+                  ),
                 ],
                 if (limitedTx.isNotEmpty) ...[
                   _Header('${l.navTransactions} (${matchedTx.length})'),
-                  for (final t in limitedTx)
-                    ListTile(
-                      leading: Icon(switch (t.type) {
-                        TransactionType.income => Icons.south_west,
-                        TransactionType.expense => Icons.north_east,
-                        TransactionType.transfer => Icons.swap_horiz,
-                      }),
-                      title: Text(
-                        t.title.isEmpty
-                            ? (t.categoryId == null
-                                  ? l.transactionType(t.type)
-                                  : (catNames[t.categoryId] ??
-                                        l.transactionType(t.type)))
-                            : t.title,
-                      ),
-                      subtitle: Text(
-                        '${df.format(t.occurredOn)} · '
-                        '${accountNames[t.accountId] ?? ''}',
-                      ),
-                      trailing: MoneyText(
-                        t.amountCents,
-                        prefix: switch (t.type) {
-                          TransactionType.income => '+',
-                          TransactionType.expense => '-',
-                          TransactionType.transfer => '',
-                        },
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      onTap: () => context.go('/transactions/${t.id}'),
-                    ),
+                  BentoList(
+                    children: [
+                      for (final t in limitedTx)
+                        ListTile(
+                          leading: Icon(switch (t.type) {
+                            TransactionType.income => Icons.south_west,
+                            TransactionType.expense => Icons.north_east,
+                            TransactionType.transfer => Icons.swap_horiz,
+                          }),
+                          title: Text(
+                            t.title.isEmpty
+                                ? (t.categoryId == null
+                                      ? l.transactionType(t.type)
+                                      : (catNames[t.categoryId] ??
+                                            l.transactionType(t.type)))
+                                : t.title,
+                          ),
+                          subtitle: Text(
+                            '${df.format(t.occurredOn)} · '
+                            '${accountNames[t.accountId] ?? ''}',
+                          ),
+                          trailing: MoneyText(
+                            t.amountCents,
+                            prefix: switch (t.type) {
+                              TransactionType.income => '+',
+                              TransactionType.expense => '-',
+                              TransactionType.transfer => '',
+                            },
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          onTap: () => context.go('/transactions/${t.id}'),
+                        ),
+                    ],
+                  ),
                 ],
-                const SizedBox(height: 24),
               ],
             ),
     );
@@ -142,13 +151,8 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(
-        title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-      ),
+      padding: const EdgeInsets.only(top: 14),
+      child: BentoSectionHeader(label: title),
     );
   }
 }

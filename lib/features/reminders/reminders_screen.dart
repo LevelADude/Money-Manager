@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import 'reminders_providers.dart';
 import '../../core/theme.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// Erinnerungen: offene Hinweise (fällige Daueraufträge, Budget-Warnungen,
 /// Sparziel-Termine) + Erfassungs-Streak.
@@ -14,7 +14,7 @@ class RemindersScreen extends ConsumerWidget {
 
   Color _color(BuildContext context, ReminderLevel level) => switch (level) {
     ReminderLevel.alert => AppColors.of(context).expense,
-    ReminderLevel.warning => Colors.orange.shade800,
+    ReminderLevel.warning => AppColors.of(context).warning,
     ReminderLevel.info => Theme.of(context).colorScheme.primary,
   };
 
@@ -27,7 +27,7 @@ class RemindersScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.moreReminders)),
       body: ListView(
-        padding: EdgeInsets.all(12).withBarInset(context),
+        padding: BentoListView.paddingOf(context),
         children: [
           Card(
             child: ListTile(
