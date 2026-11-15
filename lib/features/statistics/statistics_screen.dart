@@ -6,7 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/app_transaction.dart';
+import '../../data/models/category.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
+import '../../shared/category_icons.dart';
 import '../../shared/data_refresh.dart';
 import '../../shared/mini_line_chart.dart';
 import '../../shared/money.dart';
@@ -19,26 +22,6 @@ import 'period_filter.dart';
 import 'statistics_providers.dart';
 import '../../core/theme.dart';
 import '../../shared/responsive.dart';
-
-/// Farbpalette für die Kategorie-Diagramme.
-const _palette = <Color>[
-  Color(0xFF4CAF50),
-  Color(0xFF2196F3),
-  Color(0xFFFF9800),
-  Color(0xFF9C27B0),
-  Color(0xFFF44336),
-  Color(0xFF00BCD4),
-  Color(0xFF8BC34A),
-  Color(0xFFFFC107),
-  Color(0xFF3F51B5),
-  Color(0xFFE91E63),
-  Color(0xFF009688),
-  Color(0xFF795548),
-  Color(0xFF607D8B),
-  Color(0xFFCDDC39),
-  Color(0xFFFF5722),
-  Color(0xFF673AB7),
-];
 
 /// Diagramm-Form für die Kategorie-Aufschlüsselung.
 enum _ChartStyle { donut, pie, bars }
@@ -173,6 +156,8 @@ class StatisticsScreen extends ConsumerWidget {
     String nameOf(String? id) =>
         id == null ? l.noCategory : (catNames[id] ?? l.noCategory);
 
+    final colors = AppColors.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l.navStatistics),
@@ -186,11 +171,17 @@ class StatisticsScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: EdgeInsets.all(12).withBarInset(context),
+        padding: const EdgeInsets.fromLTRB(
+          Bento.margin,
+          4,
+          Bento.margin,
+          16,
+        ).withBarInset(context),
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SegmentedButton<StatsPeriod>(
+              showSelectedIcon: false,
               segments: [
                 for (final p in StatsPeriod.values)
                   ButtonSegment(value: p, label: Text(_statsPeriodLabel(l, p))),
@@ -203,107 +194,102 @@ class StatisticsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           _PeriodNavBar(period: period, anchor: anchor),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _SummaryCard(
+          BentoGrid(
+            cells: [
+              BentoCell(
+                child: BentoStat(
                   label: l.income,
-                  cents: stats.incomeCents,
-                  color: AppColors.of(context).income,
+                  value: MoneyText(
+                    stats.incomeCents,
+                    style: TextStyle(color: colors.income),
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _SummaryCard(
+              BentoCell(
+                child: BentoStat(
                   label: l.expenses,
-                  cents: stats.expenseCents,
-                  color: AppColors.of(context).expense,
+                  value: MoneyText(stats.expenseCents),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _SummaryCard(
-            label: l.balanceInPeriod,
-            cents: stats.balanceCents,
-            color: stats.balanceCents >= 0
-                ? AppColors.of(context).income
-                : AppColors.of(context).expense,
-          ),
-          if (comparison.hasPrevious) ...[
-            const SizedBox(height: 8),
-            _ComparisonCard(
-              comparison: comparison,
-              prevLabel: _prevPeriodLabel(l, period),
-            ),
-          ],
-          const SizedBox(height: 16),
-          _NetWorthTrendCard(history: netWorthHistory),
-          const SizedBox(height: 12),
-          _MonthlyTrendCard(months: months),
-          const SizedBox(height: 12),
-          _HeatmapCard(
-            year: hmNow.year,
-            month: hmNow.month,
-            dailyByDate: dailyByDate,
-          ),
-          const SizedBox(height: 12),
-          _CategorySection(
-            title: l.expensesByCategory,
-            data: stats.expenseByCategory,
-            nameOf: nameOf,
-            onTapEntry: (catId) => _showDrilldown(context, ref, catId, true),
-          ),
-          const SizedBox(height: 12),
-          _CategorySection(
-            title: l.incomeByCategory,
-            data: stats.incomeByCategory,
-            nameOf: nameOf,
-            onTapEntry: (catId) => _showDrilldown(context, ref, catId, false),
-          ),
-          const SizedBox(height: 12),
-          _SankeyCard(
-            income: stats.incomeByCategory,
-            expense: stats.expenseByCategory,
-            nameOf: nameOf,
-          ),
-          const SizedBox(height: 12),
-          if (topExpenses.isNotEmpty) ...[
-            _TopExpensesCard(items: topExpenses),
-            const SizedBox(height: 12),
-          ],
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.account_balance_outlined),
-                  title: Text(l.netWorth),
-                  trailing: MoneyText(
+              BentoCell(
+                span: 2,
+                child: BentoStat(
+                  label: l.balanceInPeriod,
+                  value: MoneyText(
+                    stats.balanceCents,
+                    prefix: stats.balanceCents > 0 ? '+' : '',
+                    style: TextStyle(
+                      color: stats.balanceCents < 0 ? colors.expense : null,
+                    ),
+                  ),
+                ),
+              ),
+              BentoCell(
+                child: BentoStat(
+                  label: l.netWorth,
+                  value: MoneyText(
                     stats.netWorthCents,
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: stats.netWorthCents >= 0
-                          ? AppColors.of(context).income
-                          : AppColors.of(context).expense,
+                      color: stats.netWorthCents < 0 ? colors.expense : null,
                     ),
                   ),
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.trending_down),
-                  title: Text(l.totalDebt),
-                  trailing: MoneyText(
+              ),
+              BentoCell(
+                child: BentoStat(
+                  label: l.totalDebt,
+                  value: MoneyText(
                     stats.debtCents,
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: stats.debtCents > 0
-                          ? AppColors.of(context).expense
-                          : null,
+                      color: stats.debtCents > 0 ? colors.expense : null,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              if (comparison.hasPrevious)
+                BentoCell(
+                  span: 2,
+                  child: _ComparisonCard(
+                    comparison: comparison,
+                    prevLabel: _prevPeriodLabel(l, period),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: Bento.gap),
+          // Breit zwei Spalten, schmal dieselben Kacheln untereinander.
+          BentoColumns(
+            left: [
+              _NetWorthTrendCard(history: netWorthHistory),
+              _HeatmapCard(
+                year: hmNow.year,
+                month: hmNow.month,
+                dailyByDate: dailyByDate,
+              ),
+              _CategorySection(
+                title: l.expensesByCategory,
+                data: stats.expenseByCategory,
+                nameOf: nameOf,
+                onTapEntry: (catId) =>
+                    _showDrilldown(context, ref, catId, true),
+              ),
+              if (topExpenses.isNotEmpty) _TopExpensesCard(items: topExpenses),
+            ],
+            right: [
+              _MonthlyTrendCard(months: months),
+              _CategorySection(
+                title: l.incomeByCategory,
+                data: stats.incomeByCategory,
+                nameOf: nameOf,
+                onTapEntry: (catId) =>
+                    _showDrilldown(context, ref, catId, false),
+              ),
+              _SankeyCard(
+                income: stats.incomeByCategory,
+                expense: stats.expenseByCategory,
+                nameOf: nameOf,
+              ),
+            ],
           ),
           if (stats.txCount == 0)
             Padding(
@@ -390,41 +376,6 @@ class _PeriodNavBar extends ConsumerWidget {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.label,
-    required this.cents,
-    required this.color,
-  });
-
-  final String label;
-  final int cents;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: Theme.of(context).textTheme.labelMedium),
-            const SizedBox(height: 4),
-            MoneyText(
-              cents,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Vermögensverlauf: Liniendiagramm des Gesamtvermögens über 12 Monate.
 class _NetWorthTrendCard extends StatelessWidget {
   const _NetWorthTrendCard({required this.history});
@@ -438,7 +389,8 @@ class _NetWorthTrendCard extends StatelessWidget {
     final current = history.isEmpty ? 0 : history.last.cents;
     final first = history.isEmpty ? 0 : history.first.cents;
     final delta = current - first;
-    return Card(
+    return BentoTile(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -447,12 +399,7 @@ class _NetWorthTrendCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    l.netWorthTrend12,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: Text(l.netWorthTrend12, style: Bento.label(context)),
                 ),
                 MoneyText(
                   current,
@@ -525,6 +472,7 @@ class _SankeyCard extends StatelessWidget {
     Map<String?, int> data,
     int offset,
     String restLabel,
+    List<Color> palette,
   ) {
     final list = data.entries.where((e) => e.value > 0).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -535,14 +483,14 @@ class _SankeyCard extends StatelessWidget {
       result.add((
         label: nameOf(top[i].key),
         value: top[i].value,
-        color: _palette[(offset + i) % _palette.length],
+        color: palette[(offset + i) % palette.length],
       ));
     }
     if (restVal > 0) {
       result.add((
         label: restLabel,
         value: restVal,
-        color: _palette[(offset + top.length) % _palette.length],
+        color: palette[(offset + top.length) % palette.length],
       ));
     }
     return result;
@@ -551,23 +499,21 @@ class _SankeyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final left = _entries(income, 0, l.other);
-    final right = _entries(expense, 8, l.other);
+    final palette = AppColors.chartSeries(context);
+    final left = _entries(income, 0, l.other, palette);
+    // Versetzt beginnen, damit beide Seiten verschiedene Farben zeigen.
+    final right = _entries(expense, 3, l.other, palette);
     if (left.isEmpty && right.isEmpty) {
       return const SizedBox.shrink();
     }
-    return Card(
+    return BentoTile(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l.moneyFlow,
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
+            Text(l.moneyFlow, style: Bento.label(context)),
             const SizedBox(height: 12),
             SizedBox(
               height: 200,
@@ -758,7 +704,8 @@ class _HeatmapCardState extends State<_HeatmapCard> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Card(
+    return BentoTile(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -769,9 +716,7 @@ class _HeatmapCardState extends State<_HeatmapCard> {
                 Expanded(
                   child: Text(
                     _mode == _HeatMode.month ? l.heatmapMonth : l.heatmapYear,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Bento.label(context),
                   ),
                 ),
                 SegmentedButton<_HeatMode>(
@@ -836,7 +781,9 @@ class _HeatmapCardState extends State<_HeatmapCard> {
               '$d',
               style: TextStyle(
                 fontSize: 10,
-                color: intensity > 0.55 ? Colors.white : null,
+                color: intensity > 0.55
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : null,
               ),
             ),
           ),
@@ -998,18 +945,14 @@ class _MonthlyTrendCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final hasData = months.any((m) => m.incomeCents > 0 || m.expenseCents > 0);
-    return Card(
+    return BentoTile(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l.monthlyTrend12,
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
+            Text(l.monthlyTrend12, style: Bento.label(context)),
             const SizedBox(height: 12),
             if (!hasData)
               Padding(
@@ -1027,7 +970,7 @@ class _MonthlyTrendCard extends StatelessWidget {
                     incomeColor: AppColors.of(context).income,
                     expenseColor: AppColors.of(context).expense,
                     axisColor: Theme.of(context).dividerColor,
-                    labelColor: Theme.of(context).hintColor,
+                    labelColor: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -1181,8 +1124,10 @@ class _CategorySectionState extends State<_CategorySection> {
     final entries = widget.data.entries.where((e) => e.value > 0).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final total = entries.fold<int>(0, (s, e) => s + e.value);
+    final palette = AppColors.chartSeries(context);
 
-    return Card(
+    return BentoTile(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1191,12 +1136,7 @@ class _CategorySectionState extends State<_CategorySection> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    widget.title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: Text(widget.title, style: Bento.label(context)),
                 ),
                 if (entries.isNotEmpty)
                   SegmentedButton<_ChartStyle>(
@@ -1248,7 +1188,7 @@ class _CategorySectionState extends State<_CategorySection> {
                             values: [for (final e in entries) e.value],
                             colors: [
                               for (var i = 0; i < entries.length; i++)
-                                _palette[i % _palette.length],
+                                palette[i % palette.length],
                             ],
                             donut: _style == _ChartStyle.donut,
                             strokeWidth: 24,
@@ -1276,7 +1216,7 @@ class _CategorySectionState extends State<_CategorySection> {
               if (_style != _ChartStyle.bars) const SizedBox(height: 12),
               for (var i = 0; i < entries.length; i++)
                 _LegendRow(
-                  color: _palette[i % _palette.length],
+                  color: palette[i % palette.length],
                   name: widget.nameOf(entries[i].key),
                   cents: entries[i].value,
                   percent: total == 0 ? 0 : entries[i].value / total * 100,
@@ -1333,7 +1273,7 @@ class _LegendRow extends StatelessWidget {
                 Text(
                   pct,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).hintColor,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -1402,18 +1342,14 @@ class _ComparisonCard extends StatelessWidget {
       );
     }
 
-    return Card(
+    return BentoTile(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l.comparisonTo(prevLabel),
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
+            Text(l.comparisonTo(prevLabel), style: Bento.label(context)),
             const SizedBox(height: 6),
             row(l.expenses, comparison.expenseDeltaPct, expense: true),
             row(l.income, comparison.incomeDeltaPct, expense: false),
@@ -1434,43 +1370,43 @@ class _TopExpensesCard extends ConsumerWidget {
     final accounts = ref.watch(accountsProvider).value ?? const [];
     final accountNames = {for (final a in accounts) a.id: a.name};
     final catNames = ref.watch(categoryNamesProvider);
+    final categories = {
+      for (final c
+          in ref.watch(categoriesRawProvider).value ?? const <Category>[])
+        c.id: c,
+    };
     final l = AppLocalizations.of(context);
+    final ink2 = Theme.of(context).colorScheme.onSurfaceVariant;
     final expenseWord = l.transactionType(TransactionType.expense);
-    return Card(
-      child: Column(
-        children: [
-          ListTile(
-            title: Text(
-              l.topExpenses,
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          const Divider(height: 1),
-          for (final t in items)
-            ListTile(
-              dense: true,
-              title: Text(
-                t.title.isEmpty
-                    ? (t.categoryId == null
-                          ? expenseWord
-                          : (catNames[t.categoryId] ?? expenseWord))
-                    : t.title,
-              ),
-              subtitle: Text(accountNames[t.accountId] ?? ''),
-              trailing: MoneyText(
-                t.amountCents,
-                prefix: '-',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.of(context).expense,
-                ),
-              ),
-              onTap: () => context.go('/transactions/${t.id}'),
-            ),
-        ],
+    return BentoList(
+      header: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Text(l.topExpenses, style: Bento.label(context)),
       ),
+      children: [
+        for (final t in items)
+          BentoRow(
+            leading: BentoGlyph(
+              child: categories[t.categoryId] != null
+                  ? categoryGlyph(
+                      categories[t.categoryId]!,
+                      size: 22,
+                      color: ink2,
+                    )
+                  : const Icon(Icons.north_east),
+            ),
+            title: Text(
+              t.title.isEmpty
+                  ? (t.categoryId == null
+                        ? expenseWord
+                        : (catNames[t.categoryId] ?? expenseWord))
+                  : t.title,
+            ),
+            subtitle: Text(accountNames[t.accountId] ?? ''),
+            trailing: MoneyText(t.amountCents, prefix: '-'),
+            onTap: () => context.go('/transactions/${t.id}'),
+          ),
+      ],
     );
   }
 }
