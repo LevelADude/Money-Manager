@@ -22,6 +22,7 @@ import 'period_filter.dart';
 import 'statistics_providers.dart';
 import '../../core/theme.dart';
 import '../../shared/responsive.dart';
+import '../../shared/glass.dart';
 
 /// Diagramm-Form für die Kategorie-Aufschlüsselung.
 enum _ChartStyle { donut, pie, bars }
@@ -81,10 +82,8 @@ class StatisticsScreen extends ConsumerWidget {
     final df = DateFormat('dd.MM.yyyy');
     final title = catId == null ? l.noCategory : (catNames[catId] ?? '—');
 
-    showModalBottomSheet<void>(
+    showGlassSheet<void>(
       context: context,
-      useRootNavigator: true,
-      showDragHandle: true,
       isScrollControlled: true,
       constraints: const BoxConstraints(maxWidth: 640),
       builder: (ctx) => DraggableScrollableSheet(

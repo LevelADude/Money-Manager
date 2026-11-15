@@ -131,17 +131,41 @@ class _PreviewAppState extends ConsumerState<PreviewApp> {
                   borderRadius: BorderRadius.circular(20),
                   child: PressScale(
                     shape: const CircleBorder(),
+                    // Lang drücken: Beispiel-Sheet (Glas) über dem Inhalt.
+                    onLongPress: () => showGlassSheet<void>(
+                      context:
+                          _router.routerDelegate.navigatorKey.currentContext!,
+                      builder: (ctx) => SafeArea(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const ListTile(
+                              title: Text('Beispiel-Sheet'),
+                              dense: true,
+                            ),
+                            for (final (icon, label) in const [
+                              (Icons.photo_camera_outlined, 'Foto aufnehmen'),
+                              (Icons.photo_library_outlined, 'Aus Galerie'),
+                              (Icons.attach_file, 'Datei wählen'),
+                            ])
+                              ListTile(
+                                leading: Icon(icon),
+                                title: Text(label),
+                                onTap: () => Navigator.pop(ctx),
+                              ),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
+                    ),
                     onTap: () => setState(
                       () => _palette =
                           _palettes[(_palettes.indexOf(_palette) + 1) %
                               _palettes.length],
                     ),
-                    child: const Tooltip(
-                      message: 'Palette wechseln',
-                      child: SizedBox.square(
-                        dimension: 40,
-                        child: Icon(Icons.palette_outlined, size: 20),
-                      ),
+                    child: const SizedBox.square(
+                      dimension: 40,
+                      child: Icon(Icons.palette_outlined, size: 20),
                     ),
                   ),
                 ),

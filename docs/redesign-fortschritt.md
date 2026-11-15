@@ -21,14 +21,19 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
     Screens), Beispieldaten/Overrides in `lib/dev_preview_data.dart`.
   - Tests: `test/bento_test.dart`, `test/main_screens_test.dart`.
 
+- **Phase 2 Teil 3** – Glas-Sheets: `showGlassSheet` in
+  `lib/shared/glass.dart` (dickes Glas, Griff, Root-Navigator) ist die
+  einzige Stelle, die Bottom-Sheets öffnet; alle sieben Aufrufe umgestellt
+  (Verlauf, Vorlagen, Belegquelle, Reservierung einlösen, Währung,
+  Statistik-Aufschlüsselung, Rechner). Test: `test/glass_sheet_test.dart`.
+  Vorschau: langer Druck auf den Paletten-Knopf öffnet ein Beispiel-Sheet.
+
 ## Nächste Schritte (Reihenfolge)
 
-1. Phase 2 Teil 3 – Glas-Sheets: Bottom-Sheets und Dialoge zentral
-   (Theme/gemeinsamer Helfer) auf die Glas-Bedienebene bringen.
-2. Phase 3 – übrige Screens unter `lib/features/` auf Bento/`AppColors`,
+1. Phase 3 – übrige Screens unter `lib/features/` auf Bento/`AppColors`,
    Bereich für Bereich, je Bereich ein Commit.
-3. Phase 4 – Performance Web: erst messen, dann nur belegte Maßnahmen.
-4. Phase 5 – Abschlussprüfung (Kontrast, Abstände, Fokus, Bewegung) und
+2. Phase 4 – Performance Web: erst messen, dann nur belegte Maßnahmen.
+3. Phase 5 – Abschlussprüfung (Kontrast, Abstände, Fokus, Bewegung) und
    Optimierungs-Checkliste.
 
 Kein PR nach `main` und kein Merge ohne ausdrückliche Freigabe des Nutzers.
@@ -63,8 +68,19 @@ lib/dev_preview.dart`, dann im Browser `?p=sage|emerald|dark#/`,
 - Mehr: sechs Gruppen ohne Überschriften (keine neuen Texte): Finden,
   Auswerten/Planen, Ziele/Schulden, Automatik, Daten, Konto/App.
 
+## Entscheidungen (Phase 2 Teil 3)
+
+- Dialoge (`AlertDialog`, Datumswahl) bleiben deckende Kacheln: Glas ist
+  laut Designregel der Bedienebene vorbehalten (Tableiste, Kopfzeile,
+  Sheets, Plus-Knopf); Bestätigungen zu Geld und Löschen sollen maximal
+  lesbar sein. Form und Farben kommen schon aus `dialogTheme`.
+- Sheet-Inhalt bekommt ein eigenes durchsichtiges `Material`, damit
+  Listenzeilen ihre Tinte auf dem Glas malen.
+
 ## Ungeprüft / offen
 
+- Die sieben echten Sheets nur per Test/Beispiel-Sheet geprüft, nicht
+  einzeln im Bild (brauchen Login bzw. Formulardaten).
 - Nur Web (Chromium, Vorschau mit Beispieldaten) geprüft; nicht Windows,
   nicht Android, nicht mit echten Daten/Login.
 - Englische Texte, „Beträge verbergen", Fremdwährungen und Reservierungen

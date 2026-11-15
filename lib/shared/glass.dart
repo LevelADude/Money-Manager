@@ -72,11 +72,13 @@ class PressScale extends StatefulWidget {
     super.key,
     required this.child,
     required this.onTap,
+    this.onLongPress,
     this.shape = const StadiumBorder(),
   });
 
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final ShapeBorder shape;
 
   @override
@@ -102,10 +104,79 @@ class _PressScaleState extends State<PressScale> {
         child: InkWell(
           customBorder: widget.shape,
           onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
           onTapDown: (_) => _set(true),
           onTapUp: (_) => _set(false),
           onTapCancel: () => _set(false),
           child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Öffnet ein Bottom-Sheet als dicke Glasfläche der Bedienebene: oben
+/// abgerundet, mit Griff, über der Navigation (Root-Navigator). Einzige
+/// Stelle, an der Sheets geöffnet werden – so sehen alle gleich aus.
+///
+/// Parameter wie bei [showModalBottomSheet]; Griff und Form sind fest.
+Future<T?> showGlassSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool isScrollControlled = false,
+  bool useSafeArea = false,
+  BoxConstraints? constraints,
+}) {
+  const radius = BorderRadius.vertical(top: Radius.circular(32));
+  return showModalBottomSheet<T>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: isScrollControlled,
+    useSafeArea: useSafeArea,
+    constraints: constraints,
+    // Fläche, Schatten und Griff kommen vom Glas, nicht vom Material-Sheet.
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    showDragHandle: false,
+    shape: const RoundedRectangleBorder(borderRadius: radius),
+    clipBehavior: Clip.none,
+    builder: (ctx) => Glass(
+      thick: true,
+      borderRadius: radius,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _SheetGrabber(),
+          // Eigenes Material, damit Listenzeilen ihre Tinte auf dem Glas
+          // malen statt dahinter.
+          Flexible(
+            child: Material(
+              type: MaterialType.transparency,
+              child: builder(ctx),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SheetGrabber extends StatelessWidget {
+  const _SheetGrabber();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 38,
+        height: 5,
+        margin: const EdgeInsets.only(top: 10, bottom: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurfaceVariant.withValues(alpha: .35),
+          borderRadius: BorderRadius.circular(3),
         ),
       ),
     );

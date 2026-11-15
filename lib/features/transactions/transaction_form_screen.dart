@@ -28,6 +28,7 @@ import '../categories/category_providers.dart';
 import 'transaction_providers.dart';
 import '../../core/theme.dart';
 import '../../shared/responsive.dart';
+import '../../shared/glass.dart';
 
 /// Buchung erfassen ODER bearbeiten. Das Konto wird hier gewählt; kommt man von
 /// einem Konto, ist es vorausgewählt.
@@ -359,10 +360,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final names =
         ref.read(profileNamesProvider).value ?? const <String, String>{};
     final df = DateFormat('dd.MM.yyyy HH:mm');
-    await showModalBottomSheet<void>(
+    await showGlassSheet<void>(
       context: context,
-      useRootNavigator: true,
-      showDragHandle: true,
       builder: (ctx) => FutureBuilder<List<AuditEntry>>(
         future: repo.historyFor(widget.transactionId!),
         builder: (ctx, snap) {
@@ -457,9 +456,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   Future<void> _pickTemplate() async {
     final l = AppLocalizations.of(context);
-    final chosen = await showModalBottomSheet<TransactionTemplate>(
+    final chosen = await showGlassSheet<TransactionTemplate>(
       context: context,
-      useRootNavigator: true,
       builder: (ctx) => Consumer(
         builder: (ctx, ref2, _) {
           final templates = ref2.watch(templatesProvider).value ?? const [];
@@ -577,9 +575,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         kIsWeb ||
         defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS;
-    return showModalBottomSheet<ImageSource>(
+    return showGlassSheet<ImageSource>(
       context: context,
-      useRootNavigator: true,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
