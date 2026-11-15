@@ -41,17 +41,38 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
   - Beträge rechts in `ListTile` kräftiger (Theme).
   - Vorschau und Tests um sechs Unterseiten erweitert.
 
+- **Phase 4 (Messung + belegte Maßnahme)** – Stand 2026-11-15, Flutter
+  3.44.2, `flutter build web --release`:
+
+  | Messwert | vorher | nachher |
+  |---|---|---|
+  | `main.dart.js` | 5.055.746 B (gzip 1.449.050) | 5.056.904 B |
+  | `Inter.ttf` | 876.576 B (gzip 461.298) | 525.856 B (gzip ca. 276.000) |
+  | Wasm-Build (`--wasm`) | schlägt fehl | unverändert |
+
+  - Inter gekürzt mit `tool/subset-inter.sh` (Latein erweitert, Griechisch,
+    Kyrillisch, Satz-/Währungs-/Pfeilzeichen; Achsen `opsz`/`wght` bleiben).
+    Geprüft: jedes im Code vorkommende Zeichen, das Inter hatte, ist noch da.
+  - Wasm scheitert an der transitiven Abhängigkeit `ua_client_hints` 1.7.0
+    (`dart:html`). Deploy-Workflow deshalb NICHT geändert.
+  - Ladeanzeige und Onboarding nutzen jetzt die gespeicherte Palette statt
+    Material-Standard (kein Farbsprung beim Start).
+  - Nicht gemessen: Startzeit und Scroll-Flüssigkeit der echten App (kein
+    Login in der Cloud). Glas-Unschärfe: weiterhin nur Navigation und
+    Sheets, nie in Listenzeilen (per Test abgesichert).
+
 ## Nächste Schritte (Reihenfolge)
 
 1. Phase 3 (Rest) – noch nicht einzeln angefasst: Formulare (Buchung,
-   Konto, Dauerauftrag, Reservierung), Login/Passwort-Reset, Onboarding
-   (eigene `MaterialApp`), Export/Import, Archiv, Insights, Profil,
-   Freigaben, Budgets/Sparziele/Schulden/Planung im Detail (nutzen `Card`
-   und sind über das Theme bereits angeglichen). `pdf_export.dart` behält
-   feste Farben (Papier, kein UI).
-2. Phase 4 – Performance Web: erst messen, dann nur belegte Maßnahmen.
-3. Phase 5 – Abschlussprüfung (Kontrast, Abstände, Fokus, Bewegung) und
-   Optimierungs-Checkliste.
+   Konto, Dauerauftrag, Reservierung), Login/Passwort-Reset, Onboarding,
+   Export/Import, Archiv, Insights, Profil, Freigaben,
+   Budgets/Sparziele/Schulden/Planung im Detail (nutzen `Card` und sind über
+   das Theme bereits angeglichen). `pdf_export.dart` behält feste Farben
+   (Papier, kein UI).
+2. Phase 4 (Rest) – Wasm erst nach Update/Ersatz von `ua_client_hints`
+   erneut prüfen; Startzeit mit echten Daten messen.
+3. Phase 5 – Abschlussprüfung (Kontrast, Abstände, Fokus/Tastatur,
+   reduzierte Bewegung) und Optimierungs-Checkliste.
 
 Kein PR nach `main` und kein Merge ohne ausdrückliche Freigabe des Nutzers.
 

@@ -142,9 +142,21 @@ class _BootstrapState extends State<_Bootstrap> {
       widget.prefs.getString('settings_locale') == 'en' ? 'en' : 'de',
     );
 
+    // Gewählte Palette schon vor dem Start der eigentlichen App verwenden,
+    // damit Ladeanzeige und Onboarding nicht in fremden Farben aufblitzen.
+    final palette =
+        AppPalette.values.asNameMap()[widget.prefs.getString(
+          'settings_palette',
+        )] ??
+        AppPalette.system;
+    final theme = AppTheme.themeFor(palette);
+    final darkTheme = palette == AppPalette.system ? AppTheme.systemDark : null;
+
     if (_initializing) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
+        theme: theme,
+        darkTheme: darkTheme,
         locale: locale,
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -157,7 +169,8 @@ class _BootstrapState extends State<_Bootstrap> {
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: AppTheme.fallback,
+      theme: theme,
+      darkTheme: darkTheme,
       home: OnboardingScreen(
         config: _config,
         initialError: _error,
