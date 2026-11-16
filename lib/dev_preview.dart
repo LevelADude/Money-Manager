@@ -23,6 +23,8 @@ import 'config/app_config.dart';
 import 'features/archive/archive_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/reset_password_screen.dart';
+import 'features/export/csv_import_screen.dart';
+import 'features/export/export_screen.dart';
 import 'features/more/more_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/profile/profile_screen.dart';
@@ -99,6 +101,8 @@ GoRouter buildPreviewRouter({String initialLocation = '/'}) {
             page('settings', const SettingsScreen()),
             page('archive', const ArchiveScreen()),
             page('profile', const ProfileScreen()),
+            page('export', const ExportScreen()),
+            page('import', const CsvImportScreen()),
           ]),
         ],
       ),

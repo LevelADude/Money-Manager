@@ -177,6 +177,40 @@ void main() {
     expect(find.textContaining('/more/budgets'), findsOneWidget);
   });
 
+  testWidgets('Export: Aktionen als Listen-Kachel, CSV-Vorschau als Kachel', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/export', AppPalette.sage, _sizes['schmal']!);
+    expect(find.byType(BentoList), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(BentoList),
+        matching: find.byType(BentoRow),
+      ),
+      findsAtLeastNWidgets(3),
+    );
+    // Kopfzeile der CSV steht in der Vorschau-Kachel.
+    expect(
+      find.descendant(
+        of: find.byType(BentoTile),
+        matching: find.textContaining('Datum;Typ;Betrag'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Import: falscher Kopf meldet den Status in einer Kachel', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/import', AppPalette.sage, _sizes['schmal']!);
+    final tiles = find.byType(BentoTile).evaluate().length;
+    await tester.enterText(find.byType(TextField), 'foo;bar\n1;2');
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(BentoTile).evaluate().length, tiles + 1);
+    expect(tester.takeException(), isNull);
+  });
+
   // Unterseiten aus Phase 3, die mit den Beispieldaten auskommen.
   for (final route in [
     '/account/giro',
@@ -187,6 +221,8 @@ void main() {
     '/more/settings',
     '/more/archive',
     '/more/profile',
+    '/more/export',
+    '/more/import',
     '/account/new',
     '/more/recurring/new',
     '/more/reservations/new',

@@ -95,8 +95,12 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
    Onboardings als Kacheln, Felder frei darunter, Autofill-Hinweise;
    Vorschau: `#/login`, `#/reset-password`, `#/onboarding`). Der
    Verbindungs-Dialog bleibt ein deckender Dialog (siehe Entscheidungen).
+   Teil 6 (2026-11-16): Export und CSV-Import als Kacheln (Hinweis-Kachel
+   mit Glyphe, Export-Aktionen als Listen-Kachel, ohne Buchungen gedimmt;
+   CSV-Vorschau als Kachel, scrollt mit der Seite; Import-Status als
+   Kachel, Ladekreis im Knopf). Vorschau: `#/more/export`, `#/more/import`.
    Noch nicht einzeln angefasst:
-   Export/Import, Archiv-Einrichtung, Insights, Simulator, Freigaben,
+   Archiv-Einrichtung, Insights, Simulator, Freigaben,
    Budgets/Sparziele/Schulden/Planung im Detail (nutzen `Card` und sind über
    das Theme bereits angeglichen). `pdf_export.dart` behält feste Farben
    (Papier, kein UI).

@@ -10,6 +10,7 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/recurring_rule.dart' show IntervalUnitX;
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
@@ -190,92 +191,97 @@ class ExportScreen extends ConsumerWidget {
     final csv = _buildCsv(ref);
     final previewLines = const LineSplitter().convert(csv).take(40).join('\n');
     final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final ink2 = theme.colorScheme.onSurfaceVariant;
+    final hasTx = txCount > 0;
+
+    // Aktionszeile: Kreis mit Icon, Titel, Pfeil. Ohne Buchungen gedimmt
+    // und ohne Tipp-Fläche.
+    Widget action(IconData icon, String title, VoidCallback? onTap) => Opacity(
+      opacity: onTap == null ? 0.45 : 1,
+      child: BentoRow(
+        leading: BentoGlyph(size: 36, child: Icon(icon)),
+        title: Text(title),
+        trailing: Icon(Icons.chevron_right, size: 20, color: ink2),
+        onTap: onTap,
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.exportTitle)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l.exportSubtitle(txCount),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            Row(
+      body: ListView(
+        padding: BentoListView.paddingOf(context),
+        children: [
+          BentoTile(
+            child: Row(
               children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: txCount == 0
-                        ? null
-                        : () async {
-                            await Clipboard.setData(ClipboardData(text: csv));
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(l.csvCopied)),
-                              );
-                            }
-                          },
-                    icon: const Icon(Icons.copy_all_outlined),
-                    label: Text(l.copyCsv),
-                  ),
-                ),
+                const BentoGlyph(child: Icon(Icons.ios_share)),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: txCount == 0 ? null : () => _share(context, csv),
-                    icon: const Icon(Icons.ios_share),
-                    label: Text(l.shareCsv),
+                  child: Text(
+                    l.exportSubtitle(txCount),
+                    style: theme.textTheme.bodyMedium,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              onPressed: txCount == 0 ? null : () => _exportPdf(context, ref),
-              icon: const Icon(Icons.picture_as_pdf_outlined),
-              label: Text(l.sharePdf),
-            ),
-            if (reservationCount > 0) ...[
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () => _share(
-                  context,
-                  _buildReservationsCsv(ref),
-                  filename: 'money-manager-reservierungen.csv',
-                ),
-                icon: const Icon(Icons.bookmarks_outlined),
-                label: Text(l.exportReservationsCsv),
+          ),
+          const SizedBox(height: Bento.gap),
+          BentoList(
+            children: [
+              action(
+                Icons.copy_all_outlined,
+                l.copyCsv,
+                hasTx
+                    ? () async {
+                        await Clipboard.setData(ClipboardData(text: csv));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(l.csvCopied)));
+                        }
+                      }
+                    : null,
               ),
-            ],
-            const SizedBox(height: 16),
-            Text(
-              l.previewFirstLines,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-            const SizedBox(height: 4),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    previewLines.isEmpty ? l.noData : previewLines,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                    ),
+              action(
+                Icons.table_chart_outlined,
+                l.shareCsv,
+                hasTx ? () => _share(context, csv) : null,
+              ),
+              action(
+                Icons.picture_as_pdf_outlined,
+                l.sharePdf,
+                hasTx ? () => _exportPdf(context, ref) : null,
+              ),
+              if (reservationCount > 0)
+                action(
+                  Icons.bookmarks_outlined,
+                  l.exportReservationsCsv,
+                  () => _share(
+                    context,
+                    _buildReservationsCsv(ref),
+                    filename: 'money-manager-reservierungen.csv',
                   ),
                 ),
+            ],
+          ),
+          const SizedBox(height: Bento.gap * 2),
+          BentoSectionHeader(label: l.previewFirstLines),
+          BentoTile(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SelectableText(
+                previewLines.isEmpty ? l.noData : previewLines,
+                style: theme.textTheme.bodySmall!.copyWith(
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                  height: 1.5,
+                  color: ink2,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

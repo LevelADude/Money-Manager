@@ -9,7 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../transactions/transaction_providers.dart';
-import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
 /// CSV-Import: liest Buchungen aus eingefügtem CSV (Format wie der Export:
 /// Datum;Typ;Betrag;Konto;Zielkonto;Kategorie;Titel;Notiz). Konten/Kategorien
@@ -201,42 +201,69 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l.moreImport)),
       body: ListView(
-        padding: EdgeInsets.all(16).withBarInset(context),
+        padding: BentoListView.paddingOf(context),
         children: [
-          Text(l.csvImportIntro),
-          const SizedBox(height: 12),
+          BentoTile(
+            child: Row(
+              children: [
+                const BentoGlyph(child: Icon(Icons.file_download_outlined)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l.csvImportIntro,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Bento.gap),
+          // Eingabefeld ist eine eigene Fläche im Theme-Stil.
           TextField(
             controller: _input,
-            maxLines: 10,
+            minLines: 8,
+            maxLines: 14,
+            style: theme.textTheme.bodySmall!.copyWith(
+              fontFamily: 'monospace',
+              fontSize: 12,
+              height: 1.5,
+            ),
             decoration: const InputDecoration(
               hintText:
                   'Datum;Typ;Betrag;Konto;Zielkonto;Kategorie;Titel;Notiz\n'
                   '01.06.2026;Ausgabe;12,50;Bargeld;;Lebensmittel;Aldi;',
-              border: OutlineInputBorder(),
+              alignLabelWithHint: true,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Bento.gap),
           FilledButton.icon(
             onPressed: _busy ? null : _import,
-            icon: const Icon(Icons.file_download_outlined),
+            icon: _busy
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.file_download_outlined),
             label: Text(l.importAction),
           ),
-          if (_busy)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          if (_status.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                _status,
-                style: Theme.of(context).textTheme.bodyMedium,
+          if (_status.isNotEmpty) ...[
+            const SizedBox(height: Bento.gap),
+            BentoTile(
+              child: Row(
+                children: [
+                  const BentoGlyph(size: 36, child: Icon(Icons.info_outline)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(_status, style: theme.textTheme.bodyMedium),
+                  ),
+                ],
               ),
             ),
+          ],
         ],
       ),
     );
