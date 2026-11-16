@@ -110,9 +110,22 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
    Status und Erklärung in einer Hinweis-Kachel (Häkchen in
    Einnahmenfarbe), Felder im Theme-Stil, Ladekreis im jeweiligen Knopf.
    Vorschau: `#/more/insights`, `#/more/simulator`, `#/more/archive/setup`.
-   Noch nicht einzeln angefasst: Freigaben,
-   Budgets/Sparziele/Schulden/Planung im Detail (nutzen `Card` und sind über
-   das Theme bereits angeglichen). `pdf_export.dart` behält feste Farben
+   Teil 8 (2026-11-16): Budgets, Sparziele, Schulden. Neuer Baustein
+   `BentoProgress` (runder Balken, Spur in getönter Signalfarbe). Budgets:
+   Gesamtbudget- und Verplant-Kachel (breit nebeneinander, Zahl und Balken
+   auf einer Linie), Kategorien mit Budget als Listen-Kachel (Prozent in der
+   Titelzeile, Balken und Stand bündig mit dem Namen, Antippen bearbeitet),
+   Kategorien ohne Budget als zweite Listen-Kachel ("Dieser Monat: Betrag"
+   plus Knopf; die Texte `noBudgetThisMonth/Week` entfallen). Sparziele: je
+   Ziel eine Kachel (breit zweispaltig), Betrag groß, Knopf unten. Schulden:
+   Summen-Kachel, je Konto eine Kachel mit Auslastung und Verlauf
+   (`MiniLineChart` statt eigenem Painter, der immer neu zeichnete).
+   Behoben: Betrag im `FittedBox` wurde für die Rasterhöhe zweizeilig
+   gemessen (Kachel zu hoch), jetzt `maxLines: 1`. Vorschau:
+   `#/more/budgets`, `#/more/goals`, `#/more/debts` (Beispiel-Budgets,
+   -Sparziele, Kreditrahmen 1.500 €).
+   Noch nicht einzeln angefasst: Freigaben, Planung, Cashflow, Abrechnen,
+   Erinnerungen (nutzen `Card` und sind über das Theme angeglichen). `pdf_export.dart` behält feste Farben
    (Papier, kein UI).
 2. Phase 4 (Rest) – Wasm erst nach Update/Ersatz von `ua_client_hints`
    erneut prüfen; Startzeit mit echten Daten messen.

@@ -26,7 +26,10 @@ import 'features/auth/login_screen.dart';
 import 'features/auth/reset_password_screen.dart';
 import 'features/export/csv_import_screen.dart';
 import 'features/export/export_screen.dart';
+import 'features/budgets/budgets_screen.dart';
+import 'features/debts/debts_screen.dart';
 import 'features/insights/insights_screen.dart';
+import 'features/savings/savings_screen.dart';
 import 'features/more/more_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/profile/profile_screen.dart';
@@ -106,6 +109,9 @@ GoRouter buildPreviewRouter({String initialLocation = '/'}) {
             page('archive/setup', const ArchiveSetupScreen()),
             page('insights', const InsightsScreen()),
             page('simulator', const SimulatorScreen()),
+            page('budgets', const BudgetsScreen()),
+            page('goals', const SavingsScreen()),
+            page('debts', const DebtsScreen()),
             page('profile', const ProfileScreen()),
             page('export', const ExportScreen()),
             page('import', const CsvImportScreen()),

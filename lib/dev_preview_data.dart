@@ -14,7 +14,9 @@ import 'data/models/account_group.dart';
 import 'data/models/app_transaction.dart';
 import 'data/models/archive_config_status.dart';
 import 'data/models/archived_year.dart';
+import 'data/models/budget.dart';
 import 'data/models/category.dart';
+import 'data/models/savings_goal.dart';
 import 'features/accounts/account_providers.dart';
 import 'features/archive/archive_providers.dart';
 import 'features/auth/auth_providers.dart';
@@ -39,6 +41,7 @@ Account _acc(
   AccountType type,
   int openingCents, {
   String owner = previewUserId,
+  int? creditLimit,
 }) => Account(
   id: id,
   ownerId: owner,
@@ -48,7 +51,7 @@ Account _acc(
   openingBalanceCents: openingCents,
   icon: null,
   color: null,
-  creditLimitCents: null,
+  creditLimitCents: creditLimit,
   includeInNetWorth: true,
   archived: false,
 );
@@ -58,7 +61,13 @@ final previewAccounts = <Account>[
   _acc('spar', 'Sparkonto', AccountType.savings, 900000),
   _acc('bar', 'Bargeld', AccountType.cash, 8000),
   _acc('depot', 'Depot', AccountType.investment, 450000, owner: _partnerId),
-  _acc('karte', 'Kreditkarte', AccountType.creditCard, -32000),
+  _acc(
+    'karte',
+    'Kreditkarte',
+    AccountType.creditCard,
+    -32000,
+    creditLimit: 150000,
+  ),
 ];
 
 Category _cat(String id, String name, CategoryKind kind, String emoji) =>
@@ -137,6 +146,41 @@ List<AppTransaction> previewTransactions(DateTime now) {
   ];
 }
 
+/// Gesamtbudget und einige Kategorie-Budgets (eins knapp, eins überzogen,
+/// Kategorien ohne Budget bleiben übrig).
+const previewBudgets = <Budget>[
+  Budget(id: 'b-all', categoryId: null, amountCents: 200000),
+  Budget(id: 'b-home', categoryId: 'home', amountCents: 72500),
+  Budget(id: 'b-food', categoryId: 'food', amountCents: 30000),
+  Budget(id: 'b-move', categoryId: 'move', amountCents: 5000),
+  Budget(id: 'b-fun', categoryId: 'fun', amountCents: 2500),
+];
+
+/// Sparziele: mit Zieldatum, offener Topf, erreichtes Ziel.
+List<SavingsGoal> previewSavingsGoals(DateTime now) => [
+  SavingsGoal(
+    id: 'g-trip',
+    name: 'Urlaub Portugal',
+    targetCents: 240000,
+    savedCents: 91000,
+    targetDate: DateTime(now.year + 1, 6, 1),
+  ),
+  const SavingsGoal(
+    id: 'g-pot',
+    name: 'Notgroschen',
+    targetCents: 0,
+    savedCents: 185000,
+    targetDate: null,
+  ),
+  const SavingsGoal(
+    id: 'g-bike',
+    name: 'Fahrrad',
+    targetCents: 90000,
+    savedCents: 90000,
+    targetDate: null,
+  ),
+];
+
 /// Overrides, mit denen die vier Hauptscreens ohne Login und ohne Netz laufen.
 List<Override> previewOverrides(SharedPreferences prefs, {DateTime? now}) {
   final txs = previewTransactions(now ?? DateTime.now());
@@ -201,9 +245,11 @@ List<Override> previewOverrides(SharedPreferences prefs, {DateTime? now}) {
     reservationTopupProvider.overrideWith((ref) => 0),
     recurringGenerationProvider.overrideWith((ref) => 0),
     // Insights lesen zusätzlich Budgets, Daueraufträge und Sparziele.
-    budgetsProvider.overrideWith((ref) => Stream.value(const [])),
+    budgetsProvider.overrideWith((ref) => Stream.value(previewBudgets)),
     recurringRulesProvider.overrideWith((ref) => Stream.value(const [])),
-    savingsGoalsProvider.overrideWith((ref) => Stream.value(const [])),
+    savingsGoalsProvider.overrideWith(
+      (ref) => Stream.value(previewSavingsGoals(now ?? DateTime.now())),
+    ),
     remindersProvider.overrideWithValue(const []),
     converterProvider.overrideWithValue((cents, code) => cents),
     effectiveRatesProvider.overrideWithValue(const {}),

@@ -264,16 +264,27 @@ class SavingsScreen extends ConsumerWidget {
           return ListView(
             padding: BentoListView.paddingOf(context, fabSpace: true),
             children: [
-              for (final g in goals)
-                _GoalCard(
-                  goal: g,
-                  onDeposit: () => _contribute(context, ref, g, deposit: true),
-                  onWithdraw: () =>
-                      _contribute(context, ref, g, deposit: false),
-                  onEdit: () => _editGoal(context, ref, goal: g),
-                  onDelete: () =>
-                      ref.read(savingsGoalRepositoryProvider).deleteGoal(g.id),
-                ),
+              // Schmal untereinander, breit zwei Ziele nebeneinander.
+              BentoGrid(
+                cells: [
+                  for (final g in goals)
+                    BentoCell(
+                      span: 2,
+                      wideSpan: 2,
+                      child: _GoalTile(
+                        goal: g,
+                        onDeposit: () =>
+                            _contribute(context, ref, g, deposit: true),
+                        onWithdraw: () =>
+                            _contribute(context, ref, g, deposit: false),
+                        onEdit: () => _editGoal(context, ref, goal: g),
+                        onDelete: () => ref
+                            .read(savingsGoalRepositoryProvider)
+                            .deleteGoal(g.id),
+                      ),
+                    ),
+                ],
+              ),
             ],
           );
         },
@@ -282,8 +293,10 @@ class SavingsScreen extends ConsumerWidget {
   }
 }
 
-class _GoalCard extends StatelessWidget {
-  const _GoalCard({
+/// Ein Sparziel als Kachel: gesparter Betrag groß, Ziel und Balken darunter,
+/// Einzahlen unten. Offene Töpfe (ohne Zielbetrag) ohne Balken.
+class _GoalTile extends StatelessWidget {
+  const _GoalTile({
     required this.goal,
     required this.onDeposit,
     required this.onWithdraw,
@@ -300,11 +313,11 @@ class _GoalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final t = Theme.of(context);
+    final c = AppColors.of(context);
     final isPot = goal.targetCents <= 0;
     final pct = (goal.fraction * 100).round();
-    final color = goal.reached
-        ? AppColors.of(context).income
-        : Theme.of(context).colorScheme.primary;
+    final color = goal.reached ? c.income : t.colorScheme.primary;
 
     String? hint;
     if (!isPot && !goal.reached && goal.targetDate != null) {
@@ -319,130 +332,121 @@ class _GoalCard extends StatelessWidget {
           ' · ${l.perMonthNeeded(formatCents(perMonth))}';
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    goal.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+    return BentoTile(
+      padding: const EdgeInsets.fromLTRB(18, 6, 6, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  goal.name,
+                  style: t.textTheme.bodyLarge!.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (!isPot)
-                  Text(
-                    '$pct %',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: color),
-                  ),
-                PopupMenuButton<String>(
-                  onSelected: (v) {
-                    switch (v) {
-                      case 'edit':
-                        onEdit();
-                      case 'withdraw':
-                        onWithdraw();
-                      case 'delete':
-                        onDelete();
-                    }
-                  },
-                  itemBuilder: (ctx) => [
-                    PopupMenuItem(value: 'edit', child: Text(l.edit)),
-                    PopupMenuItem(value: 'withdraw', child: Text(l.withdraw)),
-                    PopupMenuItem(value: 'delete', child: Text(l.delete)),
-                  ],
-                ),
-              ],
-            ),
-            if (isPot) ...[
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l.openPot, style: Theme.of(context).textTheme.bodySmall),
-                  MoneyText(
-                    goal.savedCents,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_horiz),
+                onSelected: (v) {
+                  switch (v) {
+                    case 'edit':
+                      onEdit();
+                    case 'withdraw':
+                      onWithdraw();
+                    case 'delete':
+                      onDelete();
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  PopupMenuItem(value: 'edit', child: Text(l.edit)),
+                  PopupMenuItem(value: 'withdraw', child: Text(l.withdraw)),
+                  PopupMenuItem(value: 'delete', child: Text(l.delete)),
                 ],
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: FilledButton.tonalIcon(
-                  onPressed: onDeposit,
-                  icon: const Icon(Icons.add),
-                  label: Text(l.deposit),
-                ),
-              ),
-            ] else ...[
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: LinearProgressIndicator(
-                  value: goal.fraction,
-                  minHeight: 10,
-                  color: color,
-                  backgroundColor: color.withValues(alpha: 0.15),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  MoneyText(
-                    goal.savedCents,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  MoneyText(
-                    goal.targetCents,
-                    prefix: l.ofWithSpace,
-                    style: TextStyle(color: Theme.of(context).hintColor),
-                  ),
-                ],
-              ),
-              if (goal.reached)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    l.goalReached,
-                    style: TextStyle(
-                      color: AppColors.of(context).income,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                )
-              else ...[
-                if (hint != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      hint,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilledButton.tonalIcon(
-                    onPressed: onDeposit,
-                    icon: const Icon(Icons.add),
-                    label: Text(l.deposit),
-                  ),
-                ),
-              ],
             ],
-          ],
-        ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: MoneyText(
+                            goal.savedCents,
+                            style: Bento.number(context, size: 28),
+                          ),
+                        ),
+                      ),
+                      if (!isPot) ...[
+                        const SizedBox(width: 12),
+                        Text(
+                          '$pct %',
+                          style: Bento.number(
+                            context,
+                            size: 17,
+                          ).copyWith(color: color),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (isPot)
+                    Text(l.openPot, style: Bento.sub(context))
+                  else ...[
+                    MoneyText(
+                      goal.targetCents,
+                      prefix: l.ofWithSpace,
+                      style: Bento.sub(context),
+                    ),
+                    const SizedBox(height: 12),
+                    BentoProgress(
+                      value: goal.fraction,
+                      color: color,
+                      height: 10,
+                    ),
+                    const SizedBox(height: 10),
+                    if (goal.reached)
+                      Text(
+                        l.goalReached,
+                        style: Bento.sub(context).copyWith(
+                          color: c.income,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    else if (hint != null)
+                      Text(hint, style: Bento.sub(context)),
+                  ],
+                  // Knopf unten, auch wenn die Nachbarkachel höher ist.
+                  const Spacer(),
+                  if (!goal.reached)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 14),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: FilledButton.tonalIcon(
+                          onPressed: onDeposit,
+                          icon: const Icon(Icons.add),
+                          label: Text(l.deposit),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

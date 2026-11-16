@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +5,7 @@ import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/balances.dart';
+import '../../shared/mini_line_chart.dart';
 import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../archive/archive_providers.dart';
@@ -49,37 +48,46 @@ class DebtsScreen extends ConsumerWidget {
           : ListView(
               padding: BentoListView.paddingOf(context),
               children: [
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.trending_down),
-                    title: Text(l.totalDebt),
-                    trailing: MoneyText(
-                      totalDebt,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: totalDebt > 0
-                            ? AppColors.of(context).expense
-                            : null,
+                BentoGrid(
+                  cells: [
+                    BentoCell.full(
+                      child: BentoStat(
+                        label: l.totalDebt,
+                        trailing: const Icon(Icons.trending_down, size: 18),
+                        value: MoneyText(
+                          totalDebt,
+                          style: TextStyle(
+                            color: totalDebt > 0
+                                ? AppColors.of(context).expense
+                                : null,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    // Schmal untereinander, breit zwei Konten nebeneinander.
+                    for (final a in liabilities)
+                      BentoCell(
+                        span: 2,
+                        wideSpan: 2,
+                        child: _DebtTile(
+                          account: a,
+                          currentCents: balances[a.id] ?? 0,
+                          txs: txs,
+                          carryover: carryover,
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                for (final a in liabilities)
-                  _DebtCard(
-                    account: a,
-                    currentCents: balances[a.id] ?? 0,
-                    txs: txs,
-                    carryover: carryover,
-                  ),
               ],
             ),
     );
   }
 }
 
-class _DebtCard extends StatelessWidget {
-  const _DebtCard({
+/// Ein Schulden-Konto: Saldo, Auslastung des Kreditrahmens und der Verlauf
+/// der Restschuld über zwölf Monate am Kachelboden.
+class _DebtTile extends StatelessWidget {
+  const _DebtTile({
     required this.account,
     required this.currentCents,
     required this.txs,
@@ -96,6 +104,7 @@ class _DebtCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final c = AppColors.of(context);
     // Aktueller Saldo (negativ = Schuld).
     final current = currentCents;
     final debt = current < 0 ? -current : 0;
@@ -113,129 +122,77 @@ class _DebtCard extends StatelessWidget {
         ? (debt / limit).clamp(0.0, 1.0)
         : null;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+    return BentoTile(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: Text(
-                    account.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                Text(
+                  account.name,
+                  style: Bento.label(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: MoneyText(
+                    current,
+                    style: Bento.number(
+                      context,
+                      size: 28,
+                    ).copyWith(color: current < 0 ? c.expense : null),
                   ),
                 ),
-                MoneyText(
-                  current,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: current < 0
-                        ? AppColors.of(context).expense
-                        : AppColors.of(context).income,
+                if (utilization != null) ...[
+                  const SizedBox(height: 12),
+                  BentoProgress(
+                    value: utilization,
+                    color: utilization >= 0.9 ? c.expense : c.warning,
                   ),
-                ),
-              ],
-            ),
-            if (utilization != null) ...[
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: utilization,
-                  minHeight: 8,
-                  color: utilization >= 0.9
-                      ? AppColors.of(context).expense
-                      : AppColors.of(context).warning,
-                  backgroundColor: AppColors.of(context).chip,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l.creditUtilization,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  Text(
-                    '${(utilization * 100).round()} %',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l.creditUtilization,
+                          style: Bento.sub(context),
+                        ),
+                      ),
+                      Text(
+                        '${(utilization * 100).round()} %',
+                        style: Bento.sub(
+                          context,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
-            const SizedBox(height: 12),
-            Text(l.debtTrend12, style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 6),
-            SizedBox(
-              height: 80,
-              child: CustomPaint(
-                size: Size.infinite,
-                painter: _LinePainter(
-                  values: series,
-                  lineColor: Theme.of(context).colorScheme.primary,
-                  gridColor: Theme.of(context).dividerColor,
-                ),
-              ),
+                const SizedBox(height: 14),
+                Text(l.debtTrend12, style: Bento.sub(context)),
+              ],
             ),
-          ],
-        ),
+          ),
+          // Verlauf am Kachelboden, auch wenn die Nachbarkachel höher ist.
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: MiniLineChart(
+              values: series,
+              color: Theme.of(context).colorScheme.primary,
+              height: 80,
+            ),
+          ),
+        ],
       ),
     );
   }
-}
-
-class _LinePainter extends CustomPainter {
-  _LinePainter({
-    required this.values,
-    required this.lineColor,
-    required this.gridColor,
-  });
-
-  final List<int> values;
-  final Color lineColor;
-  final Color gridColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (values.length < 2) return;
-    final maxV = values.reduce(math.max);
-    final minV = values.reduce(math.min);
-    final range = (maxV - minV) == 0 ? 1 : (maxV - minV);
-    double x(int i) => size.width * i / (values.length - 1);
-    double y(int v) => size.height - (v - minV) / range * size.height;
-
-    // Null-Linie, falls der Bereich die Null kreuzt.
-    if (minV < 0 && maxV > 0) {
-      final zy = y(0);
-      canvas.drawLine(
-        Offset(0, zy),
-        Offset(size.width, zy),
-        Paint()
-          ..color = gridColor
-          ..strokeWidth = 1,
-      );
-    }
-
-    final path = Path()..moveTo(x(0), y(values.first));
-    for (var i = 1; i < values.length; i++) {
-      path.lineTo(x(i), y(values[i]));
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = lineColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
-        ..strokeJoin = StrokeJoin.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _LinePainter old) => true;
 }

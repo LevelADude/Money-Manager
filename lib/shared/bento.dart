@@ -373,6 +373,38 @@ class BentoChip extends StatelessWidget {
   }
 }
 
+/// Fortschrittsbalken in Kacheln (Budget, Sparziel, Kreditrahmen): rund, die
+/// Spur in der getönten Balkenfarbe statt in Grau.
+class BentoProgress extends StatelessWidget {
+  const BentoProgress({
+    super.key,
+    required this.value,
+    this.color,
+    this.height = 8,
+  });
+
+  /// Anteil 0–1; Werte außerhalb werden begrenzt.
+  final double value;
+
+  /// Signalfarbe; ohne Angabe die Primärfarbe.
+  final Color? color;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = this.color ?? Theme.of(context).colorScheme.primary;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(height / 2),
+      child: LinearProgressIndicator(
+        value: value.clamp(0.0, 1.0),
+        minHeight: height,
+        color: color,
+        backgroundColor: color.withValues(alpha: .15),
+      ),
+    );
+  }
+}
+
 /// Eine Zelle im [BentoGrid]. [span] gilt im schmalen Raster (2 Spalten),
 /// [wideSpan] im breiten (4 Spalten).
 class BentoCell {

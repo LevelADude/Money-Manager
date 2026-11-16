@@ -544,10 +544,6 @@ class AppLocalizations {
   );
   String overBy(String x) => _t('+$x über', '+$x over');
   String amountLeft(String x) => _t('noch $x', '$x left');
-  String noBudgetThisMonth(String x) =>
-      _t('Kein Budget · diesen Monat $x', 'No budget · this month $x');
-  String noBudgetThisWeek(String x) =>
-      _t('Kein Budget · diese Woche $x', 'No budget · this week $x');
   // ---- Gesamtbudget (kategorieunabhängig, Monat/Woche) ----
   String get overallBudget => _t('Gesamtbudget', 'Overall budget');
   String get overallBudgetHint => _t(

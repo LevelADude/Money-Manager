@@ -174,7 +174,8 @@ void main() {
     await _pump(tester, '/more', AppPalette.dark, _sizes['schmal']!);
     await tester.tap(find.text('Budgets'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('/more/budgets'), findsOneWidget);
+    // Budgets ist Teil der Vorschau: die echte Seite statt des Platzhalters.
+    expect(find.text('Gesamtbudget · Dieser Monat'), findsOneWidget);
   });
 
   testWidgets('Export: Aktionen als Listen-Kachel, CSV-Vorschau als Kachel', (
@@ -270,6 +271,48 @@ void main() {
     expect(find.byType(LinearProgressIndicator), findsNothing);
   });
 
+  testWidgets('Budgets: Gesamtbudget, Verplant und zwei Listen-Kacheln', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/budgets', AppPalette.sage, _sizes['schmal']!);
+    // Ausgaben 1.–15.11. gegen 2.000 € Gesamtbudget.
+    expect(find.textContaining('935,96'), findsWidgets);
+    expect(find.text('47 %'), findsOneWidget);
+    expect(find.textContaining('900,00'), findsOneWidget); // frei verteilbar
+    // Gesamt + Verplant + vier Kategorie-Budgets.
+    expect(find.byType(BentoProgress), findsNWidgets(6));
+    // Mit Budget und ohne Budget je eine Kachel.
+    expect(find.byType(BentoList), findsNWidgets(2));
+    expect(find.textContaining('8,00'), findsWidgets); // Mobilität überzogen
+    expect(find.text('Budget setzen'), findsNWidgets(2));
+  });
+
+  testWidgets('Sparziele: Kacheln mit Balken, erreichtes Ziel ohne Knopf', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/goals', AppPalette.dark, _sizes['breit']!);
+    expect(find.text('Urlaub Portugal'), findsOneWidget);
+    expect(find.text('Ziel erreicht! 🎉'), findsOneWidget);
+    // Der offene Topf hat keinen Balken, das erreichte Ziel keinen Knopf.
+    expect(find.byType(BentoProgress), findsNWidgets(2));
+    expect(find.text('Einzahlen'), findsNWidgets(2));
+  });
+
+  testWidgets('Schulden: Summe, Auslastung und Verlauf je Konto', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/debts', AppPalette.emerald, _sizes['schmal']!);
+    expect(
+      find.descendant(
+        of: find.byType(BentoStat),
+        matching: find.textContaining('344,00'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('23 %'), findsOneWidget); // 344 von 1.500 €
+    expect(find.byType(BentoProgress), findsOneWidget);
+  });
+
   // Unterseiten aus Phase 3, die mit den Beispieldaten auskommen.
   for (final route in [
     '/account/giro',
@@ -285,6 +328,9 @@ void main() {
     '/more/insights',
     '/more/simulator',
     '/more/archive/setup',
+    '/more/budgets',
+    '/more/goals',
+    '/more/debts',
     '/account/new',
     '/more/recurring/new',
     '/more/reservations/new',
