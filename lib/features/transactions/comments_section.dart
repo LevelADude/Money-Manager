@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../shared/bento.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
@@ -49,13 +50,7 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            l.comments,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
+        Text(l.comments, style: Bento.section(context)),
         const SizedBox(height: 4),
         async.when(
           skipLoadingOnReload: true,
@@ -114,7 +109,6 @@ class _CommentsSectionState extends ConsumerState<CommentsSection> {
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: l.commentHint,
-                  border: const OutlineInputBorder(),
                 ),
               ),
             ),

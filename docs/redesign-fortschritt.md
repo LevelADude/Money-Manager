@@ -60,6 +60,14 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
   geprüft: schmal, je eine Palette (Reservierung Salbei inkl. Aufstocken,
   Dauerauftrag Dunkel, Konto Smaragd); breit nur per Test.
 
+- **Phase 3 (Teil 4, lokal 2026-11-16)** – Buchungsformular: Schalter
+  „Aufteilen" samt Teilzeilen, Beleg (Bild + Aktionen), Datumszeile und
+  Kommentare (nur beim Bearbeiten) je in einer `BentoGroup`-Kachel; der
+  Trennstrich vor den Kommentaren entfällt. Konto- und Zielkonto-Auswahl
+  mit `isExpanded` und gekürzten Namen. Kommentar-Eingabe nutzt das
+  Feld-Theme statt eigenem Rahmen. Typ-Umschalter unter 420 px Breite nur Text (mit Symbol brach „Einnahme“ im Wort um). Im Bild geprüft: schmal, alle drei Paletten; breit und Beleg-Kachel mit Bild nur per Test bzw. gar nicht. In Vorschau (`#/transactions/new`,
+  `#/transactions/tx0`) und Tests (schmal + breit).
+
 - **Phase 4 (Messung + belegte Maßnahme)** – Stand 2026-11-15, Flutter
   3.44.2, `flutter build web --release`:
 
@@ -82,8 +90,7 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
 
 ## Nächste Schritte (Reihenfolge)
 
-1. Phase 3 (Rest) – noch nicht einzeln angefasst: Buchungsformular
-   (groß, eigene Sitzung; Muster wie bei den drei anderen Formularen),
+1. Phase 3 (Rest) – noch nicht einzeln angefasst:
    Login/Passwort-Reset, Onboarding,
    Export/Import, Archiv-Einrichtung, Insights, Simulator, Freigaben,
    Budgets/Sparziele/Schulden/Planung im Detail (nutzen `Card` und sind über

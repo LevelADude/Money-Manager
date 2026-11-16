@@ -154,6 +154,7 @@ List<Override> previewOverrides(SharedPreferences prefs, {DateTime? now}) {
     accountsProvider.overrideWith((ref) => Stream.value(previewAccounts)),
     allTransactionsProvider.overrideWith((ref) => Stream.value(txs)),
     allSplitsProvider.overrideWith((ref) => Stream.value(const [])),
+    commentsProvider.overrideWith((ref, txId) => Stream.value(const [])),
     categoriesRawProvider.overrideWith(
       (ref) => Stream.value(previewCategories),
     ),

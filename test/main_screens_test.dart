@@ -10,6 +10,7 @@ import 'package:money_manager/core/theme.dart';
 import 'package:money_manager/dev_preview.dart';
 import 'package:money_manager/dev_preview_data.dart';
 import 'package:money_manager/features/transactions/person_filter.dart';
+import 'package:money_manager/features/transactions/transaction_form_screen.dart';
 import 'package:money_manager/shared/bento.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -156,7 +157,7 @@ void main() {
     expect(find.text('Deutschlandticket'), findsNothing);
     await tester.tap(find.text('REWE City'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('/transactions/tx0'), findsOneWidget);
+    expect(find.byType(TransactionFormScreen), findsOneWidget);
   });
 
   testWidgets('Buchungen breit: Kategorie und Konto als eigene Spalten', (
@@ -189,6 +190,8 @@ void main() {
     '/account/new',
     '/more/recurring/new',
     '/more/reservations/new',
+    '/transactions/new',
+    '/transactions/tx0',
   ]) {
     for (final size in _sizes.entries) {
       testWidgets('Unterseite $route (${size.key}) baut ohne Fehler', (

@@ -29,6 +29,7 @@ import 'transaction_providers.dart';
 import '../../core/theme.dart';
 import '../../shared/responsive.dart';
 import '../../shared/glass.dart';
+import '../../shared/bento.dart';
 
 /// Buchung erfassen ODER bearbeiten. Das Konto wird hier gewählt; kommt man von
 /// einem Konto, ist es vorausgewählt.
@@ -684,25 +685,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   Widget _buildReceiptSection(BuildContext context) {
     final l = AppLocalizations.of(context);
     if (_receiptBusy) {
-      return const Padding(
-        padding: EdgeInsets.all(8),
-        child: Center(child: CircularProgressIndicator()),
+      return const BentoGroup(
+        children: [Center(child: CircularProgressIndicator())],
       );
     }
     if (_receiptPath != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      return BentoGroup(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              l.receipt,
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-          ),
-          const SizedBox(height: 6),
+          Text(l.receipt, style: Bento.section(context)),
+          const SizedBox(height: 10),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             child: FutureBuilder<String>(
               future: _receiptUrlFuture,
               builder: (ctx, snap) {
@@ -912,6 +906,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final l = AppLocalizations.of(context);
     final df = DateFormat('dd.MM.yyyy');
     final isTransfer = _type == TransactionType.transfer;
+    final compactType = MediaQuery.sizeOf(context).width < 420;
 
     // Nur verwaltbare Konten (eigene + manage-Freigaben) anbieten — ein
     // nur-ansehbares Fremdkonto ließe sich nicht bebuchen (RLS). Den Cache nur
@@ -1002,27 +997,36 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       const SizedBox(height: 12),
                     ],
                     SegmentedButton<TransactionType>(
+                      // Auf Telefonbreite nur Text: mit Symbol bricht
+                      // „Einnahme" mitten im Wort um.
+                      showSelectedIcon: !compactType,
                       segments: [
                         ButtonSegment(
                           value: TransactionType.expense,
                           label: Text(
                             l.transactionType(TransactionType.expense),
                           ),
-                          icon: const Icon(Icons.north_east),
+                          icon: compactType
+                              ? null
+                              : const Icon(Icons.north_east),
                         ),
                         ButtonSegment(
                           value: TransactionType.income,
                           label: Text(
                             l.transactionType(TransactionType.income),
                           ),
-                          icon: const Icon(Icons.south_west),
+                          icon: compactType
+                              ? null
+                              : const Icon(Icons.south_west),
                         ),
                         ButtonSegment(
                           value: TransactionType.transfer,
                           label: Text(
                             l.transactionType(TransactionType.transfer),
                           ),
-                          icon: const Icon(Icons.swap_horiz),
+                          icon: compactType
+                              ? null
+                              : const Icon(Icons.swap_horiz),
                         ),
                       ],
                       selected: {_type},
@@ -1031,6 +1035,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _accountId,
                       decoration: InputDecoration(
                         labelText: l.accountLabel,
@@ -1040,7 +1045,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       ),
                       items: [
                         for (final a in accounts)
-                          DropdownMenuItem(value: a.id, child: Text(a.name)),
+                          DropdownMenuItem(
+                            value: a.id,
+                            child: Text(
+                              a.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                       ],
                       onChanged: (v) => setState(() => _accountId = v),
                     ),
@@ -1101,6 +1112,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     const SizedBox(height: 16),
                     if (isTransfer)
                       DropdownButtonFormField<String?>(
+                        isExpanded: true,
                         initialValue: _transferTargetId,
                         decoration: InputDecoration(
                           labelText: l.targetAccount,
@@ -1114,33 +1126,51 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           for (final a in targets)
                             DropdownMenuItem<String?>(
                               value: a.id,
-                              child: Text(a.name),
+                              child: Text(
+                                a.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                         ],
                         onChanged: (v) => setState(() => _transferTargetId = v),
                       )
                     else ...[
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        value: _splitMode,
-                        onChanged: (v) => setState(() {
-                          _splitMode = v;
-                          if (v && _splitRows.isEmpty) {
-                            final cents = parseToCents(_amount.text) ?? 0;
-                            _splitRows.add(
-                              _SplitRow(
-                                categoryId: _categoryId,
-                                amount: cents > 0 ? centsToInput(cents) : '',
-                              ),
-                            );
-                          }
-                        }),
-                        title: Text(l.splitMultiple),
-                        secondary: const Icon(Icons.call_split),
+                      // Schalter und Aufteilung in einer Kachel.
+                      BentoGroup(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          4,
+                          16,
+                          _splitMode ? 16 : 4,
+                        ),
+                        children: [
+                          SwitchListTile(
+                            value: _splitMode,
+                            onChanged: (v) => setState(() {
+                              _splitMode = v;
+                              if (v && _splitRows.isEmpty) {
+                                final cents = parseToCents(_amount.text) ?? 0;
+                                _splitRows.add(
+                                  _SplitRow(
+                                    categoryId: _categoryId,
+                                    amount: cents > 0
+                                        ? centsToInput(cents)
+                                        : '',
+                                  ),
+                                );
+                              }
+                            }),
+                            title: Text(l.splitMultiple),
+                            secondary: const Icon(Icons.call_split),
+                          ),
+                          if (_splitMode) ...[
+                            const SizedBox(height: 8),
+                            _buildSplitEditor(context, categories),
+                          ],
+                        ],
                       ),
-                      if (_splitMode)
-                        _buildSplitEditor(context, categories)
-                      else
+                      if (!_splitMode) ...[
+                        const SizedBox(height: Bento.gap),
                         DropdownButtonFormField<String?>(
                           initialValue: _categoryId,
                           // Nötig für das Flexible im Row der Einträge (sonst
@@ -1174,6 +1204,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           ],
                           onChanged: (v) => setState(() => _categoryId = v),
                         ),
+                      ],
                     ],
                     const SizedBox(height: 16),
                     Autocomplete<String>(
@@ -1224,16 +1255,17 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     const SizedBox(height: 16),
                     _buildReceiptSection(context),
                     const SizedBox(height: 16),
-                    ListTile(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: Theme.of(context).dividerColor),
-                      ),
-                      leading: const Icon(Icons.calendar_today),
-                      title: Text(l.dateLabel),
-                      subtitle: Text(df.format(_date)),
-                      trailing: const Icon(Icons.edit_calendar),
-                      onTap: _pickDate,
+                    BentoGroup(
+                      padding: BentoGroup.rowsPadding,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.calendar_today),
+                          title: Text(l.dateLabel),
+                          subtitle: Text(df.format(_date)),
+                          trailing: const Icon(Icons.edit_calendar),
+                          onTap: _pickDate,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
                     FilledButton.icon(
@@ -1249,9 +1281,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     ),
                     if (widget.isEditing) ...[
                       const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      CommentsSection(transactionId: widget.transactionId!),
+                      BentoGroup(
+                        children: [
+                          CommentsSection(transactionId: widget.transactionId!),
+                        ],
+                      ),
                     ],
                   ],
                 ),

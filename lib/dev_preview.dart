@@ -25,6 +25,7 @@ import 'features/profile/profile_screen.dart';
 import 'features/projects/projects_screen.dart';
 import 'features/recurring/recurring_form_screen.dart';
 import 'features/reservations/reservation_form_screen.dart';
+import 'features/transactions/transaction_form_screen.dart';
 import 'features/reservations/reservations_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/settings/settings_screen.dart';
@@ -74,7 +75,15 @@ GoRouter buildPreviewRouter({String initialLocation = '/'}) {
                   AccountDetailScreen(accountId: state.pathParameters['id']!),
             ),
           ]),
-          branch('/transactions', const AllTransactionsScreen()),
+          branch('/transactions', const AllTransactionsScreen(), [
+            page('new', const TransactionFormScreen()),
+            GoRoute(
+              path: ':txId',
+              builder: (_, state) => TransactionFormScreen(
+                transactionId: state.pathParameters['txId'],
+              ),
+            ),
+          ]),
           branch('/statistics', const StatisticsScreen()),
           // Unterseiten, die mit den Beispieldaten auskommen.
           branch('/more', const MoreScreen(), [
