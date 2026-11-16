@@ -90,8 +90,12 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
 
 ## Nächste Schritte (Reihenfolge)
 
-1. Phase 3 (Rest) – noch nicht einzeln angefasst:
-   Login/Passwort-Reset, Onboarding,
+1. Phase 3 (Rest) – erledigt (Teil 5): Login, Passwort-Reset, Onboarding
+   (Nebenwege des Logins als Listen-Kachel, Auswahl und Schritte des
+   Onboardings als Kacheln, Felder frei darunter, Autofill-Hinweise;
+   Vorschau: `#/login`, `#/reset-password`, `#/onboarding`). Der
+   Verbindungs-Dialog bleibt ein deckender Dialog (siehe Entscheidungen).
+   Noch nicht einzeln angefasst:
    Export/Import, Archiv-Einrichtung, Insights, Simulator, Freigaben,
    Budgets/Sparziele/Schulden/Planung im Detail (nutzen `Card` und sind über
    das Theme bereits angeglichen). `pdf_export.dart` behält feste Farben

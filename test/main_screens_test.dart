@@ -192,6 +192,9 @@ void main() {
     '/more/reservations/new',
     '/transactions/new',
     '/transactions/tx0',
+    '/login',
+    '/reset-password',
+    '/onboarding',
   ]) {
     for (final size in _sizes.entries) {
       testWidgets('Unterseite $route (${size.key}) baut ohne Fehler', (

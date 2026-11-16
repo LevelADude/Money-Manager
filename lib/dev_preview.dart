@@ -19,8 +19,12 @@ import 'features/accounts/account_detail_screen.dart';
 import 'features/accounts/account_form_screen.dart';
 import 'features/accounts/account_groups_screen.dart';
 import 'features/accounts/accounts_screen.dart';
+import 'config/app_config.dart';
 import 'features/archive/archive_screen.dart';
+import 'features/auth/login_screen.dart';
+import 'features/auth/reset_password_screen.dart';
 import 'features/more/more_screen.dart';
+import 'features/onboarding/onboarding_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/projects/projects_screen.dart';
 import 'features/recurring/recurring_form_screen.dart';
@@ -97,6 +101,19 @@ GoRouter buildPreviewRouter({String initialLocation = '/'}) {
             page('profile', const ProfileScreen()),
           ]),
         ],
+      ),
+      // Einstieg: liegt in der App außerhalb der Shell (Onboarding sogar vor
+      // Riverpod); hier nur zum Ansehen, Absenden meldet einen Beispielfehler.
+      page('/login', const LoginScreen()),
+      page('/reset-password', const ResetPasswordScreen()),
+      page(
+        '/onboarding',
+        Consumer(
+          builder: (context, ref, _) => OnboardingScreen(
+            config: ref.watch(appConfigProvider),
+            onSubmit: (_, _) async => 'Vorschau: keine Verbindung',
+          ),
+        ),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
