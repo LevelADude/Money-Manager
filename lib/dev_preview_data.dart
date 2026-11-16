@@ -10,12 +10,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/app_config.dart';
 import 'data/local/app_cache.dart';
 import 'data/models/account.dart';
+import 'data/models/access_grant.dart';
 import 'data/models/account_group.dart';
 import 'data/models/app_transaction.dart';
 import 'data/models/archive_config_status.dart';
 import 'data/models/archived_year.dart';
 import 'data/models/budget.dart';
 import 'data/models/category.dart';
+import 'data/models/recurring_rule.dart';
 import 'data/models/savings_goal.dart';
 import 'features/accounts/account_providers.dart';
 import 'features/archive/archive_providers.dart';
@@ -25,7 +27,6 @@ import 'features/categories/category_providers.dart';
 import 'features/currency/currency_providers.dart';
 import 'features/profile/profile_providers.dart';
 import 'features/recurring/recurring_providers.dart';
-import 'features/reminders/reminders_providers.dart';
 import 'features/reservations/reservation_providers.dart';
 import 'features/savings/savings_providers.dart';
 import 'features/sharing/access_grant_providers.dart';
@@ -181,6 +182,80 @@ List<SavingsGoal> previewSavingsGoals(DateTime now) => [
   ),
 ];
 
+/// Daueraufträge: Fixkosten (eine noch in diesem Monat fällig) und Gehalt,
+/// damit Planung, Cashflow und Erinnerungen etwas zeigen.
+List<RecurringRule> previewRecurringRules(DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  RecurringRule rule(
+    String id,
+    String title,
+    TransactionType type,
+    int cents,
+    String cat,
+    DateTime next, {
+    IntervalUnit unit = IntervalUnit.month,
+  }) => RecurringRule(
+    id: id,
+    accountId: 'giro',
+    type: type,
+    amountCents: cents,
+    categoryId: cat,
+    transferAccountId: null,
+    title: title,
+    note: '',
+    intervalUnit: unit,
+    intervalCount: 1,
+    nextDue: next,
+    endDate: null,
+    active: true,
+    anchorDay: next.day,
+  );
+  const exp = TransactionType.expense;
+  return [
+    rule(
+      'r-phone',
+      'Handyvertrag',
+      exp,
+      1999,
+      'subs',
+      today.add(const Duration(days: 1)),
+    ),
+    rule(
+      'r-gym',
+      'Fitnessstudio',
+      exp,
+      2990,
+      'fun',
+      today.add(const Duration(days: 5)),
+    ),
+    rule(
+      'r-rent',
+      'Miete',
+      exp,
+      72500,
+      'home',
+      DateTime(now.year, now.month + 1, 1),
+    ),
+    rule(
+      'r-pay',
+      'Gehalt',
+      TransactionType.income,
+      295000,
+      'pay',
+      DateTime(now.year, now.month + 1, 1),
+    ),
+    rule(
+      'r-ins',
+      'Haftpflicht',
+      exp,
+      6480,
+      'home',
+      DateTime(now.year, now.month + 2, 10),
+      unit: IntervalUnit.year,
+    ),
+  ];
+}
+
 /// Overrides, mit denen die vier Hauptscreens ohne Login und ohne Netz laufen.
 List<Override> previewOverrides(SharedPreferences prefs, {DateTime? now}) {
   final txs = previewTransactions(now ?? DateTime.now());
@@ -246,11 +321,29 @@ List<Override> previewOverrides(SharedPreferences prefs, {DateTime? now}) {
     recurringGenerationProvider.overrideWith((ref) => 0),
     // Insights lesen zusätzlich Budgets, Daueraufträge und Sparziele.
     budgetsProvider.overrideWith((ref) => Stream.value(previewBudgets)),
-    recurringRulesProvider.overrideWith((ref) => Stream.value(const [])),
+    recurringRulesProvider.overrideWith(
+      (ref) => Stream.value(previewRecurringRules(now ?? DateTime.now())),
+    ),
+    // Freigaben: ich zeige Sam meine Finanzen, Sam lässt mich verwalten.
+    accessGrantsProvider.overrideWith(
+      (ref) async => const [
+        AccessGrant(
+          id: 'ag1',
+          ownerId: previewUserId,
+          granteeId: _partnerId,
+          level: GrantLevel.view,
+        ),
+        AccessGrant(
+          id: 'ag2',
+          ownerId: _partnerId,
+          granteeId: previewUserId,
+          level: GrantLevel.manage,
+        ),
+      ],
+    ),
     savingsGoalsProvider.overrideWith(
       (ref) => Stream.value(previewSavingsGoals(now ?? DateTime.now())),
     ),
-    remindersProvider.overrideWithValue(const []),
     converterProvider.overrideWithValue((cents, code) => cents),
     effectiveRatesProvider.overrideWithValue(const {}),
   ];

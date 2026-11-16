@@ -81,106 +81,127 @@ class SettleScreen extends ConsumerWidget {
       if (bal[d]! >= 0) j++;
     }
 
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+
+    Widget hint(IconData icon, String text, {Color? tint}) => BentoTile(
+      child: Row(
+        children: [
+          BentoGlyph(size: 38, tint: tint, child: Icon(icon)),
+          const SizedBox(width: 12),
+          Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
+        ],
+      ),
+    );
+
+    Widget initial(String id) => BentoGlyph(
+      size: 38,
+      child: Text(
+        nameOf(id).isNotEmpty ? nameOf(id)[0].toUpperCase() : '?',
+        style: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+
+    Widget section(List<Widget> children) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: children,
+    );
+
     return Scaffold(
       appBar: AppBar(title: Text(l.settleTitle)),
-      body: members.length < 2
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(l.settleNeedsTwo),
-              ),
-            )
-          : ListView(
-              padding: BentoListView.paddingOf(context),
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          l.sharedExpensesMonth,
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 4),
-                        MoneyText(
-                          total,
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              l.fairSharePerPerson,
-                              style: Theme.of(context).textTheme.bodySmall,
+      body: ListView(
+        padding: BentoListView.paddingOf(context),
+        children: members.length < 2
+            ? [hint(Icons.people_outline, l.settleNeedsTwo)]
+            : [
+                BentoGrid(
+                  cells: [
+                    BentoCell(
+                      span: 1,
+                      wideSpan: 2,
+                      child: BentoStat(
+                        label: l.sharedExpensesMonth,
+                        value: MoneyText(total),
+                      ),
+                    ),
+                    BentoCell(
+                      span: 1,
+                      wideSpan: 2,
+                      child: BentoStat(
+                        label: l.fairSharePerPerson,
+                        value: MoneyText(share),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Bento.gap * 2),
+                BentoColumns(
+                  // Je Seite eine Spalte, damit Überschrift und Kachel auch
+                  // schmal zusammenbleiben.
+                  left: [
+                    section([
+                      BentoSectionHeader(label: l.balancesPerPerson),
+                      BentoList(
+                        children: [
+                          for (final m in members)
+                            BentoRow(
+                              leading: initial(m),
+                              title: Text(nameOf(m)),
+                              subtitle: MoneyText(
+                                spent[m]!,
+                                prefix: l.spentPrefix,
+                              ),
+                              trailing: MoneyText(
+                                balance[m]!,
+                                prefix: balance[m]! > 0 ? '+' : '',
+                                style: TextStyle(
+                                  color: balance[m]! > 0
+                                      ? colors.income
+                                      : balance[m]! < 0
+                                      ? colors.expense
+                                      : null,
+                                ),
+                              ),
                             ),
-                            MoneyText(share),
+                        ],
+                      ),
+                    ]),
+                  ],
+                  right: [
+                    section([
+                      BentoSectionHeader(label: l.settleSuggestion),
+                      if (plan.isEmpty)
+                        hint(Icons.check, l.allSettled, tint: colors.income)
+                      else
+                        BentoList(
+                          children: [
+                            for (final p in plan)
+                              BentoRow(
+                                leading: const BentoGlyph(
+                                  size: 38,
+                                  child: Icon(Icons.arrow_forward),
+                                ),
+                                title: Text(
+                                  '${nameOf(p.from)} → ${nameOf(p.to)}',
+                                ),
+                                trailing: MoneyText(p.amount),
+                              ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
+                    ]),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  l.balancesPerPerson,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                for (final m in members)
-                  ListTile(
-                    dense: true,
-                    leading: CircleAvatar(child: Text(nameOf(m)[0])),
-                    title: Text(nameOf(m)),
-                    subtitle: MoneyText(spent[m]!, prefix: l.spentPrefix),
-                    trailing: MoneyText(
-                      balance[m]!,
-                      prefix: balance[m]! > 0 ? '+' : '',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: balance[m]! >= 0
-                            ? AppColors.of(context).income
-                            : AppColors.of(context).expense,
-                      ),
-                    ),
-                  ),
-                const Divider(height: 24),
-                Text(
-                  l.settleSuggestion,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                if (plan.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(l.allSettled),
-                  )
-                else
-                  for (final p in plan)
-                    Card(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      child: ListTile(
-                        leading: const Icon(Icons.arrow_forward),
-                        title: Text('${nameOf(p.from)} → ${nameOf(p.to)}'),
-                        trailing: MoneyText(
-                          p.amount,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                const SizedBox(height: 12),
-                Text(
-                  l.settleHint,
-                  style: Theme.of(context).textTheme.bodySmall,
+                const SizedBox(height: Bento.gap),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text(l.settleHint, style: Bento.sub(context)),
                 ),
               ],
-            ),
+      ),
     );
   }
 }

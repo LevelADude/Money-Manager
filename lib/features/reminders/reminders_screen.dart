@@ -23,51 +23,90 @@ class RemindersScreen extends ConsumerWidget {
     final reminders = ref.watch(remindersProvider);
     final streak = ref.watch(streakProvider);
     final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final ink2 = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(title: Text(l.moreReminders)),
       body: ListView(
         padding: BentoListView.paddingOf(context),
         children: [
-          Card(
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: streak.bookedToday
-                    ? AppColors.of(context).income
-                    : Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: Text('🔥', style: const TextStyle(fontSize: 18)),
-              ),
-              title: Text(l.streakDays(streak.days)),
-              subtitle: Text(
-                streak.bookedToday ? l.bookedToday : l.notBookedToday,
-              ),
-              trailing: streak.bookedToday
-                  ? null
-                  : FilledButton.tonal(
-                      onPressed: () => context.go('/transactions/new'),
-                      child: Text(l.bookAction),
-                    ),
+          BentoTile(
+            child: Row(
+              children: [
+                BentoGlyph(
+                  tint: streak.bookedToday
+                      ? AppColors.of(context).income
+                      : null,
+                  child: const Text('🔥', style: TextStyle(fontSize: 20)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l.streakDays(streak.days),
+                        style: Bento.number(context, size: 18),
+                      ),
+                      Text(
+                        streak.bookedToday ? l.bookedToday : l.notBookedToday,
+                        style: Bento.sub(context),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!streak.bookedToday) ...[
+                  const SizedBox(width: 8),
+                  FilledButton.tonal(
+                    onPressed: () => context.go('/transactions/new'),
+                    child: Text(l.bookAction),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: Bento.gap),
           if (reminders.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Center(child: Text(l.noReminders)),
+            BentoTile(
+              child: Row(
+                children: [
+                  BentoGlyph(
+                    size: 38,
+                    tint: AppColors.of(context).income,
+                    child: const Icon(Icons.check),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      l.noReminders,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
             )
           else
-            for (final r in reminders)
-              Card(
-                child: ListTile(
-                  leading: Icon(r.icon, color: _color(context, r.level)),
-                  title: Text(r.title),
-                  subtitle: Text(r.subtitle),
-                  trailing: r.route == null
-                      ? null
-                      : const Icon(Icons.chevron_right),
-                  onTap: r.route == null ? null : () => context.go(r.route!),
-                ),
-              ),
+            BentoList(
+              children: [
+                for (final r in reminders)
+                  BentoRow(
+                    leading: BentoGlyph(
+                      size: 38,
+                      tint: _color(context, r.level),
+                      child: Icon(r.icon),
+                    ),
+                    title: Text(r.title),
+                    subtitle: Text(r.subtitle),
+                    subtitleMaxLines: 3,
+                    trailing: r.route == null
+                        ? null
+                        : Icon(Icons.chevron_right, size: 20, color: ink2),
+                    onTap: r.route == null ? null : () => context.go(r.route!),
+                  ),
+              ],
+            ),
         ],
       ),
     );

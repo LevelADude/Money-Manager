@@ -313,6 +313,66 @@ void main() {
     expect(find.byType(BentoProgress), findsOneWidget);
   });
 
+  testWidgets('Planung: Verfügbar und Hochrechnung als Kacheln, Fixkosten', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/planning', AppPalette.sage, _sizes['schmal']!);
+    expect(tester.takeException(), isNull);
+    expect(find.text('Verfügbar bis Monatsende'), findsOneWidget);
+    expect(find.byType(BentoGrid), findsOneWidget);
+    // Vier Fixkosten (Gehalt ist Einnahme) in einer Listen-Kachel.
+    expect(find.byType(BentoList), findsOneWidget);
+    expect(find.text('Handyvertrag'), findsOneWidget);
+    expect(find.text('Gehalt'), findsNothing);
+    expect(find.byType(Card), findsNothing);
+  });
+
+  testWidgets('Cashflow: Saldo und Tiefststand, Ereignisse als Liste', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/cashflow', AppPalette.dark, _sizes['breit']!);
+    expect(tester.takeException(), isNull);
+    expect(find.byType(BentoStat), findsNWidgets(2));
+    expect(find.text('Tiefststand (60 Tage)'), findsOneWidget);
+    expect(find.byType(BentoList), findsOneWidget);
+    expect(find.text('Fitnessstudio'), findsNWidgets(2)); // monatlich
+    expect(find.byType(Card), findsNothing);
+  });
+
+  testWidgets('Abrechnen: Summen, Salden und Ausgleich', (tester) async {
+    await _pump(tester, '/more/settle', AppPalette.emerald, _sizes['schmal']!);
+    expect(tester.takeException(), isNull);
+    expect(find.byType(BentoStat), findsNWidgets(2));
+    expect(find.text('Salden je Person'), findsOneWidget);
+    // Sam hat nichts ausgegeben und gleicht an Alex aus.
+    expect(find.text('Sam → Alex'), findsOneWidget);
+    expect(find.byType(BentoList), findsNWidgets(2));
+    expect(find.byType(Card), findsNothing);
+  });
+
+  testWidgets('Erinnerungen: Streak-Kachel und Hinweise als Liste', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/reminders', AppPalette.sage, _sizes['schmal']!);
+    expect(tester.takeException(), isNull);
+    expect(find.text('🔥'), findsOneWidget);
+    // Fällige Daueraufträge und Budget-Warnungen aus den Beispieldaten.
+    expect(find.byType(BentoList), findsOneWidget);
+    expect(find.byType(BentoRow), findsWidgets);
+    expect(find.byType(Card), findsNothing);
+  });
+
+  testWidgets('Freigaben: Personen mit Umschalter, erhaltene als Liste', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/sharing', AppPalette.emerald, _sizes['breit']!);
+    expect(tester.takeException(), isNull);
+    expect(find.byType(SegmentedButton<String>), findsOneWidget);
+    expect(find.text('Du darfst ansehen und verwalten'), findsOneWidget);
+    expect(find.byType(BentoList), findsNWidgets(2));
+    expect(find.byType(Card), findsNothing);
+  });
+
   // Unterseiten aus Phase 3, die mit den Beispieldaten auskommen.
   for (final route in [
     '/account/giro',
@@ -331,6 +391,11 @@ void main() {
     '/more/budgets',
     '/more/goals',
     '/more/debts',
+    '/more/planning',
+    '/more/cashflow',
+    '/more/settle',
+    '/more/reminders',
+    '/more/sharing',
     '/account/new',
     '/more/recurring/new',
     '/more/reservations/new',

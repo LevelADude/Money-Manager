@@ -195,11 +195,15 @@ class BentoRow extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+    this.subtitleMaxLines = 1,
   });
 
   final Widget? leading;
   final Widget title;
   final Widget? subtitle;
+
+  /// Für Erläuterungen, die ganz lesbar sein sollen (Erinnerungen).
+  final int subtitleMaxLines;
 
   /// Zusatzspalten zwischen Titel und Betrag (Desktop: Kategorie, Konto).
   final List<Widget> columns;
@@ -236,7 +240,7 @@ class BentoRow extends StatelessWidget {
                 if (subtitle != null)
                   DefaultTextStyle.merge(
                     style: subStyle,
-                    maxLines: 1,
+                    maxLines: subtitleMaxLines,
                     overflow: TextOverflow.ellipsis,
                     child: subtitle!,
                   ),

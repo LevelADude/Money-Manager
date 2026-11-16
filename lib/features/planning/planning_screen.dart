@@ -87,148 +87,137 @@ class PlanningScreen extends ConsumerWidget {
         ? (projectedExpense - prevMonthExpense) / prevMonthExpense * 100
         : null;
     final projectedNet = incomeMonth - projectedExpense;
+    final deltaText = projDeltaPct == null
+        ? null
+        : '${projDeltaPct >= 0 ? '+' : ''}${projDeltaPct.round()}';
+
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+    // Saldo-artige Werte nur negativ in Ausgabenfarbe (wie Konten/Statistik).
+    Color? signal(int cents) => cents < 0 ? colors.expense : null;
+
+    Widget line(String label, int cents) => Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: Bento.sub(context),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          MoneyText(cents, style: theme.textTheme.bodyMedium),
+        ],
+      ),
+    );
+
+    Widget bigAmount(int cents) => FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: MoneyText(
+        cents,
+        style: Bento.number(context, size: 32).copyWith(color: signal(cents)),
+      ),
+    );
+
+    final availableTile = BentoTile(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(l.availableUntilMonthEnd, style: Bento.label(context)),
+          const SizedBox(height: 2),
+          bigAmount(available),
+          const SizedBox(height: 6),
+          line(l.incomeMonthLabel, incomeMonth),
+          line(l.minusExpensesSoFar, -expenseMonth),
+          line(l.minusOpenFixed, -upcomingFix),
+        ],
+      ),
+    );
+
+    final projectionTile = BentoTile(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l.projectionMonthEnd,
+                  style: Bento.label(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (deltaText != null)
+                BentoChip(
+                  icon: projDeltaPct! >= 0
+                      ? Icons.trending_up
+                      : Icons.trending_down,
+                  child: Text(l.vsPrevMonthPct(deltaText)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          bigAmount(projectedNet),
+          Text(l.expectedBalance, style: Bento.sub(context)),
+          const SizedBox(height: 6),
+          line(l.expectedExpenses, projectedExpense),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              l.atCurrentPace(daysElapsed, daysInMonth),
+              style: Bento.sub(context),
+            ),
+          ),
+        ],
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.morePlanning)),
       body: ListView(
         padding: BentoListView.paddingOf(context),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l.availableUntilMonthEnd,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  MoneyText(
-                    available,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: available >= 0
-                          ? AppColors.of(context).income
-                          : AppColors.of(context).expense,
-                    ),
-                  ),
-                  const Divider(height: 24),
-                  _line(context, l.incomeMonthLabel, incomeMonth),
-                  _line(context, l.minusExpensesSoFar, -expenseMonth),
-                  _line(context, l.minusOpenFixed, -upcomingFix),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.trending_up, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        l.projectionMonthEnd,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(l.expectedExpenses),
-                      MoneyText(
-                        projectedExpense,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '${l.atCurrentPace(daysElapsed, daysInMonth)}'
-                    '${projDeltaPct == null ? '' : ' · ${l.vsPrevMonthPct('${projDeltaPct >= 0 ? '+' : ''}${projDeltaPct.round()}')}'}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(l.expectedBalance),
-                      MoneyText(
-                        projectedNet,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: projectedNet >= 0
-                              ? AppColors.of(context).income
-                              : AppColors.of(context).expense,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l.fixedCostsMonthly,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-              MoneyText(
-                monthlyFixTotal,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+          BentoGrid(
+            cells: [
+              BentoCell(span: 2, child: availableTile),
+              BentoCell(span: 2, child: projectionTile),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: Bento.gap * 2),
+          BentoSectionHeader(
+            label: l.fixedCostsMonthly,
+            trailing: MoneyText(monthlyFixTotal),
+          ),
           if (fixedExpenses.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(l.noFixedCosts),
-              ),
-            )
+            BentoTile(child: Text(l.noFixedCosts, style: Bento.sub(context)))
           else
-            for (final r in fixedExpenses)
-              Card(
-                margin: const EdgeInsets.only(bottom: 6),
-                child: ListTile(
-                  leading: const Icon(Icons.repeat),
-                  title: Text(r.title.isEmpty ? l.standingOrderNoun : r.title),
-                  subtitle: Text(
-                    '${l.nextDuePrefix(df.format(r.nextDue))} · '
-                    '${l.everyInterval(r.intervalCount, r.intervalUnit)}',
+            BentoList(
+              children: [
+                for (final r in fixedExpenses)
+                  BentoRow(
+                    leading: const BentoGlyph(
+                      size: 38,
+                      child: Icon(Icons.repeat),
+                    ),
+                    title: Text(
+                      r.title.isEmpty ? l.standingOrderNoun : r.title,
+                    ),
+                    subtitle: Text(
+                      '${l.nextDuePrefix(df.format(r.nextDue))} · '
+                      '${l.everyInterval(r.intervalCount, r.intervalUnit)}',
+                    ),
+                    trailing: MoneyText(r.amountCents),
                   ),
-                  trailing: MoneyText(
-                    r.amountCents,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
+              ],
+            ),
         ],
-      ),
-    );
-  }
-
-  Widget _line(BuildContext context, String label, int cents) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(label), MoneyText(cents)],
       ),
     );
   }

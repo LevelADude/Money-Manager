@@ -64,6 +64,11 @@ class CashflowScreen extends ConsumerWidget {
       ));
     }
 
+    final colors = AppColors.of(context);
+    final theme = Theme.of(context);
+    // Saldo-artige Werte nur negativ in Ausgabenfarbe.
+    Color? signal(int cents) => cents < 0 ? colors.expense : null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l.moreCashflow),
@@ -72,100 +77,94 @@ class CashflowScreen extends ConsumerWidget {
       body: ListView(
         padding: BentoListView.paddingOf(context),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l.currentBalance,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  MoneyText(
+          BentoGrid(
+            cells: [
+              BentoCell(
+                span: 1,
+                wideSpan: 2,
+                child: BentoStat(
+                  label: l.currentBalance,
+                  value: MoneyText(
                     current,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: signal(current)),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l.lowestBalance60,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      MoneyText(
-                        lowest,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: lowest < 0
-                              ? AppColors.of(context).expense
-                              : null,
+                ),
+              ),
+              BentoCell(
+                span: 1,
+                wideSpan: 2,
+                child: BentoStat(
+                  label: l.lowestBalance60,
+                  value: MoneyText(
+                    lowest,
+                    style: TextStyle(color: signal(lowest)),
+                  ),
+                ),
+              ),
+              if (lowest < 0)
+                BentoCell.full(
+                  child: BentoTile(
+                    child: Row(
+                      children: [
+                        BentoGlyph(
+                          size: 38,
+                          tint: colors.expense,
+                          child: const Icon(Icons.warning_amber_rounded),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            l.balanceGoesNegative,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  if (lowest < 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        l.balanceGoesNegative,
-                        style: TextStyle(color: AppColors.of(context).expense),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+                ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Bento.gap),
           if (rows.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(l.noPlannedTx60),
-              ),
-            )
+            BentoTile(child: Text(l.noPlannedTx60, style: Bento.sub(context)))
           else
-            for (final r in rows)
-              ListTile(
-                dense: true,
-                leading: Icon(
-                  r.signed >= 0 ? Icons.south_west : Icons.north_east,
-                  color: r.signed >= 0
-                      ? AppColors.of(context).income
-                      : AppColors.of(context).expense,
-                ),
-                title: Text(r.title),
-                subtitle: Text(df.format(r.date)),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    MoneyText(
-                      r.signed.abs(),
-                      prefix: r.signed >= 0 ? '+' : '-',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: r.signed >= 0
-                            ? AppColors.of(context).income
-                            : AppColors.of(context).expense,
+            BentoList(
+              children: [
+                for (final r in rows)
+                  BentoRow(
+                    leading: BentoGlyph(
+                      size: 38,
+                      tint: r.signed >= 0 ? colors.income : null,
+                      child: Icon(
+                        r.signed >= 0 ? Icons.south_west : Icons.north_east,
                       ),
                     ),
-                    MoneyText(
-                      r.balance,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: r.balance < 0
-                            ? AppColors.of(context).expense
-                            : Theme.of(context).hintColor,
-                      ),
+                    title: Text(r.title),
+                    subtitle: Text(df.format(r.date)),
+                    trailing: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Einnahmen in Einnahmenfarbe, Ausgaben neutral.
+                        MoneyText(
+                          r.signed.abs(),
+                          prefix: r.signed >= 0 ? '+' : '-',
+                          style: TextStyle(
+                            color: r.signed >= 0 ? colors.income : null,
+                          ),
+                        ),
+                        // Laufender Saldo danach.
+                        MoneyText(
+                          r.balance,
+                          style: Bento.sub(
+                            context,
+                          ).copyWith(color: signal(r.balance)),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+              ],
+            ),
         ],
       ),
     );

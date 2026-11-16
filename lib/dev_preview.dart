@@ -29,6 +29,11 @@ import 'features/export/export_screen.dart';
 import 'features/budgets/budgets_screen.dart';
 import 'features/debts/debts_screen.dart';
 import 'features/insights/insights_screen.dart';
+import 'features/planning/cashflow_screen.dart';
+import 'features/planning/planning_screen.dart';
+import 'features/reminders/reminders_screen.dart';
+import 'features/settle/settle_screen.dart';
+import 'features/sharing/sharing_screen.dart';
 import 'features/savings/savings_screen.dart';
 import 'features/more/more_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
@@ -112,6 +117,11 @@ GoRouter buildPreviewRouter({String initialLocation = '/'}) {
             page('budgets', const BudgetsScreen()),
             page('goals', const SavingsScreen()),
             page('debts', const DebtsScreen()),
+            page('planning', const PlanningScreen()),
+            page('cashflow', const CashflowScreen()),
+            page('settle', const SettleScreen()),
+            page('reminders', const RemindersScreen()),
+            page('sharing', const SharingScreen()),
             page('profile', const ProfileScreen()),
             page('export', const ExportScreen()),
             page('import', const CsvImportScreen()),

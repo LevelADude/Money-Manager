@@ -124,9 +124,23 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
    gemessen (Kachel zu hoch), jetzt `maxLines: 1`. Vorschau:
    `#/more/budgets`, `#/more/goals`, `#/more/debts` (Beispiel-Budgets,
    -Sparziele, Kreditrahmen 1.500 €).
-   Noch nicht einzeln angefasst: Freigaben, Planung, Cashflow, Abrechnen,
-   Erinnerungen (nutzen `Card` und sind über das Theme angeglichen). `pdf_export.dart` behält feste Farben
-   (Papier, kein UI).
+   Teil 9 (2026-11-16): Planung, Cashflow, Abrechnen, Erinnerungen,
+   Freigaben – damit ist Phase 3 abgeschlossen. Planung: Verfügbar- und
+   Hochrechnungs-Kachel (breit nebeneinander, Vormonatsvergleich als Marke),
+   Fixkosten als Listen-Kachel mit Summe in der Überschrift. Cashflow: Saldo
+   und Tiefststand als Summen-Kacheln, Warnung als Hinweis-Kachel,
+   Ereignisse als Listen-Kachel (Einnahmen in Einnahmenfarbe, Ausgaben
+   neutral, laufender Saldo darunter). Abrechnen: zwei Summen-Kacheln,
+   Salden und Ausgleich als Listen-Kacheln (breit nebeneinander). Erinnerungen:
+   Streak-Kachel, Hinweise als Listen-Kachel mit Kreis in Signalfarbe und
+   ganzem Text (`BentoRow.subtitleMaxLines`). Freigaben: Hinweis-Kachel,
+   Personen mit Umschalter in einer Listen-Kachel, erhaltene Freigaben als
+   zweite. Saldo-artige Werte nur negativ in Ausgabenfarbe. Vorschau:
+   `#/more/planning`, `#/more/cashflow`, `#/more/settle`,
+   `#/more/reminders`, `#/more/sharing` (Beispiel-Daueraufträge und
+   -Freigaben; Erinnerungen werden jetzt echt aus den Beispieldaten berechnet).
+   Nur per Tests geprüft, nicht im Bild (Browser-Vorschau war in der Sitzung
+   nicht erreichbar). `pdf_export.dart` behält feste Farben (Papier, kein UI).
 2. Phase 4 (Rest) – Wasm erst nach Update/Ersatz von `ua_client_hints`
    erneut prüfen; Startzeit mit echten Daten messen.
 3. Phase 5 – Abschlussprüfung (Kontrast, Abstände, Fokus/Tastatur,
