@@ -16,12 +16,15 @@ import 'core/main_scaffold.dart';
 import 'core/theme.dart';
 import 'dev_preview_data.dart';
 import 'features/accounts/account_detail_screen.dart';
+import 'features/accounts/account_form_screen.dart';
 import 'features/accounts/account_groups_screen.dart';
 import 'features/accounts/accounts_screen.dart';
 import 'features/archive/archive_screen.dart';
 import 'features/more/more_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/projects/projects_screen.dart';
+import 'features/recurring/recurring_form_screen.dart';
+import 'features/reservations/reservation_form_screen.dart';
 import 'features/reservations/reservations_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/settings/settings_screen.dart';
@@ -64,6 +67,7 @@ GoRouter buildPreviewRouter({String initialLocation = '/'}) {
         branches: [
           branch('/', const AccountsScreen(), [
             page('account/groups', const AccountGroupsScreen()),
+            page('account/new', const AccountFormScreen()),
             GoRoute(
               path: 'account/:id',
               builder: (_, state) =>
@@ -77,6 +81,8 @@ GoRouter buildPreviewRouter({String initialLocation = '/'}) {
             page('search', const SearchScreen()),
             page('projects', const ProjectsScreen()),
             page('reservations', const ReservationsScreen()),
+            page('reservations/new', const ReservationFormScreen()),
+            page('recurring/new', const RecurringFormScreen()),
             page('settings', const SettingsScreen()),
             page('archive', const ArchiveScreen()),
             page('profile', const ProfileScreen()),

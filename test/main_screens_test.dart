@@ -186,6 +186,9 @@ void main() {
     '/more/settings',
     '/more/archive',
     '/more/profile',
+    '/account/new',
+    '/more/recurring/new',
+    '/more/reservations/new',
   ]) {
     for (final size in _sizes.entries) {
       testWidgets('Unterseite $route (${size.key}) baut ohne Fehler', (

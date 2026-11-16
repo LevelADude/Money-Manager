@@ -656,17 +656,44 @@ List<Widget> bentoSections(List<Widget> children, {double gap = Bento.gap}) {
       if (section.isNotEmpty)
         Padding(
           padding: EdgeInsets.only(top: i == 0 ? 0 : gap),
-          child: BentoTile(
-            padding: const EdgeInsets.all(16),
-            child: ListTileTheme.merge(
-              contentPadding: EdgeInsets.zero,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: section,
-              ),
-            ),
-          ),
+          child: BentoGroup(children: section),
         ),
   ];
+}
+
+/// Eine Kachel mit untereinander stehenden Zeilen (Listenzeilen, Schalter,
+/// Felder). Listenzeilen sitzen bündig am Kachelrand. In Formularen fasst sie
+/// alles zusammen, was sonst lose auf dem Hintergrund läge; Eingabefelder
+/// selbst sind bereits eigene Flächen und bleiben außerhalb.
+class BentoGroup extends StatelessWidget {
+  const BentoGroup({
+    super.key,
+    required this.children,
+    this.padding = const EdgeInsets.all(16),
+  });
+
+  /// Für Kacheln, die nur aus Listenzeilen bestehen: die Zeilen bringen ihre
+  /// eigene Höhe mit.
+  static const EdgeInsets rowsPadding = EdgeInsets.symmetric(
+    horizontal: 16,
+    vertical: 4,
+  );
+
+  final List<Widget> children;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return BentoTile(
+      padding: padding,
+      child: ListTileTheme.merge(
+        contentPadding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: children,
+        ),
+      ),
+    );
+  }
 }

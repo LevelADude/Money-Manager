@@ -48,6 +48,18 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
   bis zum Rand, `shouldRepaint` vergleicht statt immer neu zu zeichnen.
   Im Bild geprüft (Salbei, breit).
 
+- **Phase 3 (Teil 3, lokal 2026-11-16)** – Formulare Konto, Dauerauftrag,
+  Reservierung: Eingabefelder bleiben eigene Flächen (Kachelfarbe + Rand
+  aus dem Theme); alles, was lose auf dem Hintergrund lag (Schalter,
+  Datumszeilen, Rhythmus, Freigabe-Chips), sitzt in `BentoGroup`-Kacheln.
+  `bentoSections` baut jetzt ebenfalls auf `BentoGroup`. Auswahlfelder mit
+  `isExpanded` und gekürzten Namen: vorher lief ein langer Konto- oder
+  Kategoriename auf schmalen Geräten rechts über. Alle drei in der
+  Vorschau (`#/account/new`, `#/more/recurring/new`,
+  `#/more/reservations/new`) und in den Tests (schmal + breit). Im Bild
+  geprüft: schmal, je eine Palette (Reservierung Salbei inkl. Aufstocken,
+  Dauerauftrag Dunkel, Konto Smaragd); breit nur per Test.
+
 - **Phase 4 (Messung + belegte Maßnahme)** – Stand 2026-11-15, Flutter
   3.44.2, `flutter build web --release`:
 
@@ -70,8 +82,9 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
 
 ## Nächste Schritte (Reihenfolge)
 
-1. Phase 3 (Rest) – noch nicht einzeln angefasst: Formulare (Buchung,
-   Konto, Dauerauftrag, Reservierung), Login/Passwort-Reset, Onboarding,
+1. Phase 3 (Rest) – noch nicht einzeln angefasst: Buchungsformular
+   (groß, eigene Sitzung; Muster wie bei den drei anderen Formularen),
+   Login/Passwort-Reset, Onboarding,
    Export/Import, Archiv-Einrichtung, Insights, Simulator, Freigaben,
    Budgets/Sparziele/Schulden/Planung im Detail (nutzen `Card` und sind über
    das Theme bereits angeglichen). `pdf_export.dart` behält feste Farben
