@@ -21,10 +21,12 @@ import 'features/accounts/account_groups_screen.dart';
 import 'features/accounts/accounts_screen.dart';
 import 'config/app_config.dart';
 import 'features/archive/archive_screen.dart';
+import 'features/archive/archive_setup_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/reset_password_screen.dart';
 import 'features/export/csv_import_screen.dart';
 import 'features/export/export_screen.dart';
+import 'features/insights/insights_screen.dart';
 import 'features/more/more_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/profile/profile_screen.dart';
@@ -36,6 +38,7 @@ import 'features/reservations/reservations_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/settings/settings_providers.dart';
+import 'features/simulator/simulator_screen.dart';
 import 'features/statistics/statistics_screen.dart';
 import 'features/transactions/all_transactions_screen.dart';
 import 'features/transactions/person_filter.dart';
@@ -100,6 +103,9 @@ GoRouter buildPreviewRouter({String initialLocation = '/'}) {
             page('recurring/new', const RecurringFormScreen()),
             page('settings', const SettingsScreen()),
             page('archive', const ArchiveScreen()),
+            page('archive/setup', const ArchiveSetupScreen()),
+            page('insights', const InsightsScreen()),
+            page('simulator', const SimulatorScreen()),
             page('profile', const ProfileScreen()),
             page('export', const ExportScreen()),
             page('import', const CsvImportScreen()),

@@ -150,26 +150,33 @@ class BentoStat extends StatelessWidget {
 
 /// Getönter Kreis hinter einem Emoji oder Icon.
 class BentoGlyph extends StatelessWidget {
-  const BentoGlyph({super.key, required this.child, this.size = 42});
+  const BentoGlyph({super.key, required this.child, this.size = 42, this.tint});
 
   final Widget child;
   final double size;
 
+  /// Signalfarbe (Warnung, Einnahme): färbt das Icon und tönt den Kreis.
+  /// Ohne Angabe neutral.
+  final Color? tint;
+
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context);
+    final tint = this.tint;
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.of(context).chip,
+        color: tint == null
+            ? AppColors.of(context).chip
+            : tint.withValues(alpha: .14),
         shape: BoxShape.circle,
       ),
       child: IconTheme.merge(
         data: IconThemeData(
           size: size * .5,
-          color: t.colorScheme.onSurfaceVariant,
+          color: tint ?? t.colorScheme.onSurfaceVariant,
         ),
         child: child,
       ),

@@ -945,9 +945,6 @@ class AppLocalizations {
   String get surplusPerMonth => _t('Überschuss / Monat', 'Surplus / month');
   String get wealthIn12Months =>
       _t('Vermögen in 12 Monaten', 'Net worth in 12 months');
-  String wealthChangePrefix(bool positive) => positive
-      ? _t('Veränderung: +', 'Change: +')
-      : _t('Veränderung: ', 'Change: ');
   String get projection => _t('Projektion', 'Projection');
 
   // ---- Projekte / Reisen ----

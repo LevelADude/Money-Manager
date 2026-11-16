@@ -99,8 +99,18 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
    mit Glyphe, Export-Aktionen als Listen-Kachel, ohne Buchungen gedimmt;
    CSV-Vorschau als Kachel, scrollt mit der Seite; Import-Status als
    Kachel, Ladekreis im Knopf). Vorschau: `#/more/export`, `#/more/import`.
-   Noch nicht einzeln angefasst:
-   Archiv-Einrichtung, Insights, Simulator, Freigaben,
+   Teil 7 (2026-11-16): Insights, Simulator, Archiv-Einrichtung.
+   Insights: Umschalter bleibt stehen, je Abschnitt eine Listen-Kachel,
+   Zeilen mit Kreis in Signalfarbe (`BentoGlyph(tint:)`), vollem Text und
+   optionaler Verlaufslinie bündig mit dem Text. Simulator: Hinweis-Kachel,
+   Felder frei (breit nebeneinander), Regler in einer Kachel, zwei
+   Summen-Kacheln, Vermögens-Kachel wie die Gesamtsaldo-Kachel (Marke und
+   Linie nur bei Veränderung). Behoben: Vorbelegung las die Monatswerte nur
+   einmal und blieb bei 0, wenn Buchungen noch luden. Archiv-Einrichtung:
+   Status und Erklärung in einer Hinweis-Kachel (Häkchen in
+   Einnahmenfarbe), Felder im Theme-Stil, Ladekreis im jeweiligen Knopf.
+   Vorschau: `#/more/insights`, `#/more/simulator`, `#/more/archive/setup`.
+   Noch nicht einzeln angefasst: Freigaben,
    Budgets/Sparziele/Schulden/Planung im Detail (nutzen `Card` und sind über
    das Theme bereits angeglichen). `pdf_export.dart` behält feste Farben
    (Papier, kein UI).

@@ -18,12 +18,14 @@ import 'data/models/category.dart';
 import 'features/accounts/account_providers.dart';
 import 'features/archive/archive_providers.dart';
 import 'features/auth/auth_providers.dart';
+import 'features/budgets/budget_providers.dart';
 import 'features/categories/category_providers.dart';
 import 'features/currency/currency_providers.dart';
 import 'features/profile/profile_providers.dart';
 import 'features/recurring/recurring_providers.dart';
 import 'features/reminders/reminders_providers.dart';
 import 'features/reservations/reservation_providers.dart';
+import 'features/savings/savings_providers.dart';
 import 'features/sharing/access_grant_providers.dart';
 import 'features/sharing/account_member_providers.dart';
 import 'features/transactions/transaction_providers.dart';
@@ -198,6 +200,10 @@ List<Override> previewOverrides(SharedPreferences prefs, {DateTime? now}) {
     reservationsStreamProvider.overrideWith((ref) => Stream.value(const [])),
     reservationTopupProvider.overrideWith((ref) => 0),
     recurringGenerationProvider.overrideWith((ref) => 0),
+    // Insights lesen zusätzlich Budgets, Daueraufträge und Sparziele.
+    budgetsProvider.overrideWith((ref) => Stream.value(const [])),
+    recurringRulesProvider.overrideWith((ref) => Stream.value(const [])),
+    savingsGoalsProvider.overrideWith((ref) => Stream.value(const [])),
     remindersProvider.overrideWithValue(const []),
     converterProvider.overrideWithValue((cents, code) => cents),
     effectiveRatesProvider.overrideWithValue(const {}),

@@ -211,6 +211,65 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Insights: Abschnitte als Listen-Kacheln, Umschalter wirkt', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/insights', AppPalette.sage, _sizes['schmal']!);
+    expect(find.byType(BentoList), findsAtLeastNWidgets(1));
+    expect(find.byType(BentoSectionHeader), findsAtLeastNWidgets(1));
+    await tester.tap(find.text('Dieses Jahr'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(BentoList), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('Simulator: Eingaben ändern Überschuss und Vermögens-Kachel', (
+    tester,
+  ) async {
+    await _pump(tester, '/more/simulator', AppPalette.dark, _sizes['schmal']!);
+    final fields = find.byType(TextField);
+    // Vorbelegt mit den Monatsdurchschnitten, sobald Buchungen da sind.
+    final prefilled = tester.widget<TextField>(fields.at(0)).controller!.text;
+    expect(prefilled, isNot(anyOf('', '0,00')));
+    await tester.enterText(fields.at(0), '1000');
+    await tester.enterText(fields.at(1), '400');
+    await tester.pumpAndSettle();
+    // Überschuss als Summen-Kachel, Veränderung in 12 Monaten als Marke.
+    expect(
+      find.descendant(
+        of: find.byType(BentoStat),
+        matching: find.textContaining('600,00'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(BentoChip),
+        matching: find.textContaining('7.200,00'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Archiv-Einrichtung: Status in der Hinweis-Kachel', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      '/more/archive/setup',
+      AppPalette.emerald,
+      _sizes['schmal']!,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(BentoTile),
+        matching: find.textContaining('beispiel/archiv'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+  });
+
   // Unterseiten aus Phase 3, die mit den Beispieldaten auskommen.
   for (final route in [
     '/account/giro',
@@ -223,6 +282,9 @@ void main() {
     '/more/profile',
     '/more/export',
     '/more/import',
+    '/more/insights',
+    '/more/simulator',
+    '/more/archive/setup',
     '/account/new',
     '/more/recurring/new',
     '/more/reservations/new',
