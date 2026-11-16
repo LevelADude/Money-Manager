@@ -712,6 +712,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   height: 160,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  // Handyfotos nicht in voller Auflösung dekodieren: die
+                  // Fensterbreite reicht für die Vorschau (spart Speicher).
+                  cacheWidth:
+                      (MediaQuery.sizeOf(context).width *
+                              MediaQuery.devicePixelRatioOf(context))
+                          .round(),
                   errorBuilder: (_, _, _) => Container(
                     height: 160,
                     alignment: Alignment.center,

@@ -150,7 +150,7 @@ class PlanningScreen extends ConsumerWidget {
                 child: Text(
                   l.projectionMonthEnd,
                   style: Bento.label(context),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -213,6 +213,7 @@ class PlanningScreen extends ConsumerWidget {
                       '${l.nextDuePrefix(df.format(r.nextDue))} · '
                       '${l.everyInterval(r.intervalCount, r.intervalUnit)}',
                     ),
+                    subtitleMaxLines: 2,
                     trailing: MoneyText(r.amountCents),
                   ),
               ],

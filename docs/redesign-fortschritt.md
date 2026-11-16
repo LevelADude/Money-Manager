@@ -139,14 +139,43 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
    `#/more/planning`, `#/more/cashflow`, `#/more/settle`,
    `#/more/reminders`, `#/more/sharing` (Beispiel-Daueraufträge und
    -Freigaben; Erinnerungen werden jetzt echt aus den Beispieldaten berechnet).
-   Nur per Tests geprüft, nicht im Bild (Browser-Vorschau war in der Sitzung
-   nicht erreichbar). `pdf_export.dart` behält feste Farben (Papier, kein UI).
+   Sichtprüfung nachgeholt (2026-11-16, schmal und breit, alle drei
+   Paletten): behoben wurden abgeschnittene Überschriften in Summen-Kacheln
+   (`BentoStat` jetzt bis zwei Zeilen, das Raster gleicht die Höhen an),
+   „Hochrechnung Monatsende" neben der Marke und der Fixkosten-Rhythmus
+   (zwei Zeilen); der Hinweis unter „Abrechnen" ist breit auf 640 px
+   begrenzt. `pdf_export.dart` behält feste Farben (Papier, kein UI).
 2. Phase 4 (Rest) – Wasm erst nach Update/Ersatz von `ua_client_hints`
    erneut prüfen; Startzeit mit echten Daten messen.
-3. Phase 5 – Abschlussprüfung (Kontrast, Abstände, Fokus/Tastatur,
-   reduzierte Bewegung) und Optimierungs-Checkliste.
+3. Phase 5 – erledigt (2026-11-16), siehe Abschnitt „Abschlussprüfung".
+4. Rest: Startzeit mit echten Daten messen; Sichtprüfung mit Login auf
+   Windows und Android; danach PR nach `main`.
 
 Kein PR nach `main` und kein Merge ohne ausdrückliche Freigabe des Nutzers.
+
+## Abschlussprüfung (Phase 5, 2026-11-16)
+
+Mit `impeccable audit` als Leitfaden. Der DOM-Detektor greift bei Flutter
+(CanvasKit malt auf ein Canvas) nicht; geprüft wurde am Code, mit Tests und
+im Bild (Design-Vorschau, Chromium, schmal/breit, drei Paletten).
+
+| Bereich | Ergebnis |
+|---|---|
+| Kontrast | Paletten-Test deckt Text auf Kachel/Hintergrund, Signalfarben, Akzent ab (alle > 4,5:1). Glas bei „Kontrast erhöhen" deckend. Kein Befund im Bild. |
+| Fokus/Tastatur | **Behoben:** Fokus war ein 12-%-Grauschleier, auf hellen Kacheln kaum sichtbar. Jetzt Akzentfarbe 20 % (`focusColor` im Theme), auf dem Plus-Knopf helle Tönung. Tab-Reihenfolge folgt dem Layout. |
+| Reduzierte Bewegung | `PressScale` war schon abgesichert. **Behoben:** Seitenwechsel zoomten/schoben auch bei „Bewegung reduzieren"; jetzt nur Überblenden. Test dazu. |
+| Abstände/Einheitlichkeit | Kacheln einheitlich (Radius 22, Haarlinie, Abstand `Bento.gap` 12). Die fünf verbliebenen `Card`s nutzen das gleiche Card-Theme. **Behoben:** nackte Icons in Abos, Wechselkursen und Reservierungs-Summe jetzt im `BentoGlyph`-Kreis wie überall. |
+| Feste Farben | Keine außerhalb von `theme.dart`, `pdf_export.dart` und Vorschau. |
+| Touch-Ziele | Listenzeilen, Tableiste und Plus-Knopf ≥ 44 px. |
+
+Optimierungs-Checkliste: Das Redesign ändert die Datenschicht nicht (nur
+Paletten-Einstellung). N+1, Indizes, nur Benötigtes laden, Bündeln/Entprellen,
+Cache mit Invalidierung und Optimistic Updates wurden in PR #6 geprüft und
+gelten unverändert. Neu: Beleg-Vorschau dekodiert nur noch in Fensterbreite
+(`cacheWidth`). Glas-Unschärfe nur auf der Bedienebene (eine
+`BackdropFilter`-Stelle). Der Verlaufs-Painter der Schulden zeichnet nicht
+mehr bei jedem Frame (Teil 8). Lange Listen (Buchungen, Kategorien, Konten)
+bauen zeilenweise; kurze Kachel-Listen (Cashflow 60 Tage, Abos) bewusst nicht.
 
 ## Prüfen nach jeder Phase
 
@@ -188,6 +217,12 @@ lib/dev_preview.dart`, dann im Browser `?p=sage|emerald|dark#/`,
   Listenzeilen ihre Tinte auf dem Glas malen.
 
 ## Ungeprüft / offen
+
+- Freigaben: Umschalten wartet zu Recht auf den Server (Zugriffsrechte),
+  zeigt bei einem Fehler aber keine Meldung (vor dem Redesign so; nicht
+  Teil dieses Umbaus).
+- Fokus-Ring nur in Chromium per Tab geprüft, nicht mit Windows-Tastatur
+  in der nativen App.
 
 - Phase 3: nur Kontodetail, Meine Summen, Suche, Projekte, Reservierungen
   und Einstellungen im Bild geprüft; die übrigen umgestellten Screens

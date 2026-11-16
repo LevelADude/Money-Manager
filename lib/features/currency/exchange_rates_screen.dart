@@ -217,7 +217,10 @@ class ExchangeRatesScreen extends ConsumerWidget {
         children: [
           Card(
             child: ListTile(
-              leading: const Icon(Icons.star_outline),
+              leading: const BentoGlyph(
+                size: 38,
+                child: Icon(Icons.star_outline),
+              ),
               title: Text(l.mainCurrencyWith(base)),
               subtitle: Text(l.baseRateNote),
             ),

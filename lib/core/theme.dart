@@ -351,6 +351,9 @@ class AppTheme {
       canvasColor: c.card,
       dividerColor: c.hairline,
       splashFactory: InkSparkle.splashFactory,
+      // Tastaturfokus deutlich sichtbar (Standard: 12 % Grau, auf den
+      // hellen Kacheln kaum zu erkennen). Gilt für InkWell/ListTile.
+      focusColor: base.colorScheme.primary.withValues(alpha: .2),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.iOS: BackdropPageTransitions(
@@ -594,11 +597,19 @@ class BackdropPageTransitions extends PageTransitionsBuilder {
     Animation<double> animation,
     Animation<double> secondaryAnimation,
     Widget child,
-  ) => inner.buildTransitions(
-    route,
-    context,
-    animation,
-    secondaryAnimation,
-    AppBackdrop(child: child),
-  );
+  ) {
+    final page = AppBackdrop(child: child);
+    // „Bewegung reduzieren": keine Zoom-/Schiebebewegung, nur Überblenden –
+    // der Seitenwechsel bleibt erkennbar.
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return FadeTransition(opacity: animation, child: page);
+    }
+    return inner.buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      page,
+    );
+  }
 }

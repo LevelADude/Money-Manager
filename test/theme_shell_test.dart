@@ -140,4 +140,54 @@ void main() {
     );
     expect(find.byType(BackdropFilter), findsNothing);
   });
+
+  testWidgets('Seitenwechsel blendet bei „Bewegung reduzieren" nur über', (
+    tester,
+  ) async {
+    // Auf iOS schiebt der normale Übergang die Seite (SlideTransition).
+    Future<bool> slidesDuringPush({required bool reduce}) async {
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData(disableAnimations: reduce),
+          child: MaterialApp(
+            key: UniqueKey(),
+            theme: AppTheme.themeFor(
+              AppPalette.sage,
+            ).copyWith(platform: TargetPlatform.iOS),
+            home: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const Text('Ziel')),
+                ),
+                child: const Text('Los'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Los'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      final slides = find
+          .ancestor(
+            of: find.text('Ziel'),
+            matching: find.byType(SlideTransition),
+          )
+          .evaluate()
+          .isNotEmpty;
+      await tester.pumpAndSettle();
+      expect(find.text('Ziel'), findsOneWidget);
+      return slides;
+    }
+
+    expect(await slidesDuringPush(reduce: false), isTrue);
+    expect(await slidesDuringPush(reduce: true), isFalse);
+  });
+
+  test('Fokusfarbe ist die Akzentfarbe, nicht das blasse Standardgrau', () {
+    for (final p in AppPalette.values) {
+      final t = AppTheme.themeFor(p);
+      expect(t.focusColor, t.colorScheme.primary.withValues(alpha: .2));
+    }
+  });
 }

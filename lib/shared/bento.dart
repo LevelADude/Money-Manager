@@ -123,7 +123,9 @@ class BentoStat extends StatelessWidget {
                 child: Text(
                   label,
                   style: Bento.label(context),
-                  maxLines: 1,
+                  // Zwei Zeilen statt Abschneiden: das Raster gleicht
+                  // die Höhen nebeneinanderliegender Kacheln an.
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

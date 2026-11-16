@@ -294,6 +294,7 @@ class GlassAddButton extends StatelessWidget {
           ),
           child: PressScale(
             shape: const CircleBorder(),
+            focusColor: scheme.onPrimary.withValues(alpha: .3),
             onTap: onTap,
             child: SizedBox(
               width: 56,

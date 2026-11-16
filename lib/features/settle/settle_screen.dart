@@ -198,7 +198,14 @@ class SettleScreen extends ConsumerWidget {
                 const SizedBox(height: Bento.gap),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(l.settleHint, style: Bento.sub(context)),
+                  // Lesbare Zeilenlänge auch auf breiten Fenstern.
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 640),
+                      child: Text(l.settleHint, style: Bento.sub(context)),
+                    ),
+                  ),
                 ),
               ],
       ),

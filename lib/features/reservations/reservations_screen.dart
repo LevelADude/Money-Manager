@@ -77,7 +77,10 @@ class ReservationsScreen extends ConsumerWidget {
                 Card(
                   margin: EdgeInsets.zero,
                   child: ListTile(
-                    leading: const Icon(Icons.bookmarks_outlined),
+                    leading: const BentoGlyph(
+                      size: 38,
+                      child: Icon(Icons.bookmarks_outlined),
+                    ),
                     title: Text(l.reservedLabel),
                     subtitle: Text(l.allAccounts),
                     trailing: MoneyText(

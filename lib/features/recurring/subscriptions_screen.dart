@@ -33,7 +33,10 @@ class SubscriptionsScreen extends ConsumerWidget {
                 for (final c in candidates)
                   Card(
                     child: ListTile(
-                      leading: const Icon(Icons.autorenew),
+                      leading: const BentoGlyph(
+                        size: 38,
+                        child: Icon(Icons.autorenew),
+                      ),
                       title: Text(c.title),
                       subtitle: Text(
                         '${l.everyInterval(c.intervalCount, c.intervalUnit)} · '

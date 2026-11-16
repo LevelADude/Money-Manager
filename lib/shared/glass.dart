@@ -74,9 +74,13 @@ class PressScale extends StatefulWidget {
     required this.onTap,
     this.onLongPress,
     this.shape = const StadiumBorder(),
+    this.focusColor,
   });
 
   final Widget child;
+
+  /// Fokusfarbe, wenn der Hintergrund selbst die Akzentfarbe ist.
+  final Color? focusColor;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final ShapeBorder shape;
@@ -103,6 +107,7 @@ class _PressScaleState extends State<PressScale> {
         type: MaterialType.transparency,
         child: InkWell(
           customBorder: widget.shape,
+          focusColor: widget.focusColor,
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
           onTapDown: (_) => _set(true),
