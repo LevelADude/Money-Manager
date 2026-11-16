@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Kleines Liniendiagramm (mit Flächenfüllung + Null-Linie) für Zeitreihen.
@@ -60,8 +61,13 @@ class _LineChartPainter extends CustomPainter {
     final maxV = values.reduce(math.max);
     final minV = values.reduce(math.min);
     final range = (maxV - minV) == 0 ? 1 : (maxV - minV);
-    double x(int i) => size.width * i / (values.length - 1);
-    double y(int v) => chartH - (v - minV) / range * (chartH - 4) - 2;
+    // Rechts und oben/unten Platz für den Endpunkt lassen, damit er an einer
+    // bündigen Kachelkante nicht angeschnitten wird.
+    const dotR = 3.5;
+    final plotW = size.width - dotR - 1;
+    double x(int i) => plotW * i / (values.length - 1);
+    double y(int v) =>
+        chartH - (v - minV) / range * (chartH - 2 * (dotR + 1)) - (dotR + 1);
 
     // Null-Linie.
     if (minV < 0 && maxV > 0) {
@@ -82,7 +88,8 @@ class _LineChartPainter extends CustomPainter {
 
     // Flächenfüllung.
     final fill = Path.from(line)
-      ..lineTo(x(values.length - 1), chartH)
+      ..lineTo(size.width, y(values.last))
+      ..lineTo(size.width, chartH)
       ..lineTo(x(0), chartH)
       ..close();
     canvas.drawPath(fill, Paint()..color = lineColor.withValues(alpha: 0.12));
@@ -99,7 +106,7 @@ class _LineChartPainter extends CustomPainter {
     // Letzter Punkt.
     canvas.drawCircle(
       Offset(x(values.length - 1), y(values.last)),
-      3.5,
+      dotR,
       Paint()..color = lineColor,
     );
 
@@ -122,5 +129,10 @@ class _LineChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _LineChartPainter old) => true;
+  bool shouldRepaint(covariant _LineChartPainter old) =>
+      old.lineColor != lineColor ||
+      old.gridColor != gridColor ||
+      old.labelColor != labelColor ||
+      !listEquals(old.values, values) ||
+      !listEquals(old.labels, labels);
 }

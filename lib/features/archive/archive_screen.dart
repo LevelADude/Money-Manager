@@ -13,6 +13,7 @@ import '../transactions/transaction_providers.dart';
 import 'archive_providers.dart';
 import 'archive_setup_screen.dart';
 import 'archived_year_screen.dart';
+import '../../shared/bento.dart';
 import '../../shared/responsive.dart';
 
 /// Archivierung alter Jahre nach GitHub: Jahres-Auswahl + Warnung + Fortschritt
@@ -110,7 +111,8 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.archiveTitle)),
       body: ListView(
-        children: [
+        padding: BentoListView.paddingOf(context),
+        children: bentoSections([
           if (isAdmin && config?.repo != null)
             ListTile(
               dense: true,
@@ -124,11 +126,12 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Text(l.archiveIntro, style: theme.textTheme.bodyMedium),
           ),
           _warningCard(context),
           if (isAdmin) ...[
+            const Divider(),
             _sectionTitle(context, l.archiveSelectYears),
             if (years.isEmpty)
               ListTile(subtitle: Text(l.archiveNoYears))
@@ -149,7 +152,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                   subtitle: Text(l.archiveTxCount(counts[y]!)),
                 ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              padding: const EdgeInsets.only(top: 8),
               child: FilledButton.icon(
                 onPressed: (_busy || years.isEmpty) ? null : _runArchive,
                 icon: const Icon(Icons.archive_outlined),
@@ -158,7 +161,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
             ),
             if (_busy)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                padding: const EdgeInsets.only(top: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -169,7 +172,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                 ),
               ),
           ],
-          const Divider(height: 32),
+          const Divider(),
           _sectionTitle(context, l.archivedSection),
           archivedAsync.when(
             skipLoadingOnReload: true,
@@ -184,8 +187,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
                     ],
                   ),
           ),
-          const SizedBox(height: 24),
-        ],
+        ]),
       ),
     );
   }
@@ -194,11 +196,11 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      margin: const EdgeInsets.only(top: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,7 +397,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   }
 
   Widget _sectionTitle(BuildContext context, String text) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+    padding: const EdgeInsets.only(bottom: 4),
     child: Text(
       text,
       style: Theme.of(

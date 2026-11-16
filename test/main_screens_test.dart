@@ -184,6 +184,8 @@ void main() {
     '/more/projects',
     '/more/reservations',
     '/more/settings',
+    '/more/archive',
+    '/more/profile',
   ]) {
     for (final size in _sizes.entries) {
       testWidgets('Unterseite $route (${size.key}) baut ohne Fehler', (

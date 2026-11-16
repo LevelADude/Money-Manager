@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../onboarding/connection_editor.dart';
 import 'profile_providers.dart';
+import '../../shared/bento.dart';
 import '../../shared/responsive.dart';
 
 /// Eigenes Profil ansehen/bearbeiten (Anzeigename) + Abmelden.
@@ -137,7 +138,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         padding: EdgeInsets.all(16).withBarInset(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+          children: bentoSections([
             ListTile(
               leading: const Icon(Icons.email_outlined),
               title: Text(l.email),
@@ -163,21 +164,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   : const Icon(Icons.check),
               label: Text(l.save),
             ),
-            const SizedBox(height: 12),
+            const Divider(),
             OutlinedButton.icon(
               onPressed: _changePassword,
               icon: const Icon(Icons.lock_outline),
               label: Text(l.changePasswordAction),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => ref.read(authRepositoryProvider).signOut(),
               icon: const Icon(Icons.logout),
               label: Text(l.signOut),
             ),
-            const Divider(height: 48),
+            const Divider(),
             const _DatabaseConnectionSection(),
-          ],
+          ]),
         ),
       ),
     );

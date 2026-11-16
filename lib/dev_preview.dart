@@ -18,7 +18,9 @@ import 'dev_preview_data.dart';
 import 'features/accounts/account_detail_screen.dart';
 import 'features/accounts/account_groups_screen.dart';
 import 'features/accounts/accounts_screen.dart';
+import 'features/archive/archive_screen.dart';
 import 'features/more/more_screen.dart';
+import 'features/profile/profile_screen.dart';
 import 'features/projects/projects_screen.dart';
 import 'features/reservations/reservations_screen.dart';
 import 'features/search/search_screen.dart';
@@ -76,6 +78,8 @@ GoRouter buildPreviewRouter({String initialLocation = '/'}) {
             page('projects', const ProjectsScreen()),
             page('reservations', const ReservationsScreen()),
             page('settings', const SettingsScreen()),
+            page('archive', const ArchiveScreen()),
+            page('profile', const ProfileScreen()),
           ]),
         ],
       ),

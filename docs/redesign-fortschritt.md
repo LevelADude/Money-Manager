@@ -41,6 +41,13 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
   - Beträge rechts in `ListTile` kräftiger (Theme).
   - Vorschau und Tests um sechs Unterseiten erweitert.
 
+- **Phase 3 (Teil 2, lokal 2026-11-16)** – Profil und „Jahre archivieren"
+  als Abschnitts-Kacheln (`bentoSections`); beide in Vorschau
+  (`#/more/profile`, `#/more/archive`) und Tests. Verlaufslinie
+  (`MiniLineChart`): Endpunkt wird nicht mehr angeschnitten, Fläche reicht
+  bis zum Rand, `shouldRepaint` vergleicht statt immer neu zu zeichnen.
+  Im Bild geprüft (Salbei, breit).
+
 - **Phase 4 (Messung + belegte Maßnahme)** – Stand 2026-11-15, Flutter
   3.44.2, `flutter build web --release`:
 
@@ -65,7 +72,7 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
 
 1. Phase 3 (Rest) – noch nicht einzeln angefasst: Formulare (Buchung,
    Konto, Dauerauftrag, Reservierung), Login/Passwort-Reset, Onboarding,
-   Export/Import, Archiv, Insights, Profil, Freigaben,
+   Export/Import, Archiv-Einrichtung, Insights, Simulator, Freigaben,
    Budgets/Sparziele/Schulden/Planung im Detail (nutzen `Card` und sind über
    das Theme bereits angeglichen). `pdf_export.dart` behält feste Farben
    (Papier, kein UI).
@@ -129,5 +136,5 @@ lib/dev_preview.dart`, dann im Browser `?p=sage|emerald|dark#/`,
 - Englische Texte, „Beträge verbergen", Fremdwährungen und Reservierungen
   nicht im Bild geprüft (Code unverändert übernommen).
 - Diagrammfarben wiederholen sich ab der 9. Kategorie.
-- Punkt am Ende der Verlaufslinie in der Saldo-Kachel wird rechts
-  angeschnitten.
+- Bei extrem schmaler Breite (unter ca. 200 px) läuft die Kopfzeile der
+  Konten-Seite über; für echte Geräte ohne Belang.

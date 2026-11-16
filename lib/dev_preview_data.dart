@@ -7,10 +7,13 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'config/app_config.dart';
 import 'data/local/app_cache.dart';
 import 'data/models/account.dart';
 import 'data/models/account_group.dart';
 import 'data/models/app_transaction.dart';
+import 'data/models/archive_config_status.dart';
+import 'data/models/archived_year.dart';
 import 'data/models/category.dart';
 import 'features/accounts/account_providers.dart';
 import 'features/archive/archive_providers.dart';
@@ -169,6 +172,28 @@ List<Override> previewOverrides(SharedPreferences prefs, {DateTime? now}) {
     manageableOwnersProvider.overrideWithValue(const {previewUserId}),
     membersByAccountProvider.overrideWithValue(const {}),
     archivedCarryoverProvider.overrideWithValue(const {}),
+    // Archiv- und Profilseite.
+    appConfigProvider.overrideWithValue(AppConfig(prefs)),
+    myDisplayNameProvider.overrideWith((ref) => 'Vorschau'),
+    archiveConfigStatusProvider.overrideWith(
+      (ref) => const ArchiveConfigStatus(
+        configured: true,
+        repo: 'beispiel/archiv',
+        hasToken: true,
+        hasKey: true,
+      ),
+    ),
+    archivedYearsProvider.overrideWith(
+      (ref) => Stream.value([
+        ArchivedYear(
+          year: 2020,
+          archivedAt: DateTime(2021, 1, 15),
+          txCount: 412,
+          byteSize: 48200,
+          carryoverByAccount: const {},
+        ),
+      ]),
+    ),
     reservationsStreamProvider.overrideWith((ref) => Stream.value(const [])),
     reservationTopupProvider.overrideWith((ref) => 0),
     recurringGenerationProvider.overrideWith((ref) => 0),
