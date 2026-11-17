@@ -59,7 +59,7 @@ class ActivityScreen extends ConsumerWidget {
                 final amount = (e.data?['amount_cents'] as num?)?.toInt();
                 final who = names[e.actor] ?? l.unknownPerson;
                 return ListTile(
-                  leading: Icon(_icon(e.action)),
+                  leading: BentoGlyph(size: 38, child: Icon(_icon(e.action))),
                   title: Text(
                     title == null || title.isEmpty
                         ? '${l.auditAction(e.action)}: ${l.transactionNoun}'

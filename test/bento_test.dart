@@ -129,4 +129,57 @@ void main() {
       expect(series.toSet().length, series.length);
     });
   }
+
+  // Hover-/Druckfläche von Listenzeilen darf nicht bündig am Symbol enden:
+  // Zeile mit Innenabstand, Kachel mit Luft ringsum, Text weiter 16 px vom
+  // Kachelrand, Überschriften bündig mit dem Text.
+  for (final (name, build) in [
+    (
+      'rowsPadding',
+      () => BentoGroup(
+        padding: BentoGroup.rowsPadding,
+        children: [
+          ListTile(
+            key: const Key('row'),
+            leading: const Icon(Icons.star, key: Key('icon')),
+            title: const Text('Zeile'),
+            onTap: () {},
+          ),
+        ],
+      ),
+    ),
+    (
+      'bentoSections',
+      () => Column(
+        children: bentoSections([
+          const Text('Überschrift', key: Key('head')),
+          SwitchListTile(
+            key: const Key('row'),
+            secondary: const Icon(Icons.star, key: Key('icon')),
+            title: const Text('Zeile'),
+            value: false,
+            onChanged: (_) {},
+          ),
+        ]),
+      ),
+    ),
+  ]) {
+    testWidgets('Listenzeilen mit Abstand zur Hover-Fläche ($name)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(build()));
+      final tile = tester.getRect(find.byType(BentoTile));
+      final row = tester.getRect(find.byKey(const Key('row')));
+      final icon = tester.getRect(find.byKey(const Key('icon')));
+      expect(row.left - tile.left, 6);
+      expect(tile.right - row.right, 6);
+      expect(icon.left - row.left, 10);
+      if (name == 'bentoSections') {
+        final head = tester.getRect(find.byKey(const Key('head')));
+        expect(head.left - tile.left, 16);
+      } else {
+        expect(row.top - tile.top, 6);
+      }
+    });
+  }
 }

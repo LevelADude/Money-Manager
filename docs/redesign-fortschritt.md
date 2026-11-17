@@ -145,11 +145,13 @@ Branch: `feat/redesign-smaragd-glass`. Vorlagen: `design/prototypen/`.
    „Hochrechnung Monatsende" neben der Marke und der Fixkosten-Rhythmus
    (zwei Zeilen); der Hinweis unter „Abrechnen" ist breit auf 640 px
    begrenzt. `pdf_export.dart` behält feste Farben (Papier, kein UI).
-2. Phase 4 (Rest) – Wasm erst nach Update/Ersatz von `ua_client_hints`
-   erneut prüfen; Startzeit mit echten Daten messen.
+2. Phase 4 (Rest) – Startzeit gemessen (2026-11-16, siehe
+   „Startzeit mit echten Daten"). Wasm weiter blockiert: `ua_client_hints`
+   ist auf pub.dev unverändert bei 1.7.0 (April 2026).
 3. Phase 5 – erledigt (2026-11-16), siehe Abschnitt „Abschlussprüfung".
-4. Rest: Startzeit mit echten Daten messen; Sichtprüfung mit Login auf
-   Windows und Android; danach PR nach `main`.
+4. Startzeit und Sichtprüfung mit Login auf Windows erledigt
+   (2026-11-16). Rest: Android (siehe „Ungeprüft / offen"), danach PR nach
+   `main`.
 
 Kein PR nach `main` und kein Merge ohne ausdrückliche Freigabe des Nutzers.
 
@@ -176,6 +178,56 @@ gelten unverändert. Neu: Beleg-Vorschau dekodiert nur noch in Fensterbreite
 `BackdropFilter`-Stelle). Der Verlaufs-Painter der Schulden zeichnet nicht
 mehr bei jedem Frame (Teil 8). Lange Listen (Buchungen, Kategorien, Konten)
 bauen zeilenweise; kurze Kachel-Listen (Cashflow 60 Tage, Abos) bewusst nicht.
+
+## Startzeit mit echten Daten (2026-11-16)
+
+Messpunkte per `--dart-define=STARTUP_TRACE=true` (`lib/shared/startup_trace.dart`,
+ohne Schalter entfernt der Compiler die Aufrufe): `main()`, Supabase bereit,
+erster Frame, jede Ausgabe von Konten und Buchungen (erst Cache, dann
+Server). Echte Daten: 5 Konten, 154 Buchungen; gespeicherte Sitzung.
+
+| Zeit ab Start | Windows (Release, ab Prozessstart, 3 Läufe) | Web (Release, localhost, HTTP-Cache warm, ab Seitenaufruf, 3 Läufe) |
+|---|---|---|
+| `main()` | 0,13 s | 0,15–0,20 s |
+| erster Frame | 0,14 s | 0,16–0,23 s |
+| Kacheln aus dem Cache | 0,16–0,18 s | 0,21–0,32 s |
+| Konten vom Server | 0,33–0,66 s | 0,35–0,58 s |
+| Buchungen vom Server | 0,37–0,74 s | 0,44–1,18 s |
+
+Web ohne HTTP-Cache (erster Aufruf): `main()` nach 1,27 s, erster Frame
+1,36 s – fast nur Laden/Übersetzen von `main.dart.js` (4,9 MB) und CanvasKit.
+Kein Engpass in der App selbst: die Kacheln stehen aus dem lokalen Cache,
+bevor der Server antwortet; die Serverzeit ist Netz. Deshalb nichts
+optimiert. Beobachtet, nicht geändert: beim Start werden `profiles` und
+`recurring_rules` je zweimal abgefragt (parallel, kostet kaum Zeit).
+Nicht gemessen: Web über das echte Netz (GitHub Pages), Android.
+
+## Sichtprüfung mit Login (Windows, 2026-11-16)
+
+Geprüft im Windows-Release mit echten Daten, breit: Konten, Buchungen,
+Statistik, Mehr, Aktivität, Daueraufträge, Kategorien, Regeln, Papierkorb,
+Backup, Archivjahr, Verwaltung, Reservierungen, Wechselkurse, Einstellungen,
+Buchungsformular; Englisch, „Beträge verbergen", Salbei-Palette,
+Tastaturfokus (Tab). Behoben:
+
+- Hover-Fläche von Listenzeilen endete bündig am Symbol und fast am
+  Kachelrand (Login, Formulare, Einstellungs-Seiten). `BentoGroup` mit
+  `rowsPadding` und `bentoSections` geben Zeilen jetzt 10 px Innenabstand und
+  der Kachel 6 px Luft (Zeilenradius 16 = 22 − 6); Text bleibt 16 px vom
+  Rand, Trennlinien bündig mit dem Text. Feste `contentPadding: zero` in den
+  Einstellungen entfernt. Test in `bento_test.dart`.
+- Englisch: „Transactions" in Seitenleiste/Tableiste abgeschnitten → wird
+  leicht verkleinert statt gekürzt.
+- Aktivität: Symbole im `BentoGlyph`-Kreis wie überall.
+- Wechselkurse: Kurszeilen lagen nackt auf dem Hintergrund → Listen-Kachel.
+- Verwaltung: Speicherbalken bündig mit der Überschrift statt 16 px extra.
+- Freigaben: Serverfehler beim Umschalten zeigt jetzt eine Meldung, die
+  Auswahl bleibt (kein Optimistic Update). Test in `sharing_error_test.dart`.
+
+Bewusst so gelassen: leere Zustände sind in der ganzen App ruhiger,
+zentrierter Text (15 Seiten, einheitlich). Listen unter „Mehr" leuchten beim
+Hover über die volle Breite (vom Kachelrand beschnitten), Einstellungs-
+Zeilen eingerückt – zwei Muster: Datenlisten vs. Bedienzeilen.
 
 ## Prüfen nach jeder Phase
 
@@ -218,23 +270,18 @@ lib/dev_preview.dart`, dann im Browser `?p=sage|emerald|dark#/`,
 
 ## Ungeprüft / offen
 
-- Freigaben: Umschalten wartet zu Recht auf den Server (Zugriffsrechte),
-  zeigt bei einem Fehler aber keine Meldung (vor dem Redesign so; nicht
-  Teil dieses Umbaus).
-- Fokus-Ring nur in Chromium per Tab geprüft, nicht mit Windows-Tastatur
-  in der nativen App.
+- Tastaturfokus auf Windows geprüft (deutlich, folgt den Spalten); er
+  greift erst, wenn das Fenster selbst den Fokus hat.
+- Android nicht geprüft: Emulator vorhanden („Medium Phone"), aber nur
+  2 GB RAM frei (Laptop 16 GB) – Emulator plus Gradle-Build hätten ins
+  Swapping getrieben. Auf dem Desktop-PC oder mit Gerät nachholen.
 
-- Phase 3: nur Kontodetail, Meine Summen, Suche, Projekte, Reservierungen
-  und Einstellungen im Bild geprüft; die übrigen umgestellten Screens
-  (Admin, Backup, Kategorien, Papierkorb, Aktivität, Daueraufträge, Regeln,
-  Archivjahr) nur über Analyse und Build, da sie Login-Daten brauchen.
 
 - Die sieben echten Sheets nur per Test/Beispiel-Sheet geprüft, nicht
   einzeln im Bild (brauchen Login bzw. Formulardaten).
-- Nur Web (Chromium, Vorschau mit Beispieldaten) geprüft; nicht Windows,
-  nicht Android, nicht mit echten Daten/Login.
-- Englische Texte, „Beträge verbergen", Fremdwährungen und Reservierungen
-  nicht im Bild geprüft (Code unverändert übernommen).
+- Mit Login nur auf Windows (breit) geprüft; schmal nur in der Vorschau.
+  Login-Screen nach der Hover-Korrektur nur in Test und Vorschau, nicht
+  ausgeloggt im Windows-Build (Sitzung nicht beendet).
 - Diagrammfarben wiederholen sich ab der 9. Kategorie.
 - Bei extrem schmaler Breite (unter ca. 200 px) läuft die Kopfzeile der
   Konten-Seite über; für echte Geräte ohne Belang.

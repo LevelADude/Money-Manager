@@ -72,7 +72,6 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(height: 40),
           header(l.privacy),
           SwitchListTile(
-            contentPadding: EdgeInsets.zero,
             value: settings.hideAmounts,
             onChanged: notifier.setHideAmounts,
             secondary: const Icon(Icons.visibility_off_outlined),
@@ -80,7 +79,6 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(l.hideAmountsSub),
           ),
           SwitchListTile(
-            contentPadding: EdgeInsets.zero,
             value: settings.showAvailable,
             onChanged: notifier.setShowAvailable,
             secondary: const Icon(Icons.bookmarks_outlined),
@@ -91,7 +89,6 @@ class SettingsScreen extends ConsumerWidget {
           header(l.currency),
           const SizedBox(height: 8),
           ListTile(
-            contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.payments_outlined),
             title: Text(l.mainCurrency),
             subtitle: Text(l.mainCurrencyHelp),
@@ -170,7 +167,6 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(height: 40),
           SwitchListTile(
-            contentPadding: EdgeInsets.zero,
             value: settings.lockEnabled,
             onChanged: (v) async {
               if (v) {
@@ -202,7 +198,6 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(height: 40),
           header(l.database),
           ListTile(
-            contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.dns_outlined),
             title: Text(l.dbConnection),
             subtitle: Text(l.dbConnectionSub),

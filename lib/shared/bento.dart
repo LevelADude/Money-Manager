@@ -701,9 +701,43 @@ List<Widget> bentoSections(List<Widget> children, {double gap = Bento.gap}) {
       if (section.isNotEmpty)
         Padding(
           padding: EdgeInsets.only(top: i == 0 ? 0 : gap),
-          child: BentoGroup(children: section),
+          child: _sectionGroup(section),
         ),
   ];
+}
+
+bool _isListRow(Widget w) =>
+    w is ListTile ||
+    w is SwitchListTile ||
+    w is CheckboxListTile ||
+    w is RadioListTile ||
+    w is ExpansionTile;
+
+/// Abschnitt mit Listenzeilen: Zeilen bekommen Innenabstand und Luft zum
+/// Kachelrand (wie [BentoGroup.rowsPadding]), alles andere rückt um den
+/// gleichen Betrag ein, damit Text weiter 16 px vom Rand steht.
+Widget _sectionGroup(List<Widget> section) {
+  if (!section.any(_isListRow)) return BentoGroup(children: section);
+  const inset = BentoGroup._rowsInset;
+  const content = BentoGroup._rowsContent;
+  return BentoGroup(
+    insetRows: true,
+    padding: EdgeInsets.fromLTRB(
+      inset,
+      _isListRow(section.first) ? inset : 16,
+      inset,
+      _isListRow(section.last) ? inset : 16,
+    ),
+    children: [
+      for (final child in section)
+        _isListRow(child)
+            ? child
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: content),
+                child: child,
+              ),
+    ],
+  );
 }
 
 /// Eine Kachel mit untereinander stehenden Zeilen (Listenzeilen, Schalter,
@@ -715,30 +749,49 @@ class BentoGroup extends StatelessWidget {
     super.key,
     required this.children,
     this.padding = const EdgeInsets.all(16),
+    this.insetRows = false,
   });
 
   /// Für Kacheln, die nur aus Listenzeilen bestehen: die Zeilen bringen ihre
-  /// eigene Höhe mit.
-  static const EdgeInsets rowsPadding = EdgeInsets.symmetric(
-    horizontal: 16,
-    vertical: 4,
-  );
+  /// eigene Höhe mit. Die Kachel lässt ringsum [_rowsInset] frei, die Zeilen
+  /// selbst haben [_rowsContent] Innenabstand. So sitzt der Text wie sonst
+  /// 16 px vom Rand, und die Hover-/Druckfläche hat Luft zu Symbol und
+  /// Kachelrand statt bündig am Symbol zu enden.
+  static const EdgeInsets rowsPadding = EdgeInsets.all(_rowsInset);
+  static const double _rowsInset = 6;
+  static const double _rowsContent = 16 - _rowsInset;
 
   final List<Widget> children;
   final EdgeInsetsGeometry padding;
 
+  /// Listenzeilen mit eigenem Innenabstand statt bündig (siehe
+  /// [rowsPadding]); gilt automatisch, wenn [padding] == [rowsPadding].
+  final bool insetRows;
+
   @override
   Widget build(BuildContext context) {
+    final rows = insetRows || padding == rowsPadding;
+    final column = ListTileTheme.merge(
+      contentPadding: rows
+          ? const EdgeInsets.symmetric(horizontal: _rowsContent)
+          : EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      ),
+    );
     return BentoTile(
       padding: padding,
-      child: ListTileTheme.merge(
-        contentPadding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: children,
-        ),
-      ),
+      // Trennlinien bündig mit dem Text, nicht mit der Hover-Fläche.
+      child: rows
+          ? DividerTheme(
+              data: DividerTheme.of(
+                context,
+              ).copyWith(indent: _rowsContent, endIndent: _rowsContent),
+              child: column,
+            )
+          : column,
     );
   }
 }

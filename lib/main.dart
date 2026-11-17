@@ -11,9 +11,16 @@ import 'core/theme.dart';
 import 'data/local/app_cache.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'l10n/app_localizations.dart';
+import 'shared/startup_trace.dart';
 
 Future<void> main() async {
+  startupMark('main');
   WidgetsFlutterBinding.ensureInitialized();
+  if (startupTraceEnabled) {
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => startupMark('erster Frame'),
+    );
+  }
   // Deutsche Datums-/Zahlenformate verfügbar machen (sonst werfen
   // DateFormat(..., 'de')-Aufrufe eine LocaleDataException).
   await initializeDateFormatting('de', null);
@@ -78,6 +85,7 @@ class _BootstrapState extends State<_Bootstrap> {
         // klassischen "anon"-Key (beide sind clientseitig öffentlich).
         publishableKey: _config.anonKey,
       );
+      startupMark('Supabase bereit');
       if (!mounted) return;
       setState(() {
         _ready = true;

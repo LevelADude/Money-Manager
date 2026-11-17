@@ -267,15 +267,15 @@ class AdminScreen extends ConsumerWidget {
     return stats.when(
       skipLoadingOnReload: true,
       loading: () => const Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(vertical: 16),
         child: LinearProgressIndicator(),
       ),
       error: (e, _) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(l.storageLoadFailed(e)),
       ),
       data: (s) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           children: [
             _usageBar(context, l.database, s.dbBytes, _kDbLimitBytes),

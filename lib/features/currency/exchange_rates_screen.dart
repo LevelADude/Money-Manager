@@ -242,24 +242,32 @@ class ExchangeRatesScreen extends ConsumerWidget {
               child: Text(l.noForeignCurrencies),
             )
           else
-            for (final code in list)
-              ListTile(
-                leading: const Icon(Icons.currency_exchange),
-                title: Text('1 $code (${currencySymbol(code)})'),
-                subtitle: _rateSubtitle(l, code, base, effective, live),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: l.deleteCurrency,
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => _deleteCurrency(context, ref, code),
+            BentoList(
+              children: [
+                for (final code in list)
+                  ListTile(
+                    leading: const BentoGlyph(
+                      size: 38,
+                      child: Icon(Icons.currency_exchange),
                     ),
-                    const Icon(Icons.edit_outlined),
-                  ],
-                ),
-                onTap: () => _editRate(context, ref, code, manual[code] ?? 0),
-              ),
+                    title: Text('1 $code (${currencySymbol(code)})'),
+                    subtitle: _rateSubtitle(l, code, base, effective, live),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: l.deleteCurrency,
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _deleteCurrency(context, ref, code),
+                        ),
+                        const Icon(Icons.edit_outlined),
+                      ],
+                    ),
+                    onTap: () =>
+                        _editRate(context, ref, code, manual[code] ?? 0),
+                  ),
+              ],
+            ),
           const SizedBox(height: 80),
         ],
       ),

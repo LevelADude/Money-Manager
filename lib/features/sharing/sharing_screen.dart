@@ -13,17 +13,32 @@ import '../../shared/bento.dart';
 class SharingScreen extends ConsumerWidget {
   const SharingScreen({super.key});
 
-  Future<void> _set(WidgetRef ref, String granteeId, String choice) async {
+  /// Ändert eine Freigabe. Kein Optimistic Update: Zugriffsrechte gelten erst,
+  /// wenn der Server bestätigt. Schlägt das fehl, bleibt die alte Auswahl
+  /// stehen und eine Meldung erklärt warum.
+  Future<void> _set(
+    BuildContext context,
+    WidgetRef ref,
+    String granteeId,
+    String choice,
+  ) async {
     final repo = ref.read(accessGrantRepositoryProvider);
-    if (choice == 'none') {
-      await repo.revoke(granteeId);
-    } else {
-      await repo.grant(
-        granteeId,
-        choice == 'manage' ? GrantLevel.manage : GrantLevel.view,
-      );
+    final messenger = ScaffoldMessenger.of(context);
+    final l = AppLocalizations.of(context);
+    try {
+      if (choice == 'none') {
+        await repo.revoke(granteeId);
+      } else {
+        await repo.grant(
+          granteeId,
+          choice == 'manage' ? GrantLevel.manage : GrantLevel.view,
+        );
+      }
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+    } finally {
+      ref.invalidate(accessGrantsProvider);
     }
-    ref.invalidate(accessGrantsProvider);
   }
 
   @override
@@ -119,7 +134,8 @@ class SharingScreen extends ConsumerWidget {
                               null => 'none',
                             },
                           },
-                          onSelectionChanged: (s) => _set(ref, id, s.first),
+                          onSelectionChanged: (s) =>
+                              _set(context, ref, id, s.first),
                         ),
                       ],
                     ),
