@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../config/app_config.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
 import '../onboarding/connection_editor.dart';
 import 'auth_providers.dart';
 
@@ -118,111 +119,127 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
+          constraints: const BoxConstraints(maxWidth: 420),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Icon(
-                    Icons.account_balance_wallet,
-                    size: 56,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Money Manager',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 32),
-                  if (_isSignUp) ...[
-                    TextFormField(
-                      controller: _name,
-                      textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(
-                        labelText: l.displayNameOptional,
-                        prefixIcon: const Icon(Icons.person_outline),
-                      ),
+            child: AutofillGroup(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Image.asset(
+                      'assets/icon/logo.png',
+                      height: 84,
+                      excludeFromSemantics: true,
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  TextFormField(
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: l.email,
-                      prefixIcon: const Icon(Icons.email_outlined),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Money Manager',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                    validator: (v) =>
-                        (v == null || !v.contains('@')) ? l.invalidEmail : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _password,
-                    obscureText: true,
-                    onFieldSubmitted: (_) => _submit(),
-                    decoration: InputDecoration(
-                      labelText: l.password,
-                      prefixIcon: const Icon(Icons.lock_outline),
-                    ),
-                    validator: (v) =>
-                        (v == null || v.length < 6) ? l.passwordMin : null,
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: _loading ? null : _submit,
-                    child: _loading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(_isSignUp ? l.register : l.signIn),
-                  ),
-                  TextButton(
-                    onPressed: _loading
-                        ? null
-                        : () => setState(() => _isSignUp = !_isSignUp),
-                    child: Text(_isSignUp ? l.haveAccount : l.newHere),
-                  ),
-                  if (!_isSignUp)
-                    TextButton(
-                      onPressed: _loading ? null : _forgotPassword,
-                      child: Text(l.forgotPassword),
-                    ),
-                  // Die DB-Verbindung lässt sich vom (öffentlichen) Anmelde-
-                  // screen NUR ändern, wenn diese Instanz NICHT fest an eine
-                  // Datenbank gebunden ist (kein Standard aus
-                  // assets/db_connection/connection.json und kein per Build
-                  // eingebackenes Secret). Andernfalls könnte ein Unbefugter
-                  // die Verbindung vor dem Login auf eine fremde DB umbiegen
-                  // („trollen"). Bei fest gebundener Instanz ist die Verbindung
-                  // ausschließlich nach dem Login über die Einstellungen
-                  // (bzw. das Profil) änderbar.
-                  if (!config.hasBakedDefault)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Center(
-                        child: TextButton(
-                          onPressed: _loading
-                              ? null
-                              : () => showConnectionEditor(context, ref),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.outline,
-                            textStyle: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          child: Text(l.changeDbConnection),
+                    const SizedBox(height: 32),
+                    if (_isSignUp) ...[
+                      TextFormField(
+                        controller: _name,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.name],
+                        decoration: InputDecoration(
+                          labelText: l.displayNameOptional,
+                          prefixIcon: const Icon(Icons.person_outline),
                         ),
                       ),
+                      const SizedBox(height: Bento.gap),
+                    ],
+                    TextFormField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.email],
+                      decoration: InputDecoration(
+                        labelText: l.email,
+                        prefixIcon: const Icon(Icons.email_outlined),
+                      ),
+                      validator: (v) => (v == null || !v.contains('@'))
+                          ? l.invalidEmail
+                          : null,
                     ),
-                ],
+                    const SizedBox(height: Bento.gap),
+                    TextFormField(
+                      controller: _password,
+                      obscureText: true,
+                      autofillHints: [
+                        _isSignUp
+                            ? AutofillHints.newPassword
+                            : AutofillHints.password,
+                      ],
+                      onFieldSubmitted: (_) => _submit(),
+                      decoration: InputDecoration(
+                        labelText: l.password,
+                        prefixIcon: const Icon(Icons.lock_outline),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.length < 6) ? l.passwordMin : null,
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: _loading ? null : _submit,
+                      child: _loading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(_isSignUp ? l.register : l.signIn),
+                    ),
+                    const SizedBox(height: 20),
+                    // Nebenwege gesammelt in einer Kachel statt als lose Links.
+                    BentoGroup(
+                      padding: BentoGroup.rowsPadding,
+                      children: [
+                        ListTile(
+                          leading: Icon(
+                            _isSignUp
+                                ? Icons.login_outlined
+                                : Icons.person_add_alt_outlined,
+                          ),
+                          title: Text(_isSignUp ? l.haveAccount : l.newHere),
+                          enabled: !_loading,
+                          onTap: () => setState(() => _isSignUp = !_isSignUp),
+                        ),
+                        if (!_isSignUp) ...[
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(Icons.lock_reset_outlined),
+                            title: Text(l.forgotPassword),
+                            enabled: !_loading,
+                            onTap: _forgotPassword,
+                          ),
+                        ],
+                        // Die DB-Verbindung lässt sich vom (öffentlichen) Anmelde-
+                        // screen NUR ändern, wenn diese Instanz NICHT fest an eine
+                        // Datenbank gebunden ist (kein Standard aus
+                        // assets/db_connection/connection.json und kein per Build
+                        // eingebackenes Secret). Andernfalls könnte ein Unbefugter
+                        // die Verbindung vor dem Login auf eine fremde DB umbiegen
+                        // („trollen"). Bei fest gebundener Instanz ist die
+                        // Verbindung ausschließlich nach dem Login über die
+                        // Einstellungen (bzw. das Profil) änderbar.
+                        if (!config.hasBakedDefault) ...[
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(Icons.dns_outlined),
+                            title: Text(l.changeDbConnection),
+                            enabled: !_loading,
+                            onTap: () => showConnectionEditor(context, ref),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

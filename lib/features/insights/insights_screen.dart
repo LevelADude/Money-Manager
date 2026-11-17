@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
 import '../../shared/mini_line_chart.dart';
 import 'insights_providers.dart';
 
 /// „Insights" – lokal berechnete Auswertungen, gruppiert in Achtung / Überblick
-/// / Hinweise. Komplett offline, ohne LLM.
+/// / Hinweise. Komplett offline, ohne LLM. Jeder Abschnitt ist eine
+/// Listen-Kachel; der Zeitraum-Umschalter bleibt oben stehen.
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
 
@@ -18,17 +21,31 @@ class InsightsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
     final sections = [
-      (InsightSection.warning, l.secWarning),
-      (InsightSection.overview, l.secOverview),
-      (InsightSection.hint, l.secHint),
-    ];
+      for (final (section, label) in [
+        (InsightSection.warning, l.secWarning),
+        (InsightSection.overview, l.secOverview),
+        (InsightSection.hint, l.secHint),
+      ])
+        (
+          label,
+          [
+            for (final i in insights)
+              if (i.effectiveSection == section) i,
+          ],
+        ),
+    ].where((s) => s.$2.isNotEmpty).toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(l.insightsTitle)),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            padding: const EdgeInsets.fromLTRB(
+              Bento.margin,
+              8,
+              Bento.margin,
+              8,
+            ),
             child: SegmentedButton<InsightScope>(
               segments: [
                 ButtonSegment(
@@ -48,54 +65,52 @@ class InsightsScreen extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: insights.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(l.insightsEmpty, textAlign: TextAlign.center),
-                    ),
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-                    children: [
-                      for (final (section, label) in sections)
-                        ...() {
-                          final cards = insights
-                              .where((i) => i.effectiveSection == section)
-                              .toList();
-                          if (cards.isEmpty) return const <Widget>[];
-                          return [
-                            _SectionHeader(label: label),
-                            for (final i in cards) _InsightCard(insight: i),
-                          ];
-                        }(),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
+            child: ListView(
+              padding: BentoListView.paddingOf(context),
+              children: [
+                if (sections.isEmpty)
+                  BentoTile(
+                    child: Row(
+                      children: [
+                        const BentoGlyph(child: Icon(Icons.lightbulb_outline)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            l.insightsEmpty,
+                            style: theme.textTheme.bodyMedium,
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.lock_outline,
-                              size: 16,
-                              color: theme.hintColor,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                l.insightsLocalNote,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.hintColor,
-                                ),
-                              ),
-                            ),
-                          ],
+                      ],
+                    ),
+                  ),
+                for (final (i, (label, cards)) in sections.indexed) ...[
+                  if (i > 0) const SizedBox(height: Bento.gap * 2),
+                  BentoSectionHeader(label: label),
+                  BentoList(
+                    children: [for (final c in cards) _InsightRow(insight: c)],
+                  ),
+                ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 16, 6, 0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.lock_outline,
+                        size: 16,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          l.insightsLocalNote,
+                          style: Bento.sub(context),
                         ),
                       ),
                     ],
                   ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -103,74 +118,85 @@ class InsightsScreen extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
-      child: Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: Theme.of(context).hintColor,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-}
-
-class _InsightCard extends StatelessWidget {
-  const _InsightCard({required this.insight});
+/// Eine Auswertung als Zeile einer Listen-Kachel: getönter Kreis in der
+/// Signalfarbe, Titel, voller Erläuterungstext, optional Verlaufslinie.
+class _InsightRow extends StatelessWidget {
+  const _InsightRow({required this.insight});
 
   final Insight insight;
 
+  static const double _glyph = 38;
+  static const double _glyphGap = 12;
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final t = Theme.of(context);
+    final ink2 = t.colorScheme.onSurfaceVariant;
     final color = switch (insight.severity) {
-      InsightSeverity.positive => Colors.green.shade600,
-      InsightSeverity.warning => scheme.error,
-      InsightSeverity.info => scheme.primary,
+      InsightSeverity.positive => AppColors.of(context).income,
+      InsightSeverity.warning => t.colorScheme.error,
+      InsightSeverity.info => t.colorScheme.primary,
     };
     final route = insight.route;
     final spark = insight.sparkline;
-    return Card(
+    final content = Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: color.withValues(alpha: 0.15),
-              child: Icon(insight.icon, color: color),
-            ),
-            title: Text(
-              insight.title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(insight.detail),
-            isThreeLine: insight.detail.length > 60,
-            trailing: route == null
-                ? null
-                : const Icon(Icons.chevron_right, size: 20),
-            onTap: route == null ? null : () => context.go(route),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              BentoGlyph(size: _glyph, tint: color, child: Icon(insight.icon)),
+              const SizedBox(width: _glyphGap),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      insight.title,
+                      style: t.textTheme.bodyLarge!.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      insight.detail,
+                      style: t.textTheme.bodySmall!.copyWith(
+                        fontSize: 13,
+                        height: 1.35,
+                        color: ink2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (route != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 9),
+                  child: Icon(Icons.chevron_right, size: 20, color: ink2),
+                ),
+            ],
           ),
           if (spark != null && spark.length >= 2)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              // Bündig mit dem Text, nicht mit dem Kreis.
+              padding: const EdgeInsets.only(left: _glyph + _glyphGap, top: 10),
               child: MiniLineChart(
                 values: spark,
                 color: color,
-                height: 90,
+                height: 80,
                 labels: insight.sparkLabels ?? const [],
               ),
             ),
         ],
       ),
     );
+    return route == null
+        ? content
+        : InkWell(onTap: () => context.go(route), child: content);
   }
 }

@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../currency/currency_picker.dart';
 import '../currency/currency_providers.dart';
 import '../onboarding/connection_editor.dart';
 import 'settings_providers.dart';
+import '../../shared/responsive.dart';
+import '../../shared/bento.dart';
 
-/// Einstellungen: Erscheinungsbild (Theme-Modus + Akzentfarbe).
+/// Einstellungen: Sprache, Erscheinungsbild (Farbpalette), Privatsphäre, Währung.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -29,8 +32,8 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.settingsTitle)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+        padding: EdgeInsets.all(16).withBarInset(context),
+        children: bentoSections([
           header(l.language),
           const SizedBox(height: 8),
           SegmentedButton<String>(
@@ -48,46 +51,27 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(height: 40),
           header(l.appearance),
           const SizedBox(height: 8),
-          SegmentedButton<ThemeMode>(
-            segments: [
-              ButtonSegment(
-                value: ThemeMode.system,
-                label: Text(l.themeSystem),
-                icon: const Icon(Icons.brightness_auto),
-              ),
-              ButtonSegment(
-                value: ThemeMode.light,
-                label: Text(l.themeLight),
-                icon: const Icon(Icons.light_mode),
-              ),
-              ButtonSegment(
-                value: ThemeMode.dark,
-                label: Text(l.themeDark),
-                icon: const Icon(Icons.dark_mode),
-              ),
-            ],
-            selected: {settings.themeMode},
-            onSelectionChanged: (s) => notifier.setThemeMode(s.first),
-          ),
-          const SizedBox(height: 24),
-          header(l.accentColor),
-          const SizedBox(height: 12),
           Wrap(
             spacing: 12,
             runSpacing: 12,
             children: [
-              for (final c in accentColors)
-                _ColorSwatch(
-                  color: Color(c),
-                  selected: settings.seedColor == c,
-                  onTap: () => notifier.setSeedColor(c),
+              for (final (p, label) in [
+                (AppPalette.system, l.themeSystem),
+                (AppPalette.sage, l.paletteSage),
+                (AppPalette.emerald, l.paletteEmerald),
+                (AppPalette.dark, l.themeDark),
+              ])
+                _PaletteSwatch(
+                  palette: p,
+                  label: label,
+                  selected: settings.palette == p,
+                  onTap: () => notifier.setPalette(p),
                 ),
             ],
           ),
           const Divider(height: 40),
           header(l.privacy),
           SwitchListTile(
-            contentPadding: EdgeInsets.zero,
             value: settings.hideAmounts,
             onChanged: notifier.setHideAmounts,
             secondary: const Icon(Icons.visibility_off_outlined),
@@ -95,7 +79,6 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(l.hideAmountsSub),
           ),
           SwitchListTile(
-            contentPadding: EdgeInsets.zero,
             value: settings.showAvailable,
             onChanged: notifier.setShowAvailable,
             secondary: const Icon(Icons.bookmarks_outlined),
@@ -106,7 +89,6 @@ class SettingsScreen extends ConsumerWidget {
           header(l.currency),
           const SizedBox(height: 8),
           ListTile(
-            contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.payments_outlined),
             title: Text(l.mainCurrency),
             subtitle: Text(l.mainCurrencyHelp),
@@ -185,7 +167,6 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(height: 40),
           SwitchListTile(
-            contentPadding: EdgeInsets.zero,
             value: settings.lockEnabled,
             onChanged: (v) async {
               if (v) {
@@ -217,14 +198,13 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(height: 40),
           header(l.database),
           ListTile(
-            contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.dns_outlined),
             title: Text(l.dbConnection),
             subtitle: Text(l.dbConnectionSub),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => showConnectionEditor(context, ref),
           ),
-        ],
+        ]),
       ),
     );
   }
@@ -289,36 +269,108 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class _ColorSwatch extends StatelessWidget {
-  const _ColorSwatch({
-    required this.color,
+/// Auswahlkachel einer Palette: Mini-Vorschau (Hintergrund, Kachel, Akzent)
+/// über dem Namen. „System" zeigt links Salbei und rechts Dunkel.
+class _PaletteSwatch extends StatelessWidget {
+  const _PaletteSwatch({
+    required this.palette,
+    required this.label,
     required this.selected,
     required this.onTap,
   });
 
-  final Color color;
+  final AppPalette palette;
+  final String label;
   final bool selected;
   final VoidCallback onTap;
 
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(28),
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: selected
-                ? Theme.of(context).colorScheme.onSurface
-                : Colors.transparent,
-            width: 3,
+  Widget _half(ThemeData t) {
+    final c = t.extension<AppColors>()!;
+    return ColoredBox(
+      color: c.background,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: c.card,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: c.hairline),
+          ),
+          child: Align(
+            alignment: const Alignment(-.6, 0),
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: t.colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
           ),
         ),
-        child: selected ? const Icon(Icons.check, color: Colors.white) : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: SizedBox(
+          width: 112,
+          child: Column(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                height: 72,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: selected ? scheme.primary : scheme.outlineVariant,
+                    width: selected ? 2.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(child: _half(AppTheme.themeFor(palette))),
+                    if (palette == AppPalette.system)
+                      Expanded(child: _half(AppTheme.systemDark)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (selected) ...[
+                    Icon(Icons.check_circle, size: 16, color: scheme.primary),
+                    const SizedBox(width: 4),
+                  ],
+                  Flexible(
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

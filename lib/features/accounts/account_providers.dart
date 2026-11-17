@@ -13,6 +13,7 @@ import '../currency/currency_providers.dart';
 import '../reservations/reservation_providers.dart';
 import '../sharing/access_grant_providers.dart';
 import '../transactions/transaction_providers.dart';
+import '../../shared/startup_trace.dart';
 
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   return AccountRepository(
@@ -23,7 +24,10 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
 
 /// Live-Liste aller Konten (inkl. nur-ansehbarer Fremdkonten aus Freigaben).
 final accountsProvider = StreamProvider<List<Account>>((ref) {
-  return ref.watch(accountRepositoryProvider).watchAccounts();
+  return traceStream(
+    'Konten',
+    ref.watch(accountRepositoryProvider).watchAccounts(),
+  );
 });
 
 /// Konten, die der aktuelle Nutzer verwalten (bebuchen) darf: eigene Konten +

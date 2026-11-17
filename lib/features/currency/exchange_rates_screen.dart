@@ -6,6 +6,7 @@ import '../../shared/money.dart';
 import '../settings/settings_providers.dart';
 import 'currency_picker.dart';
 import 'currency_providers.dart';
+import '../../shared/bento.dart';
 
 /// Wechselkurse verwalten: wie viele Einheiten der Hauptwährung 1 Einheit einer
 /// Fremdwährung wert ist (z. B. 1 USD = 0,92 EUR). Nur eigene Währungen/Kurse;
@@ -212,11 +213,14 @@ class ExchangeRatesScreen extends ConsumerWidget {
         label: Text(l.addCurrency),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: BentoListView.paddingOf(context, fabSpace: true),
         children: [
           Card(
             child: ListTile(
-              leading: const Icon(Icons.star_outline),
+              leading: const BentoGlyph(
+                size: 38,
+                child: Icon(Icons.star_outline),
+              ),
               title: Text(l.mainCurrencyWith(base)),
               subtitle: Text(l.baseRateNote),
             ),
@@ -238,24 +242,32 @@ class ExchangeRatesScreen extends ConsumerWidget {
               child: Text(l.noForeignCurrencies),
             )
           else
-            for (final code in list)
-              ListTile(
-                leading: const Icon(Icons.currency_exchange),
-                title: Text('1 $code (${currencySymbol(code)})'),
-                subtitle: _rateSubtitle(l, code, base, effective, live),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: l.deleteCurrency,
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => _deleteCurrency(context, ref, code),
+            BentoList(
+              children: [
+                for (final code in list)
+                  ListTile(
+                    leading: const BentoGlyph(
+                      size: 38,
+                      child: Icon(Icons.currency_exchange),
                     ),
-                    const Icon(Icons.edit_outlined),
-                  ],
-                ),
-                onTap: () => _editRate(context, ref, code, manual[code] ?? 0),
-              ),
+                    title: Text('1 $code (${currencySymbol(code)})'),
+                    subtitle: _rateSubtitle(l, code, base, effective, live),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: l.deleteCurrency,
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _deleteCurrency(context, ref, code),
+                        ),
+                        const Icon(Icons.edit_outlined),
+                      ],
+                    ),
+                    onTap: () =>
+                        _editRate(context, ref, code, manual[code] ?? 0),
+                  ),
+              ],
+            ),
           const SizedBox(height: 80),
         ],
       ),

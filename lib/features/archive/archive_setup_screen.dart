@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/archive_repository.dart';
 import '../../l10n/app_localizations.dart';
 import 'archive_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/bento.dart';
 
 /// Richtet das private GitHub-Archiv-Repo ein: Repo-URL + Token eingeben,
 /// Schlüssel wird erzeugt und (einmalig) zum Sichern angezeigt. Token & Schlüssel
@@ -20,7 +22,10 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
   final _repo = TextEditingController();
   final _token = TextEditingController();
   bool _prefilled = false;
-  bool _busy = false;
+  bool _saving = false;
+  bool _disconnecting = false;
+
+  bool get _busy => _saving || _disconnecting;
 
   @override
   void dispose() {
@@ -42,64 +47,101 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
     }
     final hasKey = status?.hasKey ?? false;
 
+    final connectedRepo = status != null && status.configured
+        ? status.repo ?? ''
+        : null;
+    final connected = connectedRepo != null;
+    final theme = Theme.of(context);
+
+    // Ladekreis im jeweiligen Knopf statt eines Balkens unter allem.
+    Widget busyIcon(bool active, IconData icon) => active
+        ? const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Icon(icon);
+
     return Scaffold(
       appBar: AppBar(title: Text(l.archiveSetupTitle)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: BentoListView.paddingOf(context),
         children: [
-          if (status != null && status.configured)
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.check_circle_outline),
-                title: Text(l.archiveConnectedTo(status.repo ?? '')),
-              ),
+          // Hinweis-Kachel; ist das Archiv verbunden, steht der Status
+          // darüber und der Kreis zeigt ein Häkchen in Einnahmenfarbe.
+          BentoTile(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BentoGlyph(
+                  tint: connected ? AppColors.of(context).income : null,
+                  child: Icon(
+                    connected
+                        ? Icons.check_circle_outline
+                        : Icons.inventory_2_outlined,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (connectedRepo != null) ...[
+                        Text(
+                          l.archiveConnectedTo(connectedRepo),
+                          style: theme.textTheme.bodyLarge!.copyWith(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                      ],
+                      Text(
+                        l.archiveSetupIntro,
+                        style: connected
+                            ? Bento.sub(context).copyWith(fontSize: 13)
+                            : theme.textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          const SizedBox(height: 8),
-          Text(
-            l.archiveSetupIntro,
-            style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: Bento.gap * 2),
           TextField(
             controller: _repo,
             enabled: !_busy,
             decoration: InputDecoration(
               labelText: l.archiveRepoLabel,
-              border: const OutlineInputBorder(),
               hintText: 'owner/money-manager-archive',
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Bento.gap),
           TextField(
             controller: _token,
             enabled: !_busy,
             obscureText: true,
             decoration: InputDecoration(
               labelText: l.archiveTokenLabel,
-              border: const OutlineInputBorder(),
               helperText: hasKey ? l.archiveTokenKeepHint : null,
               helperMaxLines: 2,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: Bento.gap * 2),
           FilledButton.icon(
             onPressed: _busy ? null : _save,
-            icon: const Icon(Icons.link),
+            icon: busyIcon(_saving, Icons.link),
             label: Text(hasKey ? l.archiveSave : l.archiveConnect),
           ),
-          if (status != null && status.configured) ...[
-            const SizedBox(height: 8),
+          if (connected) ...[
+            const SizedBox(height: Bento.gap),
             OutlinedButton.icon(
               onPressed: _busy ? null : _disconnect,
-              icon: const Icon(Icons.link_off),
+              icon: busyIcon(_disconnecting, Icons.link_off),
               label: Text(l.archiveDisconnect),
             ),
           ],
-          if (_busy)
-            const Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: LinearProgressIndicator(),
-            ),
         ],
       ),
     );
@@ -119,7 +161,7 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
       return;
     }
 
-    setState(() => _busy = true);
+    setState(() => _saving = true);
     try {
       // Beim ersten Einrichten einen Schlüssel erzeugen und einmalig anzeigen.
       final newKey = hasKey ? null : ArchiveRepository.generateEncKey();
@@ -145,7 +187,7 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
         ).showSnackBar(SnackBar(content: Text(l.archiveError(e))));
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -200,7 +242,7 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
       ),
     );
     if (ok != true) return;
-    setState(() => _busy = true);
+    setState(() => _disconnecting = true);
     try {
       await ref.read(archiveRepositoryProvider).clearArchiveConfig();
       ref.invalidate(archiveConfigStatusProvider);
@@ -213,7 +255,7 @@ class _ArchiveSetupScreenState extends ConsumerState<ArchiveSetupScreen> {
         ).showSnackBar(SnackBar(content: Text(l.archiveError(e))));
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => _disconnecting = false);
     }
   }
 }

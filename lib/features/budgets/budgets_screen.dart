@@ -8,6 +8,8 @@ import '../../shared/category_icons.dart';
 import '../../shared/money.dart';
 import '../categories/category_providers.dart';
 import 'budget_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/bento.dart';
 
 /// Monatsbudgets je Ausgabe-Kategorie verwalten + Fortschritt anzeigen.
 class BudgetsScreen extends ConsumerWidget {
@@ -259,50 +261,122 @@ class BudgetsScreen extends ConsumerWidget {
     final (_, periodEnd) = budgetPeriodWindow(period, now);
     final daysLeft = periodEnd.difference(today).inDays;
 
+    // Kategorien mit Budget zuerst (mit Balken), die übrigen darunter in
+    // einer eigenen Kachel – beide Gruppen alphabetisch.
+    final withBudget = [
+      for (final c in cats)
+        if (budgets[c.id] != null) c,
+    ];
+    final withoutBudget = [
+      for (final c in cats)
+        if (budgets[c.id] == null) c,
+    ];
+    void remove(String id) =>
+        ref.read(budgetRepositoryProvider).deleteBudget(id);
+
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context).moreBudgets)),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: BentoListView.paddingOf(context),
         children: [
-          _OverallBudgetCard(
-            budget: overall,
-            spent: overallSpent,
-            allocated: allocated,
-            period: period,
-            daysLeft: daysLeft,
-            onEdit: () => _editOverall(context, ref, overall),
-            onRemove: overall == null
-                ? null
-                : () => ref
-                      .read(budgetRepositoryProvider)
-                      .deleteBudget(overall.id),
+          BentoGrid(
+            cells: [
+              BentoCell(
+                span: 2,
+                wideSpan: overall == null ? 4 : 2,
+                child: _OverallBudgetTile(
+                  budget: overall,
+                  spent: overallSpent,
+                  period: period,
+                  daysLeft: daysLeft,
+                  onEdit: () => _editOverall(context, ref, overall),
+                  onRemove: overall == null ? null : () => remove(overall.id),
+                ),
+              ),
+              if (overall != null)
+                BentoCell(
+                  span: 2,
+                  wideSpan: 2,
+                  child: _AllocationTile(
+                    overallCents: overall.amountCents,
+                    allocatedCents: allocated,
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 8),
-          for (final cat in cats)
-            _BudgetTile(
-              category: cat,
-              budget: budgets[cat.id],
-              period: period,
-              spentCents: spent[cat.id] ?? 0,
-              onEdit: () =>
-                  _edit(context, ref, cat, budgets[cat.id]?.amountCents),
-              onRemove: budgets[cat.id] == null
-                  ? null
-                  : () => ref
-                        .read(budgetRepositoryProvider)
-                        .deleteBudget(budgets[cat.id]!.id),
+          if (withBudget.isNotEmpty) ...[
+            const SizedBox(height: Bento.gap),
+            BentoList(
+              children: [
+                for (final cat in withBudget)
+                  _BudgetRow(
+                    category: cat,
+                    budget: budgets[cat.id]!,
+                    spentCents: spent[cat.id] ?? 0,
+                    onEdit: () =>
+                        _edit(context, ref, cat, budgets[cat.id]!.amountCents),
+                    onRemove: () => remove(budgets[cat.id]!.id),
+                  ),
+              ],
             ),
+          ],
+          if (withoutBudget.isNotEmpty) ...[
+            const SizedBox(height: Bento.gap),
+            BentoList(
+              children: [
+                for (final cat in withoutBudget)
+                  _OpenBudgetRow(
+                    category: cat,
+                    period: period,
+                    spentCents: spent[cat.id] ?? 0,
+                    onEdit: () => _edit(context, ref, cat, null),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _OverallBudgetCard extends StatelessWidget {
-  const _OverallBudgetCard({
+/// Signalfarbe eines Budgets: überzogen rot, ab 90 % Warnung, sonst grün.
+Color _budgetColor(
+  BuildContext context, {
+  required bool over,
+  required int pct,
+}) {
+  final c = AppColors.of(context);
+  return over ? c.expense : (pct >= 90 ? c.warning : c.income);
+}
+
+/// Kleiner Bearbeiten-/Entfernen-Knopf in Kopf- und Listenzeilen.
+class _TileAction extends StatelessWidget {
+  const _TileAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: tooltip,
+    icon: Icon(icon, size: 20),
+    visualDensity: VisualDensity.compact,
+    onPressed: onPressed,
+  );
+}
+
+/// Gesamtbudget: Ausgaben im Zeitraum gegen das Budget, Balken und was pro
+/// Tag noch bleibt. Ohne Budget: bisherige Ausgaben, Erklärung, Knopf.
+class _OverallBudgetTile extends StatelessWidget {
+  const _OverallBudgetTile({
     required this.budget,
     required this.spent,
-    required this.allocated,
     required this.period,
     required this.daysLeft,
     required this.onEdit,
@@ -311,9 +385,6 @@ class _OverallBudgetCard extends StatelessWidget {
 
   final Budget? budget;
   final int spent;
-
-  /// Summe der auf Kategorien verteilten Budgets.
-  final int allocated;
   final BudgetPeriod period;
   final int daysLeft;
   final VoidCallback onEdit;
@@ -322,70 +393,112 @@ class _OverallBudgetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final hasBudget = budget != null;
-    final amount = budget?.amountCents ?? 0;
-    final frac = (hasBudget && amount > 0)
-        ? (spent / amount).clamp(0.0, 1.0)
-        : 0.0;
-    final pct = (hasBudget && amount > 0) ? (spent / amount * 100).round() : 0;
-    final remaining = amount - spent;
-    final over = hasBudget && remaining < 0;
-    final color = over
-        ? Colors.red.shade600
-        : (pct >= 90 ? Colors.orange.shade700 : Colors.green.shade600);
-    final perDay = (!over && daysLeft > 0) ? remaining ~/ daysLeft : 0;
+    final budget = this.budget;
     final periodLabel = period == BudgetPeriod.week ? l.thisWeek : l.thisMonth;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    if (budget == null) {
+      return BentoTile(
+        padding: const EdgeInsets.all(18),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    hasBudget
-                        ? '${l.overallBudget} · $periodLabel'
-                        : l.overallBudget,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                if (hasBudget) ...[
-                  Text(
-                    '$pct %',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: color),
-                  ),
-                  IconButton(
-                    tooltip: l.edit,
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: onEdit,
-                  ),
-                  IconButton(
-                    tooltip: l.remove,
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: onRemove,
-                  ),
-                ],
-              ],
+            Text(l.overallBudget, style: Bento.label(context)),
+            const SizedBox(height: 6),
+            Text(
+              l.overallBudgetHint,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            if (hasBudget) ...[
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: LinearProgressIndicator(
-                  value: frac,
-                  minHeight: 10,
-                  color: color,
-                  backgroundColor: color.withValues(alpha: 0.15),
+            const SizedBox(height: 4),
+            Text(
+              '$periodLabel: ${formatCents(spent)}',
+              style: Bento.sub(context),
+            ),
+            const SizedBox(height: 14),
+            FilledButton.tonal(
+              onPressed: onEdit,
+              child: Text(l.setOverallBudget),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final amount = budget.amountCents;
+    final pct = amount > 0 ? (spent / amount * 100).round() : 0;
+    final remaining = amount - spent;
+    final over = remaining < 0;
+    final color = _budgetColor(context, over: over, pct: pct);
+    final perDay = (!over && daysLeft > 0) ? remaining ~/ daysLeft : 0;
+
+    return BentoTile(
+      padding: const EdgeInsets.fromLTRB(18, 6, 6, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${l.overallBudget} · $periodLabel',
+                  style: Bento.label(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(l.amountOf(formatCents(spent), formatCents(amount))),
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
+              _TileAction(
+                tooltip: l.edit,
+                icon: Icons.edit_outlined,
+                onPressed: onEdit,
+              ),
+              _TileAction(
+                tooltip: l.remove,
+                icon: Icons.delete_outline,
+                onPressed: onRemove,
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          l.amountOf(formatCents(spent), formatCents(amount)),
+                          style: Bento.number(context, size: 24),
+                          // Einzeilig messen, sonst wird die Kachel im Raster
+                          // so hoch wie ein umbrochener Betrag.
+                          maxLines: 1,
+                          softWrap: false,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '$pct %',
+                      style: Bento.number(
+                        context,
+                        size: 17,
+                      ).copyWith(color: color),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                BentoProgress(
+                  value: amount > 0 ? spent / amount : 0,
+                  color: color,
+                  height: 10,
+                ),
+                const SizedBox(height: 10),
+                Text(
                   over
                       ? l.budgetExceededBy(formatCents(-remaining))
                       : l.budgetRemainingLine(
@@ -393,34 +506,15 @@ class _OverallBudgetCard extends StatelessWidget {
                           daysLeft,
                           formatCents(perDay),
                         ),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: over ? Colors.red.shade700 : null,
+                  style: Bento.sub(context).copyWith(
+                    color: over ? AppColors.of(context).expense : null,
+                    fontWeight: over ? FontWeight.w600 : null,
                   ),
                 ),
-              ),
-              const Divider(height: 24),
-              _AllocationBlock(overallCents: amount, allocatedCents: allocated),
-            ] else ...[
-              const SizedBox(height: 6),
-              Text(
-                l.overallBudgetHint,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text('${l.thisMonth}: ${formatCents(spent)}'),
-                  ),
-                  FilledButton.tonal(
-                    onPressed: onEdit,
-                    child: Text(l.setOverallBudget),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -428,8 +522,8 @@ class _OverallBudgetCard extends StatelessWidget {
 
 /// Zeigt, wie viel des Gesamtbudgets schon auf Kategorie-Budgets verteilt ist
 /// und wie viel noch frei verplant werden kann.
-class _AllocationBlock extends StatelessWidget {
-  const _AllocationBlock({
+class _AllocationTile extends StatelessWidget {
+  const _AllocationTile({
     required this.overallCents,
     required this.allocatedCents,
   });
@@ -440,168 +534,201 @@ class _AllocationBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final free = overallCents - allocatedCents;
     final overAllocated = free < 0;
-    final frac = overallCents > 0
-        ? (allocatedCents / overallCents).clamp(0.0, 1.0)
-        : 0.0;
-    final color = overAllocated
-        ? Colors.red.shade600
-        : theme.colorScheme.primary;
+    final color = overAllocated ? AppColors.of(context).expense : null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l.budgetAllocationTitle,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+    return BentoTile(
+      padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // So hoch wie die Kopfzeile der Gesamtbudget-Kachel (mit Knöpfen),
+          // damit Zahl und Balken beider Kacheln auf einer Linie liegen.
+          SizedBox(
+            height: 40,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(l.budgetAllocationTitle, style: Bento.label(context)),
             ),
-            Text(
-              l.budgetAllocatedOf(
-                formatCents(allocatedCents),
-                formatCents(overallCents),
-              ),
-              style: theme.textTheme.bodySmall,
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              formatCents(allocatedCents),
+              style: Bento.number(context, size: 24),
             ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: frac,
-            minHeight: 8,
+          ),
+          const SizedBox(height: 12),
+          BentoProgress(
+            value: overallCents > 0 ? allocatedCents / overallCents : 0,
             color: color,
-            backgroundColor: color.withValues(alpha: 0.15),
+            height: 10,
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          overAllocated
-              ? l.budgetOverAllocatedBy(formatCents(-free))
-              : l.budgetFreeToAllocate(formatCents(free)),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: overAllocated ? Colors.red.shade700 : null,
-            fontWeight: overAllocated ? FontWeight.bold : null,
+          const SizedBox(height: 10),
+          Text(
+            overAllocated
+                ? l.budgetOverAllocatedBy(formatCents(-free))
+                : l.budgetFreeToAllocate(formatCents(free)),
+            style: Bento.sub(context).copyWith(
+              color: color,
+              fontWeight: overAllocated ? FontWeight.w600 : null,
+            ),
           ),
-        ),
-      ],
+          Text(
+            l.budgetAllocatedOf(
+              formatCents(allocatedCents),
+              formatCents(overallCents),
+            ),
+            style: Bento.sub(context),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _BudgetTile extends StatelessWidget {
-  const _BudgetTile({
+/// Kategorie mit Budget: Kreis, Name, Stand und Rest; Balken darunter.
+/// Antippen bearbeitet das Budget.
+class _BudgetRow extends StatelessWidget {
+  const _BudgetRow({
     required this.category,
     required this.budget,
-    required this.period,
     required this.spentCents,
     required this.onEdit,
     required this.onRemove,
   });
 
   final Category category;
-  final Budget? budget;
-  final BudgetPeriod period;
+  final Budget budget;
   final int spentCents;
   final VoidCallback onEdit;
-  final VoidCallback? onRemove;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final hasBudget = budget != null;
-    final amount = budget?.amountCents ?? 0;
-    final over = hasBudget && spentCents > amount;
-    final frac = (hasBudget && amount > 0)
-        ? (spentCents / amount).clamp(0.0, 1.0)
-        : 0.0;
-    final pct = (hasBudget && amount > 0)
-        ? (spentCents / amount * 100).round()
-        : 0;
-    final color = over
-        ? Colors.red.shade600
-        : (pct >= 90 ? Colors.orange.shade700 : Colors.green.shade600);
+    final amount = budget.amountCents;
+    final over = spentCents > amount;
+    final pct = amount > 0 ? (spentCents / amount * 100).round() : 0;
+    final color = _budgetColor(context, over: over, pct: pct);
+    final warn = over || pct >= 90;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+    return InkWell(
+      onTap: onEdit,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          BentoRow(
+            padding: const EdgeInsets.fromLTRB(14, 8, 6, 2),
+            leading: BentoGlyph(
+              size: 38,
+              child: categoryGlyph(category, size: 22),
+            ),
+            title: Text(l.categoryName(category)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                categoryGlyph(category),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l.categoryName(category),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                Text(
+                  '$pct %',
+                  style: Bento.sub(context).copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: warn ? color : null,
                   ),
                 ),
-                if (hasBudget) ...[
-                  IconButton(
-                    tooltip: l.edit,
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: onEdit,
-                  ),
-                  IconButton(
-                    tooltip: l.remove,
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: onRemove,
-                  ),
-                ] else
-                  TextButton(onPressed: onEdit, child: Text(l.setBudgetAction)),
+                _TileAction(
+                  tooltip: l.remove,
+                  icon: Icons.delete_outline,
+                  onPressed: onRemove,
+                ),
               ],
             ),
-            if (hasBudget) ...[
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: frac,
-                  minHeight: 8,
+          ),
+          // Balken und Zahlen bündig mit dem Namen, nicht mit dem Kreis; so
+          // bleibt der Zeile die volle Breite für Stand und Rest.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(64, 0, 18, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                BentoProgress(
+                  value: amount > 0 ? spentCents / amount : 0,
                   color: color,
-                  backgroundColor: color.withValues(alpha: 0.15),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${l.amountOf(formatCents(spentCents), formatCents(amount))} · $pct %',
-                  ),
-                  Text(
-                    over
-                        ? l.overBy(formatCents(spentCents - amount))
-                        : l.amountLeft(formatCents(amount - spentCents)),
-                    style: TextStyle(
-                      color: over
-                          ? Colors.red.shade700
-                          : (pct >= 90 ? Colors.orange.shade800 : null),
-                      fontWeight: FontWeight.bold,
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l.amountOf(
+                          formatCents(spentCents),
+                          formatCents(amount),
+                        ),
+                        style: Bento.sub(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ] else
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  period == BudgetPeriod.week
-                      ? l.noBudgetThisWeek(formatCents(spentCents))
-                      : l.noBudgetThisMonth(formatCents(spentCents)),
-                  style: Theme.of(context).textTheme.bodySmall,
+                    const SizedBox(width: 8),
+                    Text(
+                      over
+                          ? l.overBy(formatCents(spentCents - amount))
+                          : l.amountLeft(formatCents(amount - spentCents)),
+                      style: Bento.sub(context).copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: warn ? color : null,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-          ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kategorie ohne Budget: Ausgaben im Zeitraum und Knopf zum Festlegen.
+class _OpenBudgetRow extends StatelessWidget {
+  const _OpenBudgetRow({
+    required this.category,
+    required this.period,
+    required this.spentCents,
+    required this.onEdit,
+  });
+
+  final Category category;
+  final BudgetPeriod period;
+  final int spentCents;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return BentoRow(
+      onTap: onEdit,
+      padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+      leading: BentoGlyph(size: 38, child: categoryGlyph(category, size: 22)),
+      title: Text(l.categoryName(category)),
+      // Dass kein Budget gesetzt ist, sagt schon der Knopf; die Zeile zeigt
+      // nur, was im Zeitraum ausgegeben wurde (passt so auch aufs Telefon).
+      subtitle: Text(
+        '${period == BudgetPeriod.week ? l.thisWeek : l.thisMonth}: '
+        '${formatCents(spentCents)}',
+      ),
+      trailing: TextButton(
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          visualDensity: VisualDensity.compact,
         ),
+        onPressed: onEdit,
+        child: Text(l.setBudgetAction),
       ),
     );
   }

@@ -13,6 +13,7 @@ import '../../data/repositories/template_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../accounts/account_providers.dart';
 import '../auth/auth_providers.dart';
+import '../../shared/startup_trace.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   return TransactionRepository(
@@ -64,7 +65,10 @@ final receiptStorageProvider = Provider<ReceiptStorage>((ref) {
 /// Live-Liste ALLER Buchungen (Basis für Salden/Vermögen/Statistik).
 /// Bei Local-First (Phase B) kommt das aus der lokalen DB.
 final allTransactionsProvider = StreamProvider<List<AppTransaction>>((ref) {
-  return ref.watch(transactionRepositoryProvider).watchAll();
+  return traceStream(
+    'Buchungen',
+    ref.watch(transactionRepositoryProvider).watchAll(),
+  );
 });
 
 /// Buchungen, die ein Konto betreffen (als Quelle ODER Übertragsziel),

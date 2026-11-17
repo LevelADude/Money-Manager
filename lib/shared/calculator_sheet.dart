@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import 'money.dart';
+import 'glass.dart';
 
 /// Öffnet ein Taschenrechner-Tastenfeld als Bottom-Sheet. Gibt den berechneten
 /// Betrag als Eingabe-String ("12,50") zurück – oder null bei Abbruch.
@@ -9,9 +10,8 @@ Future<String?> showCalculatorSheet(
   BuildContext context, {
   String initial = '',
 }) {
-  return showModalBottomSheet<String>(
+  return showGlassSheet<String>(
     context: context,
-    showDragHandle: true,
     isScrollControlled: true,
     // Auf breiten Screens zentriert + begrenzt statt über die ganze Breite.
     constraints: const BoxConstraints(maxWidth: 480),

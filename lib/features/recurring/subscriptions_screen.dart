@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import 'recurring_providers.dart';
+import '../../shared/bento.dart';
 
 /// Erkannte Abos/wiederkehrende Buchungen mit Vorschlag, sie als Dauerauftrag
 /// anzulegen.
@@ -27,12 +28,15 @@ class SubscriptionsScreen extends ConsumerWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(8),
+              padding: BentoListView.paddingOf(context),
               children: [
                 for (final c in candidates)
                   Card(
                     child: ListTile(
-                      leading: const Icon(Icons.autorenew),
+                      leading: const BentoGlyph(
+                        size: 38,
+                        child: Icon(Icons.autorenew),
+                      ),
                       title: Text(c.title),
                       subtitle: Text(
                         '${l.everyInterval(c.intervalCount, c.intervalUnit)} · '

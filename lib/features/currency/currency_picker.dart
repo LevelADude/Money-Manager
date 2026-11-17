@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/money.dart';
 import '../../shared/world_currencies.dart';
 import 'add_currency.dart';
+import '../../shared/glass.dart';
 
 /// Öffnet eine durchsuchbare Währungsauswahl (alle Weltwährungen + optionale
 /// Zusatz-Codes wie eigene/Krypto-Währungen). Gibt den gewählten Code zurück
@@ -13,10 +14,9 @@ Future<String?> showCurrencyPicker(
   String? selected,
   List<String> extraCodes = const [],
 }) {
-  return showModalBottomSheet<String>(
+  return showGlassSheet<String>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (ctx) =>
         _CurrencyPickerSheet(selected: selected, extraCodes: extraCodes),
   );

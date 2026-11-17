@@ -9,11 +9,13 @@ import '../../data/models/category.dart';
 import '../../data/models/recurring_rule.dart';
 import '../../data/models/reservation.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
 import '../../shared/calculator_sheet.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import 'reservation_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Reservierung anlegen oder bearbeiten.
 class ReservationFormScreen extends ConsumerStatefulWidget {
@@ -297,7 +299,7 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16).withBarInset(context),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -317,6 +319,7 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _accountId,
                       decoration: InputDecoration(
                         labelText: l.accountLabel,
@@ -328,7 +331,10 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                         for (final a in accounts)
                           DropdownMenuItem(
                             value: a.id,
-                            child: Text('${a.name} (${a.currency})'),
+                            child: Text(
+                              '${a.name} (${a.currency})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                       ],
                       onChanged: (v) => setState(() => _accountId = v),
@@ -339,31 +345,38 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                       _recurring ? l.startAmount : l.amount,
                       allowZero: _recurring,
                     ),
-                    const SizedBox(height: 8),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.event),
-                      title: Text(l.dueOnOptional),
-                      subtitle: Text(
-                        _dueOn == null ? l.noDueDate : df.format(_dueOn!),
-                      ),
-                      trailing: _dueOn == null
-                          ? const Icon(Icons.edit_calendar)
-                          : IconButton(
-                              tooltip: l.delete,
-                              icon: const Icon(Icons.clear),
-                              onPressed: () => setState(() => _dueOn = null),
-                            ),
-                      onTap: () async {
-                        final now = DateTime.now();
-                        final picked = await _pickDate(
-                          _dueOn ?? DateTime(now.year, now.month + 1, now.day),
-                        );
-                        if (picked != null) setState(() => _dueOn = picked);
-                      },
+                    const SizedBox(height: Bento.gap),
+                    BentoGroup(
+                      padding: BentoGroup.rowsPadding,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.event),
+                          title: Text(l.dueOnOptional),
+                          subtitle: Text(
+                            _dueOn == null ? l.noDueDate : df.format(_dueOn!),
+                          ),
+                          trailing: _dueOn == null
+                              ? const Icon(Icons.edit_calendar)
+                              : IconButton(
+                                  tooltip: l.delete,
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () =>
+                                      setState(() => _dueOn = null),
+                                ),
+                          onTap: () async {
+                            final now = DateTime.now();
+                            final picked = await _pickDate(
+                              _dueOn ??
+                                  DateTime(now.year, now.month + 1, now.day),
+                            );
+                            if (picked != null) setState(() => _dueOn = picked);
+                          },
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: Bento.gap),
                     DropdownButtonFormField<String?>(
+                      isExpanded: true,
                       initialValue: _categoryId,
                       decoration: InputDecoration(
                         labelText: l.category,
@@ -378,58 +391,75 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                         for (final c in categories)
                           DropdownMenuItem<String?>(
                             value: c.id,
-                            child: Text(l.categoryName(c)),
+                            child: Text(
+                              l.categoryName(c),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                       ],
                       onChanged: (v) => setState(() => _categoryId = v),
                     ),
-                    const SizedBox(height: 8),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      secondary: const Icon(Icons.autorenew),
-                      title: Text(l.recurringReserve),
-                      subtitle: Text(l.recurringReserveSub),
-                      value: _recurring,
-                      onChanged: (v) => setState(() => _recurring = v),
-                    ),
-                    if (_recurring) ...[
-                      const SizedBox(height: 8),
-                      amountField(_topup, l.topupAmount),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<IntervalUnit>(
-                        initialValue: _unit,
-                        decoration: InputDecoration(
-                          labelText: l.topupEvery,
-                          prefixIcon: const Icon(Icons.repeat),
+                    const SizedBox(height: Bento.gap),
+                    // Schalter und alles, was er einblendet, in einer Kachel.
+                    BentoGroup(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        4,
+                        16,
+                        _recurring ? 16 : 4,
+                      ),
+                      children: [
+                        SwitchListTile(
+                          secondary: const Icon(Icons.autorenew),
+                          title: Text(l.recurringReserve),
+                          subtitle: Text(l.recurringReserveSub),
+                          value: _recurring,
+                          onChanged: (v) => setState(() => _recurring = v),
                         ),
-                        items: [
-                          for (final u in _units)
-                            DropdownMenuItem(
-                              value: u,
-                              child: Text(l.topupUnitSingular(u)),
+                        if (_recurring) ...[
+                          const SizedBox(height: 8),
+                          amountField(_topup, l.topupAmount),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<IntervalUnit>(
+                            isExpanded: true,
+                            initialValue: _unit,
+                            decoration: InputDecoration(
+                              labelText: l.topupEvery,
+                              prefixIcon: const Icon(Icons.repeat),
                             ),
+                            items: [
+                              for (final u in _units)
+                                DropdownMenuItem(
+                                  value: u,
+                                  child: Text(l.topupUnitSingular(u)),
+                                ),
+                            ],
+                            onChanged: (v) =>
+                                setState(() => _unit = v ?? IntervalUnit.month),
+                          ),
+                          const SizedBox(height: 4),
+                          ListTile(
+                            leading: const Icon(Icons.event_repeat),
+                            title: Text(l.topupStart),
+                            subtitle: Text(df.format(_topupStart)),
+                            trailing: const Icon(Icons.edit_calendar),
+                            onTap: () async {
+                              final picked = await _pickDate(_topupStart);
+                              if (picked != null) {
+                                setState(() => _topupStart = picked);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 4),
+                          amountField(
+                            _target,
+                            l.targetOptional,
+                            allowZero: true,
+                          ),
                         ],
-                        onChanged: (v) =>
-                            setState(() => _unit = v ?? IntervalUnit.month),
-                      ),
-                      const SizedBox(height: 8),
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.event_repeat),
-                        title: Text(l.topupStart),
-                        subtitle: Text(df.format(_topupStart)),
-                        trailing: const Icon(Icons.edit_calendar),
-                        onTap: () async {
-                          final picked = await _pickDate(_topupStart);
-                          if (picked != null) {
-                            setState(() => _topupStart = picked);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      amountField(_target, l.targetOptional, allowZero: true),
-                    ],
-                    const SizedBox(height: 16),
+                      ],
+                    ),
+                    const SizedBox(height: Bento.gap),
                     TextFormField(
                       controller: _note,
                       minLines: 1,

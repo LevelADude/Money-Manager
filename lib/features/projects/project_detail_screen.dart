@@ -10,6 +10,8 @@ import '../../shared/money_text.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../transactions/transaction_providers.dart';
+import '../../core/theme.dart';
+import '../../shared/bento.dart';
 
 /// Detailauswertung eines Projekts/einer Reise (alle Buchungen mit dem Tag).
 class ProjectDetailScreen extends ConsumerWidget {
@@ -40,7 +42,7 @@ class ProjectDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(tag)),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: BentoListView.paddingOf(context),
         children: [
           Card(
             child: Padding(
@@ -48,15 +50,20 @@ class ProjectDetailScreen extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _kpi(context, l.income, income, Colors.green.shade700),
-                  _kpi(context, l.expenses, expense, Colors.red.shade700),
+                  _kpi(context, l.income, income, AppColors.of(context).income),
+                  _kpi(
+                    context,
+                    l.expenses,
+                    expense,
+                    AppColors.of(context).expense,
+                  ),
                   _kpi(
                     context,
                     l.balance,
                     income - expense,
                     (income - expense) >= 0
-                        ? Colors.green.shade700
-                        : Colors.red.shade700,
+                        ? AppColors.of(context).income
+                        : AppColors.of(context).expense,
                   ),
                 ],
               ),

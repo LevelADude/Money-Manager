@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../categories/category_providers.dart';
 import 'transaction_providers.dart';
+import '../../shared/bento.dart';
 
 /// Papierkorb: gelöschte Buchungen wiederherstellen oder endgültig löschen.
 /// Einträge älter als 30 Tage werden automatisch entfernt.
@@ -35,9 +36,8 @@ class TrashScreen extends ConsumerWidget {
               ),
             );
           }
-          return ListView.separated(
+          return BentoListView(
             itemCount: items.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (ctx, i) {
               final tx = items[i].tx;
               final title = tx.title.isEmpty

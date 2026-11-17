@@ -6,6 +6,7 @@ import '../../data/models/app_transaction.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/money_text.dart';
 import '../transactions/transaction_providers.dart';
+import '../../shared/bento.dart';
 
 /// Reise-/Projekt-Sicht: Übersicht der Ausgaben je Tag (= Projekt/Reise).
 class ProjectsScreen extends ConsumerWidget {
@@ -43,21 +44,26 @@ class ProjectsScreen extends ConsumerWidget {
               ),
             )
           : ListView(
+              padding: BentoListView.paddingOf(context),
               children: [
-                for (final tag in sorted)
-                  ListTile(
-                    leading: const Icon(Icons.sell_outlined),
-                    title: Text(tag),
-                    subtitle: Text(l.txCount(stats[tag]!.count)),
-                    trailing: MoneyText(
-                      stats[tag]!.expense,
-                      prefix: '-',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    onTap: () => context.go(
-                      '/more/projects/${Uri.encodeComponent(tag)}',
-                    ),
-                  ),
+                BentoList(
+                  children: [
+                    for (final tag in sorted)
+                      ListTile(
+                        leading: const Icon(Icons.sell_outlined),
+                        title: Text(tag),
+                        subtitle: Text(l.txCount(stats[tag]!.count)),
+                        trailing: MoneyText(
+                          stats[tag]!.expense,
+                          prefix: '-',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        onTap: () => context.go(
+                          '/more/projects/${Uri.encodeComponent(tag)}',
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
     );

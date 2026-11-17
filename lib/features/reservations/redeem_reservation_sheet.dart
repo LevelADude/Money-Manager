@@ -13,6 +13,7 @@ import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import '../transactions/transaction_providers.dart';
 import 'reservation_providers.dart';
+import '../../shared/glass.dart';
 
 /// Öffnet das „Einlösen"-Sheet: aus der Reservierung wird eine Ausgabe auf
 /// demselben Konto (Betrag/Name/Kategorie vorbelegt, anpassbar). Liefert
@@ -21,7 +22,7 @@ Future<bool> showRedeemReservationSheet(
   BuildContext context,
   Reservation reservation,
 ) async {
-  final result = await showModalBottomSheet<bool>(
+  final result = await showGlassSheet<bool>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,

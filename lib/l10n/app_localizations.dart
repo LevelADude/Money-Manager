@@ -85,7 +85,9 @@ class AppLocalizations {
   String get themeSystem => _t('System', 'System');
   String get themeLight => _t('Hell', 'Light');
   String get themeDark => _t('Dunkel', 'Dark');
-  String get accentColor => _t('Akzentfarbe', 'Accent color');
+  String get palette => _t('Farbpalette', 'Color palette');
+  String get paletteSage => _t('Salbei', 'Sage');
+  String get paletteEmerald => _t('Smaragd', 'Emerald');
   String get privacy => _t('Privatsphäre', 'Privacy');
   String get hideAmounts => _t('Beträge verbergen', 'Hide amounts');
   String get showAmounts => _t('Beträge einblenden', 'Show amounts');
@@ -542,10 +544,6 @@ class AppLocalizations {
   );
   String overBy(String x) => _t('+$x über', '+$x over');
   String amountLeft(String x) => _t('noch $x', '$x left');
-  String noBudgetThisMonth(String x) =>
-      _t('Kein Budget · diesen Monat $x', 'No budget · this month $x');
-  String noBudgetThisWeek(String x) =>
-      _t('Kein Budget · diese Woche $x', 'No budget · this week $x');
   // ---- Gesamtbudget (kategorieunabhängig, Monat/Woche) ----
   String get overallBudget => _t('Gesamtbudget', 'Overall budget');
   String get overallBudgetHint => _t(
@@ -943,9 +941,6 @@ class AppLocalizations {
   String get surplusPerMonth => _t('Überschuss / Monat', 'Surplus / month');
   String get wealthIn12Months =>
       _t('Vermögen in 12 Monaten', 'Net worth in 12 months');
-  String wealthChangePrefix(bool positive) => positive
-      ? _t('Veränderung: +', 'Change: +')
-      : _t('Veränderung: ', 'Change: ');
   String get projection => _t('Projektion', 'Projection');
 
   // ---- Projekte / Reisen ----

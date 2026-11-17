@@ -14,13 +14,18 @@ class MoneyManagerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final settings = ref.watch(settingsProvider);
-    final seed = Color(settings.seedColor);
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(seed),
-      darkTheme: AppTheme.dark(seed),
-      themeMode: settings.themeMode,
+      theme: AppTheme.themeFor(settings.palette),
+      // Nur „System" hat ein eigenes Dunkel-Gegenstück; feste Paletten gelten
+      // unabhängig von der Geräteeinstellung.
+      darkTheme: settings.palette == AppPalette.system
+          ? AppTheme.systemDark
+          : null,
+      themeMode: settings.palette == AppPalette.system
+          ? ThemeMode.system
+          : ThemeMode.light,
       locale: Locale(settings.localeCode),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

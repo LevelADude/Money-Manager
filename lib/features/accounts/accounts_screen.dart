@@ -5,12 +5,15 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/account.dart';
 import '../../data/models/account_group.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/data_refresh.dart';
 import '../../shared/hide_amounts_toggle.dart';
+import '../../shared/mini_line_chart.dart';
 import '../../shared/money.dart';
 import '../../shared/money_text.dart';
 import '../../shared/multi_currency_text.dart';
+import '../../shared/responsive.dart';
 import '../auth/auth_providers.dart';
 import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
@@ -20,10 +23,12 @@ import '../reminders/reminders_providers.dart';
 import '../reservations/reservation_providers.dart';
 import '../reservations/reserved_hint.dart';
 import '../settings/settings_providers.dart';
+import '../statistics/statistics_providers.dart';
 import '../sharing/account_member_providers.dart';
 import '../transactions/person_filter.dart';
 import '../transactions/transaction_providers.dart';
 import 'account_providers.dart';
+import '../../core/theme.dart';
 
 /// "Konten"-Tab: Gesamtvermögen + Konten, nach Kontokategorie gruppiert
 /// (mit Summe je Kategorie).
@@ -138,12 +143,7 @@ class AccountsScreen extends ConsumerWidget {
             byType.putIfAbsent(a.type, () => []).add(a);
           }
 
-          final children = <Widget>[
-            _NetWorthCard(
-              totalCents: ref.watch(netWorthProvider(personFilter)),
-              reservedCents: ref.watch(reservedNetWorthProvider(personFilter)),
-            ),
-          ];
+          final sums = <Widget>[];
 
           // Vermögen je Person nur in der Gesamtansicht („Alle Personen").
           final owners = <String>{
@@ -164,17 +164,24 @@ class AccountsScreen extends ConsumerWidget {
                   ),
                 ),
             ]..sort((a, b) => b.cents.compareTo(a.cents));
-            children.add(_PerPersonCard(entries: entries));
+            sums.add(_PerPersonCard(entries: entries));
           }
 
           // Eigene Custom-Summen (nur in der Eigen-/Gesamtansicht).
           if (personFilter == null || personFilter == myId) {
             final groupTotals = ref.watch(accountGroupTotalsProvider);
             if (groupTotals.isNotEmpty) {
-              children.add(_CustomSumsCard(entries: groupTotals));
+              sums.add(_CustomSumsCard(entries: groupTotals));
             }
           }
 
+          final hero = _NetWorthCard(
+            totalCents: ref.watch(netWorthProvider(personFilter)),
+            reservedCents: ref.watch(reservedNetWorthProvider(personFilter)),
+          );
+
+          // Je Kontotyp eine Listen-Kachel mit Überschrift und Zwischensumme.
+          final groups = <Widget>[];
           for (final type in _order) {
             final group = byType[type];
             if (group == null || group.isEmpty) continue;
@@ -182,37 +189,98 @@ class AccountsScreen extends ConsumerWidget {
               0,
               (s, a) => s + convert(primaryOf(a), a.currency),
             );
-            children.add(
-              _CategoryHeader(
-                label: l.accountType(type),
-                cents: subtotal,
-                isLiability: type.isLiability,
+            groups.add(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _CategoryHeader(label: l.accountType(type), cents: subtotal),
+                  BentoList(
+                    children: [
+                      for (final a in group)
+                        _AccountTile(
+                          account: a,
+                          balanceCents: balanceOf(a),
+                          reservedCents: reservedMap[a.id] ?? 0,
+                          overReserved: overReserved.contains(a.id),
+                          currency: a.currency,
+                          ownerName: memberNames[a.ownerId] ?? '',
+                          shared: membersByAccount[a.id]?.isNotEmpty ?? false,
+                          onTap: () => context.go('/account/${a.id}'),
+                          onEdit: () => context.go('/account/${a.id}/edit'),
+                          onArchive: () async {
+                            await ref
+                                .read(accountRepositoryProvider)
+                                .setArchived(id: a.id, archived: !a.archived);
+                            ref.invalidate(accountsProvider);
+                          },
+                          onDelete: () => _confirmDelete(context, ref, a),
+                        ),
+                    ],
+                  ),
+                ],
               ),
             );
-            for (final a in group) {
-              children.add(
-                _AccountTile(
-                  account: a,
-                  balanceCents: balanceOf(a),
-                  reservedCents: reservedMap[a.id] ?? 0,
-                  overReserved: overReserved.contains(a.id),
-                  currency: a.currency,
-                  ownerName: memberNames[a.ownerId] ?? '',
-                  shared: membersByAccount[a.id]?.isNotEmpty ?? false,
-                  onTap: () => context.go('/account/${a.id}'),
-                  onEdit: () => context.go('/account/${a.id}/edit'),
-                  onArchive: () async {
-                    await ref
-                        .read(accountRepositoryProvider)
-                        .setArchived(id: a.id, archived: !a.archived);
-                    ref.invalidate(accountsProvider);
-                  },
-                  onDelete: () => _confirmDelete(context, ref, a),
-                ),
-              );
-            }
           }
-          return ListView(children: children);
+
+          return LayoutBuilder(
+            builder: (context, box) {
+              final wide =
+                  box.maxWidth - 2 * Bento.margin >= Bento.wideBreakpoint;
+              const gap = SizedBox(height: Bento.gap);
+              return ListView(
+                // Unten Platz für den „Konto"-Knopf über der Glas-Leiste.
+                padding: const EdgeInsets.fromLTRB(
+                  Bento.margin,
+                  4,
+                  Bento.margin,
+                  88,
+                ).withBarInset(context),
+                children: [
+                  if (wide && sums.isNotEmpty)
+                    // Breit: Gesamtsaldo links, Summen-Kacheln rechts daneben.
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: hero),
+                        const SizedBox(width: Bento.gap),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (var i = 0; i < sums.length; i++) ...[
+                                if (i > 0) gap,
+                                sums[i],
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  else ...[
+                    hero,
+                    for (final s in sums) ...[gap, s],
+                  ],
+                  const SizedBox(height: 20),
+                  if (wide)
+                    BentoColumns(
+                      gap: 20,
+                      left: [
+                        for (var i = 0; i < groups.length; i += 2) groups[i],
+                      ],
+                      right: [
+                        for (var i = 1; i < groups.length; i += 2) groups[i],
+                      ],
+                    )
+                  else
+                    for (var i = 0; i < groups.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 20),
+                      groups[i],
+                    ],
+                ],
+              );
+            },
+          );
         },
       ),
     );
@@ -249,6 +317,7 @@ class AccountsScreen extends ConsumerWidget {
   }
 }
 
+/// Große Kachel: Gesamtvermögen mit Verlauf der letzten 12 Monate.
 class _NetWorthCard extends ConsumerWidget {
   const _NetWorthCard({required this.totalCents, required this.reservedCents});
 
@@ -258,39 +327,107 @@ class _NetWorthCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final c = AppColors.of(context);
     final showAvailable = ref.watch(
       settingsProvider.select((s) => s.showAvailable),
     );
+    // Aus den ohnehin geladenen Buchungen berechnet (keine weitere Abfrage).
+    final history = ref.watch(netWorthHistoryProvider);
+    final hasTrend =
+        history.length >= 2 && history.any((h) => h.cents != history[0].cents);
+    final delta = hasTrend ? history.last.cents - history.first.cents : 0;
     final primary = primaryAmount(totalCents, reservedCents, showAvailable);
-    final positive = primary >= 0;
-    return Card(
-      margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text(
-              showAvailable && reservedCents != 0
-                  ? l.availableNetWorth
-                  : l.netWorth,
-              style: Theme.of(context).textTheme.labelLarge,
+    return BentoTile(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(18, 18, 18, hasTrend ? 0 : 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        showAvailable && reservedCents != 0
+                            ? l.availableNetWorth
+                            : l.netWorth,
+                        style: Bento.label(context),
+                      ),
+                    ),
+                    if (hasTrend)
+                      BentoChip(
+                        icon: delta >= 0
+                            ? Icons.trending_up
+                            : Icons.trending_down,
+                        child: MoneyText(delta, prefix: delta >= 0 ? '+' : ''),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: MoneyText(
+                    primary,
+                    style: Bento.number(
+                      context,
+                      size: 40,
+                    ).copyWith(color: primary < 0 ? c.expense : null),
+                  ),
+                ),
+                ReservedHint(
+                  totalCents: totalCents,
+                  reservedCents: reservedCents,
+                  style: Bento.sub(context),
+                ),
+                MultiCurrencyText(primary, style: Bento.sub(context)),
+                if (hasTrend)
+                  Text(l.netWorthTrend12, style: Bento.sub(context)),
+              ],
             ),
-            const SizedBox(height: 6),
-            MoneyText(
-              primary,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: positive ? Colors.green.shade700 : Colors.red.shade700,
+          ),
+          if (hasTrend)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: MiniLineChart(
+                values: [for (final h in history) h.cents],
+                color: Theme.of(context).colorScheme.primary,
+                height: 84,
               ),
             ),
-            ReservedHint(
-              totalCents: totalCents,
-              reservedCents: reservedCents,
-              textAlign: TextAlign.center,
+        ],
+      ),
+    );
+  }
+}
+
+/// Zeile „Name … Betrag" in einer Summen-Kachel.
+class _SumLine extends StatelessWidget {
+  const _SumLine({required this.name, required this.cents});
+
+  final String name;
+  final int cents;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
+          const SizedBox(width: 12),
+          MoneyText(
+            cents,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: cents < 0 ? AppColors.of(context).expense : null,
             ),
-            MultiCurrencyText(primary, textAlign: TextAlign.center),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -303,41 +440,17 @@ class _PerPersonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              AppLocalizations.of(context).wealthPerPerson,
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            for (final e in entries)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(e.name, overflow: TextOverflow.ellipsis),
-                    ),
-                    MoneyText(
-                      e.cents,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: e.cents < 0 ? Colors.red.shade700 : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
+    return BentoTile(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            AppLocalizations.of(context).wealthPerPerson,
+            style: Bento.label(context),
+          ),
+          for (final e in entries) _SumLine(name: e.name, cents: e.cents),
+        ],
       ),
     );
   }
@@ -351,97 +464,44 @@ class _CustomSumsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Card(
-      margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-      child: InkWell(
-        onTap: () => context.go('/account/groups'),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return BentoTile(
+      onTap: () => context.go('/account/groups'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l.customSums,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.tune,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ],
+              Expanded(child: Text(l.customSums, style: Bento.label(context))),
+              Icon(
+                Icons.tune,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(height: 6),
-              for (final e in entries)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          e.group.name,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      MoneyText(
-                        e.cents,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: e.cents < 0 ? Colors.red.shade700 : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ),
-        ),
+          for (final e in entries) _SumLine(name: e.group.name, cents: e.cents),
+        ],
       ),
     );
   }
 }
 
 class _CategoryHeader extends StatelessWidget {
-  const _CategoryHeader({
-    required this.label,
-    required this.cents,
-    required this.isLiability,
-  });
+  const _CategoryHeader({required this.label, required this.cents});
 
   final String label;
   final int cents;
-  final bool isLiability;
 
   @override
   Widget build(BuildContext context) {
-    final negative = cents < 0;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          MoneyText(
-            cents,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: negative ? Colors.red.shade700 : null,
-            ),
-          ),
-        ],
+    return BentoSectionHeader(
+      label: label,
+      trailing: MoneyText(
+        cents,
+        style: TextStyle(
+          color: cents < 0 ? AppColors.of(context).expense : null,
+        ),
       ),
     );
   }
@@ -487,12 +547,13 @@ class _AccountTile extends ConsumerWidget {
       if (shared) l.sharedLabel,
       if (account.archived) l.archivedLabel,
     ].join('  ·  ');
-    return ListTile(
+    return BentoRow(
       onTap: onTap,
-      leading: CircleAvatar(
+      padding: const EdgeInsets.fromLTRB(14, 9, 2, 9),
+      leading: BentoGlyph(
         child: Icon(iconForAccountType(accountTypeToDb(account.type))),
       ),
-      title: Text(account.name, overflow: TextOverflow.ellipsis),
+      title: Text(account.name),
       subtitle: subtitle.isEmpty ? null : Text(subtitle),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -505,7 +566,7 @@ class _AccountTile extends ConsumerWidget {
                 child: Icon(
                   Icons.warning_amber_rounded,
                   size: 18,
-                  color: Colors.red.shade700,
+                  color: AppColors.of(context).expense,
                 ),
               ),
             ),
@@ -517,8 +578,7 @@ class _AccountTile extends ConsumerWidget {
                 primary,
                 currency: currency,
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: negative ? Colors.red.shade700 : null,
+                  color: negative ? AppColors.of(context).expense : null,
                 ),
               ),
               _CompactReservedHint(
@@ -529,6 +589,7 @@ class _AccountTile extends ConsumerWidget {
             ],
           ),
           PopupMenuButton<String>(
+            iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
             onSelected: (v) {
               switch (v) {
                 case 'edit':
@@ -598,9 +659,7 @@ class _CompactReservedHint extends ConsumerWidget {
     final label = showAvailable ? l.totalShort : l.available;
     return Text(
       '$label ${formatMoney(other, currency)}',
-      style: Theme.of(
-        context,
-      ).textTheme.bodySmall?.copyWith(color: Theme.of(context).hintColor),
+      style: Bento.sub(context).copyWith(fontSize: 12),
     );
   }
 }

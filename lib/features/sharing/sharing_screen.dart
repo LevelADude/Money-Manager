@@ -6,23 +6,39 @@ import '../../l10n/app_localizations.dart';
 import '../auth/auth_providers.dart';
 import '../profile/profile_providers.dart';
 import 'access_grant_providers.dart';
+import '../../shared/bento.dart';
 
 /// „Freigaben": legt fest, wer die eigenen Finanzen ansehen/verwalten darf,
 /// und zeigt, wer dem aktuellen Nutzer Zugriff gegeben hat.
 class SharingScreen extends ConsumerWidget {
   const SharingScreen({super.key});
 
-  Future<void> _set(WidgetRef ref, String granteeId, String choice) async {
+  /// Ändert eine Freigabe. Kein Optimistic Update: Zugriffsrechte gelten erst,
+  /// wenn der Server bestätigt. Schlägt das fehl, bleibt die alte Auswahl
+  /// stehen und eine Meldung erklärt warum.
+  Future<void> _set(
+    BuildContext context,
+    WidgetRef ref,
+    String granteeId,
+    String choice,
+  ) async {
     final repo = ref.read(accessGrantRepositoryProvider);
-    if (choice == 'none') {
-      await repo.revoke(granteeId);
-    } else {
-      await repo.grant(
-        granteeId,
-        choice == 'manage' ? GrantLevel.manage : GrantLevel.view,
-      );
+    final messenger = ScaffoldMessenger.of(context);
+    final l = AppLocalizations.of(context);
+    try {
+      if (choice == 'none') {
+        await repo.revoke(granteeId);
+      } else {
+        await repo.grant(
+          granteeId,
+          choice == 'manage' ? GrantLevel.manage : GrantLevel.view,
+        );
+      }
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(l.errorWith(e))));
+    } finally {
+      ref.invalidate(accessGrantsProvider);
     }
-    ref.invalidate(accessGrantsProvider);
   }
 
   @override
@@ -33,6 +49,7 @@ class SharingScreen extends ConsumerWidget {
     final iGave = ref.watch(grantsIGaveProvider);
     final iReceived = ref.watch(grantsIReceivedProvider);
     final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
 
     String nameOf(String id) =>
         names[id]?.isNotEmpty == true ? names[id]! : l.unknownPerson;
@@ -42,120 +59,115 @@ class SharingScreen extends ConsumerWidget {
         (a, b) => nameOf(a).toLowerCase().compareTo(nameOf(b).toLowerCase()),
       );
 
+    Widget initial(String id) => BentoGlyph(
+      size: 38,
+      child: Text(
+        nameOf(id).isNotEmpty ? nameOf(id)[0].toUpperCase() : '?',
+        style: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+
+    Widget emptyTile(String text) =>
+        BentoTile(child: Text(text, style: Bento.sub(context)));
+
     return Scaffold(
       appBar: AppBar(title: Text(l.sharingTitle)),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: BentoListView.paddingOf(context),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Text(
-                l.sharingIntro,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
-            child: Text(
-              l.whoCanAccess,
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          if (others.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(l.noOtherPeople),
-            )
-          else
-            for (final id in others)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            child: Text(
-                              nameOf(id).isNotEmpty
-                                  ? nameOf(id)[0].toUpperCase()
-                                  : '?',
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              nameOf(id),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      SegmentedButton<String>(
-                        showSelectedIcon: false,
-                        segments: [
-                          ButtonSegment(
-                            value: 'none',
-                            label: Text(l.accessNone),
-                          ),
-                          ButtonSegment(
-                            value: 'view',
-                            label: Text(l.accessView),
-                          ),
-                          ButtonSegment(
-                            value: 'manage',
-                            label: Text(l.accessManage),
-                          ),
-                        ],
-                        selected: {
-                          switch (iGave[id]) {
-                            GrantLevel.manage => 'manage',
-                            GrantLevel.view => 'view',
-                            null => 'none',
-                          },
-                        },
-                        onSelectionChanged: (s) => _set(ref, id, s.first),
-                      ),
-                    ],
+          BentoTile(
+            child: Row(
+              children: [
+                const BentoGlyph(child: Icon(Icons.group_outlined)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l.sharingIntro,
+                    style: theme.textTheme.bodyMedium,
                   ),
                 ),
-              ),
-          const Divider(height: 32),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
-            child: Text(
-              l.whoGrantedMe,
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ],
             ),
           ),
-          if (iReceived.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(l.nobodyGrantedYou),
-            )
+          const SizedBox(height: Bento.gap * 2),
+          BentoSectionHeader(label: l.whoCanAccess),
+          if (others.isEmpty)
+            emptyTile(l.noOtherPeople)
           else
-            for (final e in iReceived.entries)
-              ListTile(
-                leading: const Icon(Icons.visibility_outlined),
-                title: Text(nameOf(e.key)),
-                subtitle: Text(
-                  e.value == GrantLevel.manage
-                      ? l.youMayViewManage
-                      : l.youMayView,
-                ),
-              ),
+            BentoList(
+              children: [
+                for (final id in others)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 11, 14, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        BentoRow(
+                          padding: EdgeInsets.zero,
+                          leading: initial(id),
+                          title: Text(nameOf(id)),
+                        ),
+                        const SizedBox(height: 10),
+                        SegmentedButton<String>(
+                          showSelectedIcon: false,
+                          segments: [
+                            ButtonSegment(
+                              value: 'none',
+                              label: Text(l.accessNone),
+                            ),
+                            ButtonSegment(
+                              value: 'view',
+                              label: Text(l.accessView),
+                            ),
+                            ButtonSegment(
+                              value: 'manage',
+                              label: Text(l.accessManage),
+                            ),
+                          ],
+                          selected: {
+                            switch (iGave[id]) {
+                              GrantLevel.manage => 'manage',
+                              GrantLevel.view => 'view',
+                              null => 'none',
+                            },
+                          },
+                          onSelectionChanged: (s) =>
+                              _set(context, ref, id, s.first),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          const SizedBox(height: Bento.gap * 2),
+          BentoSectionHeader(label: l.whoGrantedMe),
+          if (iReceived.isEmpty)
+            emptyTile(l.nobodyGrantedYou)
+          else
+            BentoList(
+              children: [
+                for (final e in iReceived.entries)
+                  BentoRow(
+                    leading: initial(e.key),
+                    title: Text(nameOf(e.key)),
+                    subtitle: Text(
+                      e.value == GrantLevel.manage
+                          ? l.youMayViewManage
+                          : l.youMayView,
+                    ),
+                    trailing: Icon(
+                      e.value == GrantLevel.manage
+                          ? Icons.edit_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
         ],
       ),
     );

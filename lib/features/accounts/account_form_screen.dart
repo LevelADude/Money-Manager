@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/account.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
 import '../../shared/money.dart';
 import '../auth/auth_providers.dart';
 import '../currency/currency_picker.dart';
@@ -11,6 +12,7 @@ import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
 import '../sharing/account_member_providers.dart';
 import 'account_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Konto anlegen oder bearbeiten.
 class AccountFormScreen extends ConsumerStatefulWidget {
@@ -149,7 +151,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         title: Text(widget.isEditing ? l.editAccount : l.newAccount),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16).withBarInset(context),
         child: Form(
           key: _formKey,
           child: Column(
@@ -167,6 +169,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<AccountType>(
+                isExpanded: true,
                 initialValue: _type,
                 decoration: InputDecoration(
                   labelText: l.accountTypeLabel,
@@ -232,54 +235,51 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 8),
-              SwitchListTile(
-                value: _includeInNetWorth,
-                onChanged: (v) => setState(() => _includeInNetWorth = v),
-                title: Text(l.countsToNetWorth),
-                contentPadding: EdgeInsets.zero,
+              const SizedBox(height: Bento.gap),
+              BentoGroup(
+                padding: BentoGroup.rowsPadding,
+                children: [
+                  SwitchListTile(
+                    value: _includeInNetWorth,
+                    onChanged: (v) => setState(() => _includeInNetWorth = v),
+                    title: Text(l.countsToNetWorth),
+                  ),
+                ],
               ),
               if (isOwner && others.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    l.shareWithTitle,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l.shareWithHelp,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
+                const SizedBox(height: Bento.gap),
+                BentoGroup(
                   children: [
-                    for (final id in others)
-                      FilterChip(
-                        label: Text(
-                          profileNames[id]!.isNotEmpty
-                              ? profileNames[id]!
-                              : l.unknownPerson,
-                        ),
-                        selected: _shareWith.contains(id),
-                        onSelected: (sel) => setState(() {
-                          if (sel) {
-                            _shareWith.add(id);
-                          } else {
-                            _shareWith.remove(id);
-                          }
-                        }),
-                      ),
+                    Text(l.shareWithTitle, style: Bento.section(context)),
+                    const SizedBox(height: 4),
+                    Text(l.shareWithHelp, style: Bento.sub(context)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        for (final id in others)
+                          FilterChip(
+                            label: Text(
+                              profileNames[id]!.isNotEmpty
+                                  ? profileNames[id]!
+                                  : l.unknownPerson,
+                            ),
+                            selected: _shareWith.contains(id),
+                            onSelected: (sel) => setState(() {
+                              if (sel) {
+                                _shareWith.add(id);
+                              } else {
+                                _shareWith.remove(id);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
                 icon: _saving

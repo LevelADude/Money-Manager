@@ -7,12 +7,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'config/app_config.dart';
 import 'config/db_connection_file.dart';
+import 'core/theme.dart';
 import 'data/local/app_cache.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'l10n/app_localizations.dart';
+import 'shared/startup_trace.dart';
 
 Future<void> main() async {
+  startupMark('main');
   WidgetsFlutterBinding.ensureInitialized();
+  if (startupTraceEnabled) {
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => startupMark('erster Frame'),
+    );
+  }
   // Deutsche Datums-/Zahlenformate verfügbar machen (sonst werfen
   // DateFormat(..., 'de')-Aufrufe eine LocaleDataException).
   await initializeDateFormatting('de', null);
@@ -77,6 +85,7 @@ class _BootstrapState extends State<_Bootstrap> {
         // klassischen "anon"-Key (beide sind clientseitig öffentlich).
         publishableKey: _config.anonKey,
       );
+      startupMark('Supabase bereit');
       if (!mounted) return;
       setState(() {
         _ready = true;
@@ -141,9 +150,21 @@ class _BootstrapState extends State<_Bootstrap> {
       widget.prefs.getString('settings_locale') == 'en' ? 'en' : 'de',
     );
 
+    // Gewählte Palette schon vor dem Start der eigentlichen App verwenden,
+    // damit Ladeanzeige und Onboarding nicht in fremden Farben aufblitzen.
+    final palette =
+        AppPalette.values.asNameMap()[widget.prefs.getString(
+          'settings_palette',
+        )] ??
+        AppPalette.system;
+    final theme = AppTheme.themeFor(palette);
+    final darkTheme = palette == AppPalette.system ? AppTheme.systemDark : null;
+
     if (_initializing) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
+        theme: theme,
+        darkTheme: darkTheme,
         locale: locale,
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -156,10 +177,8 @@ class _BootstrapState extends State<_Bootstrap> {
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF2E7D32),
-        useMaterial3: true,
-      ),
+      theme: theme,
+      darkTheme: darkTheme,
       home: OnboardingScreen(
         config: _config,
         initialError: _error,

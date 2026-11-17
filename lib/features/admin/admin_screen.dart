@@ -9,6 +9,7 @@ import '../../shared/money.dart';
 import '../auth/auth_providers.dart';
 import '../profile/profile_providers.dart';
 import 'admin_providers.dart';
+import '../../shared/bento.dart';
 
 /// Gratis-Limits (Supabase Free): 500 MB Datenbank, 1 GB Datei-Speicher.
 const int _kDbLimitBytes = 500 * 1024 * 1024;
@@ -194,7 +195,8 @@ class AdminScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.adminTitle)),
       body: ListView(
-        children: [
+        padding: BentoListView.paddingOf(context),
+        children: bentoSections([
           _sectionTitle(context, l.storageSection),
           _buildStorage(context, ref),
           ListTile(
@@ -252,7 +254,7 @@ class AdminScreen extends ConsumerWidget {
           _sectionTitle(context, l.dangerZone),
           _buildDangerZone(context, ref, isOwner: isOwner),
           const SizedBox(height: 24),
-        ],
+        ]),
       ),
     );
   }
@@ -265,15 +267,15 @@ class AdminScreen extends ConsumerWidget {
     return stats.when(
       skipLoadingOnReload: true,
       loading: () => const Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(vertical: 16),
         child: LinearProgressIndicator(),
       ),
       error: (e, _) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(l.storageLoadFailed(e)),
       ),
       data: (s) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           children: [
             _usageBar(context, l.database, s.dbBytes, _kDbLimitBytes),

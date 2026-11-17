@@ -8,11 +8,13 @@ import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
 import '../../data/models/recurring_rule.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
 import '../../shared/calculator_sheet.dart';
 import '../../shared/money.dart';
 import '../accounts/account_providers.dart';
 import '../categories/category_providers.dart';
 import 'recurring_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Dauerauftrag anlegen oder bearbeiten.
 class RecurringFormScreen extends ConsumerStatefulWidget {
@@ -232,7 +234,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16).withBarInset(context),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -265,6 +267,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _accountId,
                       decoration: InputDecoration(
                         labelText: l.accountLabel,
@@ -274,7 +277,13 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                       ),
                       items: [
                         for (final a in accounts)
-                          DropdownMenuItem(value: a.id, child: Text(a.name)),
+                          DropdownMenuItem(
+                            value: a.id,
+                            child: Text(
+                              a.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                       ],
                       onChanged: (v) => setState(() => _accountId = v),
                     ),
@@ -310,6 +319,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     const SizedBox(height: 16),
                     if (isTransfer)
                       DropdownButtonFormField<String?>(
+                        isExpanded: true,
                         initialValue: _transferTargetId,
                         decoration: InputDecoration(
                           labelText: l.targetAccount,
@@ -323,13 +333,17 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                           for (final a in targets)
                             DropdownMenuItem<String?>(
                               value: a.id,
-                              child: Text(a.name),
+                              child: Text(
+                                a.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                         ],
                         onChanged: (v) => setState(() => _transferTargetId = v),
                       )
                     else
                       DropdownButtonFormField<String?>(
+                        isExpanded: true,
                         initialValue: _categoryId,
                         decoration: InputDecoration(
                           labelText: l.category,
@@ -343,7 +357,10 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                           for (final c in categories)
                             DropdownMenuItem<String?>(
                               value: c.id,
-                              child: Text(l.categoryName(c)),
+                              child: Text(
+                                l.categoryName(c),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                         ],
                         onChanged: (v) => setState(() => _categoryId = v),
@@ -357,60 +374,69 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                         prefixIcon: const Icon(Icons.storefront_outlined),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
+                    const SizedBox(height: Bento.gap),
+                    // Rhythmus und Termine gehören zusammen: eine Kachel.
+                    BentoGroup(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
                       children: [
-                        Text(l.everyWord),
-                        SizedBox(
-                          width: 64,
-                          child: TextFormField(
-                            controller: _count,
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<IntervalUnit>(
-                            initialValue: _unit,
-                            items: [
-                              for (final u in IntervalUnit.values)
-                                DropdownMenuItem(
-                                  value: u,
-                                  child: Text(l.intervalUnitLabel(u)),
+                        Row(
+                          children: [
+                            Text(l.everyWord),
+                            const SizedBox(width: 12),
+                            SizedBox(
+                              width: 64,
+                              child: TextFormField(
+                                controller: _count,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: DropdownButtonFormField<IntervalUnit>(
+                                isExpanded: true,
+                                initialValue: _unit,
+                                items: [
+                                  for (final u in IntervalUnit.values)
+                                    DropdownMenuItem(
+                                      value: u,
+                                      child: Text(l.intervalUnitLabel(u)),
+                                    ),
+                                ],
+                                onChanged: (v) => setState(
+                                  () => _unit = v ?? IntervalUnit.month,
                                 ),
-                            ],
-                            onChanged: (v) =>
-                                setState(() => _unit = v ?? IntervalUnit.month),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ListTile(
+                          leading: const Icon(Icons.event),
+                          title: Text(l.nextDueLabel),
+                          subtitle: Text(df.format(_nextDue)),
+                          trailing: const Icon(Icons.edit_calendar),
+                          onTap: _pickNextDue,
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.event_busy),
+                          title: Text(l.endDateOptional),
+                          subtitle: Text(
+                            _endDate == null ? l.noEnd : df.format(_endDate!),
                           ),
+                          trailing: _endDate == null
+                              ? const Icon(Icons.edit_calendar)
+                              : IconButton(
+                                  tooltip: l.delete,
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () =>
+                                      setState(() => _endDate = null),
+                                ),
+                          onTap: _pickEndDate,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.event),
-                      title: Text(l.nextDueLabel),
-                      subtitle: Text(df.format(_nextDue)),
-                      trailing: const Icon(Icons.edit_calendar),
-                      onTap: _pickNextDue,
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.event_busy),
-                      title: Text(l.endDateOptional),
-                      subtitle: Text(
-                        _endDate == null ? l.noEnd : df.format(_endDate!),
-                      ),
-                      trailing: _endDate == null
-                          ? const Icon(Icons.edit_calendar)
-                          : IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () => setState(() => _endDate = null),
-                            ),
-                      onTap: _pickEndDate,
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: Bento.gap),
                     TextFormField(
                       controller: _note,
                       minLines: 2,

@@ -10,6 +10,8 @@ import '../currency/currency_providers.dart';
 import '../profile/profile_providers.dart';
 import 'reservation_providers.dart';
 import 'reservation_tile.dart';
+import '../../core/theme.dart';
+import '../../shared/bento.dart';
 
 /// Übersicht aller Reservierungen, nach Konto gruppiert.
 class ReservationsScreen extends ConsumerWidget {
@@ -70,12 +72,15 @@ class ReservationsScreen extends ConsumerWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.only(bottom: 88),
+              padding: BentoListView.paddingOf(context, fabSpace: true),
               children: [
                 Card(
-                  margin: const EdgeInsets.all(12),
+                  margin: EdgeInsets.zero,
                   child: ListTile(
-                    leading: const Icon(Icons.bookmarks_outlined),
+                    leading: const BentoGlyph(
+                      size: 38,
+                      child: Icon(Icons.bookmarks_outlined),
+                    ),
                     title: Text(l.reservedLabel),
                     subtitle: Text(l.allAccounts),
                     trailing: MoneyText(
@@ -87,31 +92,39 @@ class ReservationsScreen extends ConsumerWidget {
                   ),
                 ),
                 for (final g in groups) ...[
-                  ListTile(
-                    dense: true,
-                    title: Text(
-                      g.account.name,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+                  const SizedBox(height: Bento.gap),
+                  BentoList(
+                    header: ListTile(
+                      dense: true,
+                      title: Text(
+                        g.account.name,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      subtitle: overReserved.contains(g.account.id)
+                          ? Text(
+                              l.overReservedWarning,
+                              style: TextStyle(
+                                color: AppColors.of(context).expense,
+                              ),
+                            )
+                          : null,
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.go('/account/${g.account.id}'),
                     ),
-                    subtitle: overReserved.contains(g.account.id)
-                        ? Text(
-                            l.overReservedWarning,
-                            style: TextStyle(color: Colors.red.shade700),
-                          )
-                        : null,
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.go('/account/${g.account.id}'),
+                    children: [
+                      for (final r in g.items)
+                        ReservationTile(
+                          reservation: r,
+                          currency: g.account.currency,
+                          canManage:
+                              !readOnly && manageable.contains(r.accountId),
+                          onEdit: () =>
+                              context.go('/more/reservations/${r.id}'),
+                        ),
+                    ],
                   ),
-                  for (final r in g.items)
-                    ReservationTile(
-                      reservation: r,
-                      currency: g.account.currency,
-                      canManage: !readOnly && manageable.contains(r.accountId),
-                      onEdit: () => context.go('/more/reservations/${r.id}'),
-                    ),
-                  const Divider(height: 1),
                 ],
               ],
             ),

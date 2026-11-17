@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../config/app_config.dart';
 import '../../config/remote_connection.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
 import '../../shared/responsive.dart';
 
 /// Welcher Einrichtungs-Weg wurde gewählt?
@@ -168,7 +169,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         maxWidth: 640,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          child: _mode == null ? _buildChooser(theme) : _buildForm(theme),
+          child: SafeArea(
+            child: _mode == null ? _buildChooser(theme) : _buildForm(theme),
+          ),
         ),
       ),
     );
@@ -180,12 +183,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(
-          Icons.cloud_sync_outlined,
-          size: 48,
-          color: theme.colorScheme.primary,
+        Image.asset(
+          'assets/icon/logo.png',
+          height: 72,
+          excludeFromSemantics: true,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Text(
           l.welcomeTitle,
           textAlign: TextAlign.center,
@@ -195,23 +198,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         Text(
           l.welcomeBody,
           textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         _ChoiceCard(
           icon: Icons.add_circle_outline,
           title: l.newInstallTitle,
           subtitle: l.newInstallSub,
           onTap: () => setState(() => _mode = _SetupMode.fresh),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Bento.gap),
         _ChoiceCard(
           icon: Icons.login_outlined,
           title: l.connectExistingTitle,
           subtitle: l.connectExistingSub,
           onTap: () => setState(() => _mode = _SetupMode.existing),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Bento.gap),
         _ChoiceCard(
           icon: Icons.bolt_outlined,
           title: l.easySetupChoiceTitle,
@@ -232,26 +237,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            easySetup
-                ? l.easySetupTitle
-                : (fresh ? l.newOwnDatabase : l.connectExistingDb),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 16),
+          if (!easySetup) ...[
+            Text(
+              fresh ? l.newOwnDatabase : l.connectExistingDb,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 16),
+          ],
 
           if (easySetup) ...[
-            Text(l.easySetupBody),
-            const SizedBox(height: 12),
+            _StepCard(
+              icon: Icons.bolt_outlined,
+              title: l.easySetupTitle,
+              child: Text(l.easySetupBody),
+            ),
             TextField(
               controller: _link,
               keyboardType: TextInputType.url,
+              onSubmitted: (_) => _submitEasySetup(),
               decoration: InputDecoration(
                 labelText: l.webVersionLink,
                 hintText: 'https://dein-name.github.io/dein-repo/',
                 prefixIcon: const Icon(Icons.link),
-                border: const OutlineInputBorder(),
               ),
             ),
           ] else if (fresh) ...[
@@ -279,30 +287,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             _StepCard(
               number: '3',
               title: l.step3Title,
-              child: _credentials(theme),
+              child: Text(l.credentialsIntro),
             ),
+            ..._credentials(),
           ] else ...[
             _StepCard(
-              number: '✓',
+              icon: Icons.check,
               title: l.existingCredsTitle,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(l.existingCredsBody),
-                  const SizedBox(height: 12),
-                  _credentials(theme),
+                  const SizedBox(height: 8),
+                  Text(l.credentialsIntro),
                 ],
               ),
             ),
+            ..._credentials(),
           ],
 
           if (_error != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: Bento.gap),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: theme.colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(Bento.radius),
               ),
               child: Row(
                 children: [
@@ -341,7 +351,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Text(
               l.ownerTip,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ],
@@ -350,50 +362,45 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   /// Die gemeinsamen URL- + Schlüssel-Felder (in beiden Modi identisch).
-  Widget _credentials(ThemeData theme) {
+  /// Stehen frei unter der erklärenden Kachel: Felder sind eigene Flächen.
+  List<Widget> _credentials() {
     final l = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(l.credentialsIntro),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _url,
-          keyboardType: TextInputType.url,
-          decoration: InputDecoration(
-            labelText: l.supabaseProjectUrl,
-            hintText: 'https://xxxxxxxx.supabase.co',
-            prefixIcon: const Icon(Icons.link),
-            border: const OutlineInputBorder(),
-          ),
-          validator: (v) {
-            final t = (v ?? '').trim();
-            if (t.isEmpty) return l.enterUrl;
-            if (!t.startsWith('http')) {
-              return l.mustStartHttps;
-            }
-            return null;
-          },
+    return [
+      TextFormField(
+        controller: _url,
+        keyboardType: TextInputType.url,
+        textInputAction: TextInputAction.next,
+        decoration: InputDecoration(
+          labelText: l.supabaseProjectUrl,
+          hintText: 'https://xxxxxxxx.supabase.co',
+          prefixIcon: const Icon(Icons.link),
         ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _key,
-          minLines: 1,
-          maxLines: 3,
-          decoration: InputDecoration(
-            labelText: l.anonKeyLabel,
-            prefixIcon: const Icon(Icons.key_outlined),
-            border: const OutlineInputBorder(),
-          ),
-          validator: (v) =>
-              (v == null || v.trim().length < 20) ? l.enterKey : null,
+        validator: (v) {
+          final t = (v ?? '').trim();
+          if (t.isEmpty) return l.enterUrl;
+          if (!t.startsWith('http')) {
+            return l.mustStartHttps;
+          }
+          return null;
+        },
+      ),
+      const SizedBox(height: Bento.gap),
+      TextFormField(
+        controller: _key,
+        minLines: 1,
+        maxLines: 3,
+        decoration: InputDecoration(
+          labelText: l.anonKeyLabel,
+          prefixIcon: const Icon(Icons.key_outlined),
         ),
-      ],
-    );
+        validator: (v) =>
+            (v == null || v.trim().length < 20) ? l.enterKey : null,
+      ),
+    ];
   }
 }
 
-/// Auswahlkarte auf dem Erststart-Bildschirm.
+/// Auswahl-Kachel auf dem Erststart-Bildschirm.
 class _ChoiceCard extends StatelessWidget {
   const _ChoiceCard({
     required this.icon,
@@ -410,87 +417,85 @@ class _ChoiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Icon(icon, color: theme.colorScheme.onPrimaryContainer),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: theme.textTheme.bodySmall),
-                  ],
+    return BentoTile(
+      onTap: onTap,
+      child: Row(
+        children: [
+          BentoGlyph(child: Icon(icon)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const Icon(Icons.chevron_right),
-            ],
+                const SizedBox(height: 2),
+                Text(subtitle, style: Bento.sub(context)),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
+          Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+        ],
       ),
     );
   }
 }
 
+/// Erklär-Kachel eines Einrichtungsschritts: Nummer oder Icon im Kreis,
+/// Titel, darunter der Inhalt.
 class _StepCard extends StatelessWidget {
   const _StepCard({
-    required this.number,
+    this.number,
+    this.icon,
     required this.title,
     required this.child,
-  });
+  }) : assert(number != null || icon != null);
 
-  final String number;
+  final String? number;
+  final IconData? icon;
   final String title;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Bento.gap),
+      child: BentoTile(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: theme.colorScheme.primary,
-              child: Text(
-                number,
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            BentoGlyph(
+              size: 32,
+              child: number == null
+                  ? Icon(icon)
+                  : Text(
+                      number!,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   child,
                 ],
               ),

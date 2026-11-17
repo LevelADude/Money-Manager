@@ -35,7 +35,8 @@
   -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
   <meta name="description" content="Persönliche Finanzverwaltung – Konten, Buchungen, Budgets und Statistiken, geräteübergreifend synchronisiert.">
-  <meta name="theme-color" content="#2E7D32">
+  <meta name="theme-color" content="#D5E2DA" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B1411" media="(prefers-color-scheme: dark)">
 
   <!-- PWA / iOS: „Zum Home-Bildschirm" als Vollbild-App -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -49,7 +50,7 @@
   -->
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Money Manager">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
@@ -93,21 +94,21 @@
       touch-action: manipulation;
       -webkit-text-size-adjust: 100%;
       -webkit-tap-highlight-color: transparent;
-      background: #fafafa;
+      background: #D5E2DA;
     }
     /* Nur der body wird fixiert (nicht auch <html>): das genuegt gegen das
        Mitscrollen/Ueberdehnen und vermeidet ein out-of-flow Wurzelelement. */
     body { position: fixed; }
-    @media (prefers-color-scheme: dark) { html, body { background: #121212; } }
+    @media (prefers-color-scheme: dark) { html, body { background: #0B1411; } }
     #boot {
       position: fixed; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 16px;
       font-family: -apple-system, Segoe UI, Roboto, sans-serif;
-      color: #2E7D32; text-align: center; padding: 24px;
+      color: #0B5C43; text-align: center; padding: 24px;
     }
     #boot .spin {
-      width: 42px; height: 42px; border: 4px solid rgba(46,125,50,.25);
-      border-top-color: #2E7D32; border-radius: 50%;
+      width: 42px; height: 42px; border: 4px solid rgba(11,92,67,.25);
+      border-top-color: #0B5C43; border-radius: 50%;
       animation: boot-spin 1s linear infinite;
     }
     @keyframes boot-spin { to { transform: rotate(360deg); } }
@@ -118,6 +119,8 @@
       overflow: auto; max-height: 50vh;
     }
     @media (prefers-color-scheme: dark) {
+      #boot { color: #3FBF93; }
+      #boot .spin { border-color: rgba(63,191,147,.25); border-top-color: #3FBF93; }
       #boot .err { background: #1e1e1e; border-color: #5c2b2b; }
     }
   </style>

@@ -5,6 +5,7 @@ import '../../data/models/category.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
 import 'category_providers.dart';
+import '../../shared/bento.dart';
 
 /// Verwaltung der Auto-Kategorisierungs-Regeln (Stichwort -> Kategorie).
 class CategoryRulesScreen extends ConsumerWidget {
@@ -113,18 +114,26 @@ class CategoryRulesScreen extends ConsumerWidget {
             );
           }
           return ListView(
+            padding: BentoListView.paddingOf(context, fabSpace: true),
             children: [
-              for (final r in rules)
-                ListTile(
-                  leading: const Icon(Icons.bolt_outlined),
-                  title: Text(l.containsKeyword(r.keyword)),
-                  subtitle: Text('→ ${catNames[r.categoryId] ?? l.category}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () =>
-                        ref.read(categoryRepositoryProvider).deleteRule(r.id),
-                  ),
-                ),
+              BentoList(
+                children: [
+                  for (final r in rules)
+                    ListTile(
+                      leading: const Icon(Icons.bolt_outlined),
+                      title: Text(l.containsKeyword(r.keyword)),
+                      subtitle: Text(
+                        '→ ${catNames[r.categoryId] ?? l.category}',
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => ref
+                            .read(categoryRepositoryProvider)
+                            .deleteRule(r.id),
+                      ),
+                    ),
+                ],
+              ),
             ],
           );
         },

@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
 import '../../shared/optimistic_switch.dart';
 import 'category_providers.dart';
+import '../../shared/bento.dart';
 
 /// Kategorien verwalten (anlegen / bearbeiten / aktiv schalten / löschen /
 /// Reihenfolge per Drag&Drop). Preset-Kategorien sind global und read-only;
@@ -37,16 +38,24 @@ class CategoriesScreen extends ConsumerWidget {
               .toList();
           final hidden = ref.watch(hiddenCategoriesProvider);
           return ListView(
+            padding: BentoListView.paddingOf(context, fabSpace: true),
             children: [
               _SectionHeader(l.expenses),
-              _ReorderableCats(items: expense),
+              BentoTile(
+                padding: EdgeInsets.zero,
+                child: _ReorderableCats(items: expense),
+              ),
               _SectionHeader(l.income),
-              _ReorderableCats(items: income),
+              BentoTile(
+                padding: EdgeInsets.zero,
+                child: _ReorderableCats(items: income),
+              ),
               if (hidden.isNotEmpty) ...[
                 _SectionHeader('${l.hiddenCategories} (${hidden.length})'),
-                for (final c in hidden) _HiddenTile(category: c),
+                BentoList(
+                  children: [for (final c in hidden) _HiddenTile(category: c)],
+                ),
               ],
-              const SizedBox(height: 80),
             ],
           );
         },
@@ -190,7 +199,7 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(6, 16, 6, 8),
       child: Text(
         title,
         style: Theme.of(
@@ -290,7 +299,7 @@ class _CategoryTile extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final editable = !category.isPreset;
     return ListTile(
-      leading: categoryGlyph(category),
+      leading: BentoGlyph(size: 38, child: categoryGlyph(category, size: 22)),
       title: Text(l.categoryName(category)),
       subtitle: Text(category.isPreset ? l.preset : l.custom),
       onTap: editable

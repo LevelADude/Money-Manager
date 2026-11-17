@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../shared/bento.dart';
 import 'auth_providers.dart';
 
 /// Neues Passwort setzen (nach Klick auf den Reset-Link / Recovery-Session).
@@ -55,8 +56,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       appBar: AppBar(title: Text(l.newPasswordTitle)),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Padding(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
               key: _formKey,
@@ -64,11 +65,23 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(l.setNewPasswordHint),
-                  const SizedBox(height: 16),
+                  BentoTile(
+                    child: Row(
+                      children: [
+                        const BentoGlyph(
+                          child: Icon(Icons.lock_reset_outlined),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(l.setNewPasswordHint)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: Bento.gap),
                   TextFormField(
                     controller: _pw,
                     obscureText: true,
+                    autofillHints: const [AutofillHints.newPassword],
+                    onFieldSubmitted: (_) => _save(),
                     decoration: InputDecoration(
                       labelText: l.newPasswordLabel,
                       prefixIcon: const Icon(Icons.lock_outline),
@@ -76,7 +89,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     validator: (v) =>
                         (v == null || v.length < 6) ? l.passwordMin : null,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: _saving ? null : _save,
                     icon: _saving

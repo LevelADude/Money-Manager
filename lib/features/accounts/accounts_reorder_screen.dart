@@ -5,6 +5,7 @@ import '../../data/models/account.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/category_icons.dart';
 import 'account_providers.dart';
+import '../../shared/responsive.dart';
 
 /// Konten per Drag&Drop sortieren. Die Reihenfolge gilt innerhalb der
 /// Kontotyp-Gruppen auf dem Konten-Tab.
@@ -72,7 +73,7 @@ class _AccountsReorderScreenState extends ConsumerState<AccountsReorderScreen> {
             return Center(child: Text(l.noAccountsShort));
           }
           return ReorderableListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: EdgeInsets.symmetric(vertical: 8).withBarInset(context),
             itemCount: list.length,
             onReorderItem: _onReorder,
             itemBuilder: (ctx, i) {
