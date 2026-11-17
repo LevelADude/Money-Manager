@@ -799,6 +799,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     Expanded(
                       flex: 3,
                       child: DropdownButtonFormField<String?>(
+                        borderRadius: Bento.menuRadius,
                         initialValue:
                             categories.any(
                               (c) => c.id == _splitRows[i].categoryId,
@@ -1041,6 +1042,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
+                      borderRadius: Bento.menuRadius,
                       isExpanded: true,
                       initialValue: _accountId,
                       decoration: InputDecoration(
@@ -1118,6 +1120,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     const SizedBox(height: 16),
                     if (isTransfer)
                       DropdownButtonFormField<String?>(
+                        borderRadius: Bento.menuRadius,
                         isExpanded: true,
                         initialValue: _transferTargetId,
                         decoration: InputDecoration(
@@ -1178,6 +1181,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       if (!_splitMode) ...[
                         const SizedBox(height: Bento.gap),
                         DropdownButtonFormField<String?>(
+                          borderRadius: Bento.menuRadius,
                           initialValue: _categoryId,
                           // Nötig für das Flexible im Row der Einträge (sonst
                           // unbegrenzte Breite -> Layout-Fehler, leere Maske).

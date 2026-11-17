@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../shared/bento.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -190,6 +191,7 @@ class _RedeemSheetState extends ConsumerState<_RedeemSheet> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
+                borderRadius: Bento.menuRadius,
                 initialValue: _categoryId,
                 decoration: InputDecoration(labelText: l.category),
                 items: [

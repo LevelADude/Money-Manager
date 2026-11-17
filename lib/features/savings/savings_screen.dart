@@ -190,6 +190,7 @@ class SavingsScreen extends ConsumerWidget {
               Text(l.roundupThisMonth(formatCents(roundup))),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
+                borderRadius: Bento.menuRadius,
                 initialValue: chosen,
                 decoration: InputDecoration(labelText: l.depositInto),
                 items: [

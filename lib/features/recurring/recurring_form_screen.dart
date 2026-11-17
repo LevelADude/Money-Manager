@@ -267,6 +267,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
+                      borderRadius: Bento.menuRadius,
                       isExpanded: true,
                       initialValue: _accountId,
                       decoration: InputDecoration(
@@ -319,6 +320,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                     const SizedBox(height: 16),
                     if (isTransfer)
                       DropdownButtonFormField<String?>(
+                        borderRadius: Bento.menuRadius,
                         isExpanded: true,
                         initialValue: _transferTargetId,
                         decoration: InputDecoration(
@@ -343,6 +345,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                       )
                     else
                       DropdownButtonFormField<String?>(
+                        borderRadius: Bento.menuRadius,
                         isExpanded: true,
                         initialValue: _categoryId,
                         decoration: InputDecoration(
@@ -394,6 +397,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: DropdownButtonFormField<IntervalUnit>(
+                                borderRadius: Bento.menuRadius,
                                 isExpanded: true,
                                 initialValue: _unit,
                                 items: [

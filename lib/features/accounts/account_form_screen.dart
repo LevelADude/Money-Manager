@@ -169,6 +169,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<AccountType>(
+                borderRadius: Bento.menuRadius,
                 isExpanded: true,
                 initialValue: _type,
                 decoration: InputDecoration(

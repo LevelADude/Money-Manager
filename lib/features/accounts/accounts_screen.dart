@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shared/app_bar_actions.dart';
 import '../../data/models/account.dart';
 import '../../data/models/account_group.dart';
 import '../../l10n/app_localizations.dart';
@@ -81,44 +82,49 @@ class AccountsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.navAccounts),
-        actions: [
-          const HideAmountsToggle(),
-          const ProfileSwitcher(),
-          IconButton(
-            tooltip: l.refresh,
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              refreshAllData(ref);
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(l.refreshed)));
-            },
-          ),
-          Builder(
-            builder: (context) {
-              final count = ref.watch(remindersProvider).length;
-              return IconButton(
-                tooltip: l.moreReminders,
-                icon: Badge(
-                  isLabelVisible: count > 0,
-                  label: Text('$count'),
-                  child: const Icon(Icons.notifications_outlined),
-                ),
-                onPressed: () => context.go('/more/reminders'),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: l.moreSearch,
-            icon: const Icon(Icons.search),
-            onPressed: () => context.go('/more/search'),
-          ),
-          IconButton(
-            tooltip: l.sortAccounts,
-            icon: const Icon(Icons.swap_vert),
-            onPressed: () => context.go('/account/reorder'),
-          ),
-        ],
+        actions: responsiveActions(
+          context,
+          primary: [
+            const HideAmountsToggle(),
+            const ProfileSwitcher(),
+            Builder(
+              builder: (context) {
+                final count = ref.watch(remindersProvider).length;
+                return IconButton(
+                  tooltip: l.moreReminders,
+                  icon: Badge(
+                    isLabelVisible: count > 0,
+                    label: Text('$count'),
+                    child: const Icon(Icons.notifications_outlined),
+                  ),
+                  onPressed: () => context.go('/more/reminders'),
+                );
+              },
+            ),
+          ],
+          secondary: [
+            (
+              icon: Icons.refresh,
+              label: l.refresh,
+              onPressed: () {
+                refreshAllData(ref);
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(l.refreshed)));
+              },
+            ),
+            (
+              icon: Icons.search,
+              label: l.moreSearch,
+              onPressed: () => context.go('/more/search'),
+            ),
+            (
+              icon: Icons.swap_vert,
+              label: l.sortAccounts,
+              onPressed: () => context.go('/account/reorder'),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: (readOnly || !canAddAccount)
           ? null

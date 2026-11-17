@@ -17,6 +17,10 @@ abstract final class Bento {
   /// Eckenradius der Kacheln.
   static const double radius = 22;
 
+  /// Rundung aufklappender Auswahlmenüs (DropdownButton lässt sich nicht
+  /// über das Theme runden). Etwas runder als die Felder (14).
+  static const BorderRadius menuRadius = BorderRadius.all(Radius.circular(16));
+
   /// Ab dieser Inhaltsbreite vier statt zwei Spalten.
   static const double wideBreakpoint = 600;
 

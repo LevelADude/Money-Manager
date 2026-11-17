@@ -319,6 +319,7 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
+                      borderRadius: Bento.menuRadius,
                       isExpanded: true,
                       initialValue: _accountId,
                       decoration: InputDecoration(
@@ -376,6 +377,7 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                     ),
                     const SizedBox(height: Bento.gap),
                     DropdownButtonFormField<String?>(
+                      borderRadius: Bento.menuRadius,
                       isExpanded: true,
                       initialValue: _categoryId,
                       decoration: InputDecoration(
@@ -421,6 +423,7 @@ class _ReservationFormScreenState extends ConsumerState<ReservationFormScreen> {
                           amountField(_topup, l.topupAmount),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<IntervalUnit>(
+                            borderRadius: Bento.menuRadius,
                             isExpanded: true,
                             initialValue: _unit,
                             decoration: InputDecoration(

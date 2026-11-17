@@ -243,6 +243,27 @@ zentrierter Text (15 Seiten, einheitlich). Listen unter „Mehr" leuchten beim
 Hover über die volle Breite (vom Kachelrand beschnitten), Einstellungs-
 Zeilen eingerückt – zwei Muster: Datenlisten vs. Bedienzeilen.
 
+## Sichtprüfung Android-Breite im Web (2026-11-17)
+
+Kein App-Build: Live-Seite bzw. lokaler Web-Release im Browser mit
+Mobil-Emulation (375 × 812, Android-Chrome-Kennung, Touch), angemeldet, echte
+Daten. Geprüft: Konten, Buchungen, Statistik, Mehr, Einstellungen,
+Buchungsformular, Auswahlmenüs. Behoben:
+
+- Titel „Konten"/„Buchungen" wurden zu „Ko…"/„Buchu…" gekürzt (5–6
+  Aktionen). `responsiveActions` (`lib/shared/app_bar_actions.dart`): auf
+  Telefonbreite wandern seltene Aktionen (Aktualisieren, Suche, Sortieren
+  bzw. Aktualisieren, Heute, PDF) in ein „⋮"-Menü; breit unverändert. Test in
+  `main_screens_test.dart`.
+- Statistik: Zeitraum-Umschalter schnitt „Gesamt" ab → volle Breite wie bei
+  den Buchungen, Beschriftungen schrumpfen bei Bedarf.
+- Auswahlmenüs (15 `DropdownButtonFormField`) mit gerundeten Ecken
+  (`Bento.menuRadius`). Bleibt: Flutter legt das Menü bis an den
+  Bildschirmrand, lange Listen (Kategorien) füllen die Höhe. Echte Abhilfe
+  wäre ein Auswahl-Sheet statt Dropdown – nicht umgesetzt.
+
+Nicht geprüft: echtes Android-Gerät (Systemleisten, Tastatur, Zurück-Geste).
+
 ## Prüfen nach jeder Phase
 
 ```bash
@@ -286,9 +307,8 @@ lib/dev_preview.dart`, dann im Browser `?p=sage|emerald|dark#/`,
 
 - Tastaturfokus auf Windows geprüft (deutlich, folgt den Spalten); er
   greift erst, wenn das Fenster selbst den Fokus hat.
-- Android nicht geprüft: Emulator vorhanden („Medium Phone"), aber nur
-  2 GB RAM frei (Laptop 16 GB) – Emulator plus Gradle-Build hätten ins
-  Swapping getrieben. Auf dem Desktop-PC oder mit Gerät nachholen.
+- Android nur als Web in Telefonbreite geprüft (siehe „Sichtprüfung
+  Android-Breite im Web"); kein App-Build, kein echtes Gerät.
 
 
 - Die sieben echten Sheets nur per Test/Beispiel-Sheet geprüft, nicht

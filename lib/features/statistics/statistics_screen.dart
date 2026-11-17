@@ -177,13 +177,27 @@ class StatisticsScreen extends ConsumerWidget {
           16,
         ).withBarInset(context),
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          // Volle Breite wie bei den Buchungen; fünf Abschnitte passen auf
+          // Telefonbreite nur, wenn lange Beschriftungen leicht schrumpfen
+          // (vorher wurde „Gesamt" rechts abgeschnitten).
+          SizedBox(
+            width: double.infinity,
             child: SegmentedButton<StatsPeriod>(
               showSelectedIcon: false,
+              style: const ButtonStyle(
+                padding: WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 6),
+                ),
+              ),
               segments: [
                 for (final p in StatsPeriod.values)
-                  ButtonSegment(value: p, label: Text(_statsPeriodLabel(l, p))),
+                  ButtonSegment(
+                    value: p,
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(_statsPeriodLabel(l, p), maxLines: 1),
+                    ),
+                  ),
               ],
               selected: {period},
               onSelectionChanged: (s) =>

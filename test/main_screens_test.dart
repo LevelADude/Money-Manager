@@ -415,4 +415,46 @@ void main() {
       });
     }
   }
+
+  // Auf Telefonbreite wandern seltene Aktionen ins „⋮"-Menü, damit der Titel
+  // ganz lesbar bleibt; breit stehen alle als Symbolknöpfe.
+  for (final (route, title) in [
+    ('/', 'Konten'),
+    ('/transactions', 'Buchungen'),
+  ]) {
+    testWidgets('Kopfzeile $route: Titel ganz, Menü nur schmal', (
+      tester,
+    ) async {
+      await _pump(tester, route, AppPalette.sage, _sizes['schmal']!);
+      final appBar = find.byType(AppBar).first;
+      expect(
+        find.descendant(of: appBar, matching: find.byIcon(Icons.more_vert)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: appBar, matching: find.byIcon(Icons.refresh)),
+        findsNothing,
+      );
+      final titleBox = tester.getSize(
+        find.descendant(of: appBar, matching: find.text(title)),
+      );
+      final painter = TextPainter(
+        text: TextSpan(
+          text: title,
+          style: Theme.of(tester.element(appBar)).appBarTheme.titleTextStyle,
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      expect(titleBox.width, greaterThanOrEqualTo(painter.width - 1));
+
+      await _pump(tester, route, AppPalette.sage, _sizes['breit']!);
+      expect(
+        find.descendant(
+          of: find.byType(AppBar).first,
+          matching: find.byIcon(Icons.more_vert),
+        ),
+        findsNothing,
+      );
+    });
+  }
 }

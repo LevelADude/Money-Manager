@@ -42,6 +42,7 @@ class CategoryRulesScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
+                borderRadius: Bento.menuRadius,
                 initialValue: categoryId,
                 isExpanded: true,
                 decoration: InputDecoration(labelText: l.category),

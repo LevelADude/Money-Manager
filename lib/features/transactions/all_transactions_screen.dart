@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../shared/app_bar_actions.dart';
 import '../../data/models/account.dart';
 import '../../data/models/app_transaction.dart';
 import '../../data/models/category.dart';
@@ -233,33 +234,35 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.navTransactions),
-        actions: [
-          const HideAmountsToggle(),
-          const ProfileSwitcher(),
-          IconButton(
-            tooltip: l.refresh,
-            icon: const Icon(Icons.refresh),
-            onPressed: () => refreshAllData(ref),
-          ),
-          IconButton(
-            tooltip: l.today,
-            icon: const Icon(Icons.today_outlined),
-            onPressed: () => setState(() => _anchor = DateTime.now()),
-          ),
-          IconButton(
-            tooltip: l.periodAsPdf,
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            onPressed: filtered.isEmpty
-                ? null
-                : () => _sharePeriodPdf(
-                    items: filtered,
-                    accountNames: accountNames,
-                    catNames: catNames,
-                    income: income,
-                    expense: expense,
-                  ),
-          ),
-        ],
+        actions: responsiveActions(
+          context,
+          primary: [const HideAmountsToggle(), const ProfileSwitcher()],
+          secondary: [
+            (
+              icon: Icons.refresh,
+              label: l.refresh,
+              onPressed: () => refreshAllData(ref),
+            ),
+            (
+              icon: Icons.today_outlined,
+              label: l.today,
+              onPressed: () => setState(() => _anchor = DateTime.now()),
+            ),
+            (
+              icon: Icons.picture_as_pdf_outlined,
+              label: l.periodAsPdf,
+              onPressed: filtered.isEmpty
+                  ? null
+                  : () => _sharePeriodPdf(
+                      items: filtered,
+                      accountNames: accountNames,
+                      catNames: catNames,
+                      income: income,
+                      expense: expense,
+                    ),
+            ),
+          ],
+        ),
       ),
       // Neue Buchung: Plus-Knopf der Navigation (MainScaffold).
       body: Column(
