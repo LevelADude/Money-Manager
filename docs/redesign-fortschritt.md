@@ -200,7 +200,21 @@ Kein Engpass in der App selbst: die Kacheln stehen aus dem lokalen Cache,
 bevor der Server antwortet; die Serverzeit ist Netz. Deshalb nichts
 optimiert. Beobachtet, nicht geändert: beim Start werden `profiles` und
 `recurring_rules` je zweimal abgefragt (parallel, kostet kaum Zeit).
-Nicht gemessen: Web über das echte Netz (GitHub Pages), Android.
+Live-Seite (GitHub Pages, nach Merge von PR #7, 2026-11-17, Verbindung
+„4g" laut Browser):
+
+| Zeit ab Seitenaufruf | kalt (alles übers Netz) | warm, angemeldet (3 Läufe) |
+|---|---|---|
+| Ladebildschirm | 0,21 s | 0,09–0,20 s |
+| `main.dart.js` (1,47 MB gzip) + CanvasKit (2 MB) | 0,95 s | aus dem Cache |
+| App startet | ~1,27 s | ~0,08–0,09 s |
+| Login bzw. Kacheln aus dem lokalen Cache | ~1,8 s (Login) | sofort nach Start |
+| Konten vom Server | – | 0,28–0,37 s |
+| Buchungen vom Server | – | 0,44–0,55 s |
+
+Kalt ist die Hälfte Download, der Rest Übersetzen/Start. Kein Handlungsbedarf;
+spürbar wäre nur ein kleinerer `main.dart.js` (Wasm, blockiert) oder ein
+Ladebildschirm mit Logo. Nicht gemessen: mobiles Netz, Android.
 
 ## Sichtprüfung mit Login (Windows, 2026-11-16)
 
